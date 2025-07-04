@@ -17,11 +17,11 @@ export default function HairProfitDashboard() {
       purchaseQuantity: 100,
       purchasePrice: 50,
       currency: 'USD',
-      processingSteps: [{ name: 'Coloring', expense: 250, wastage: 5 }],
+      processingSteps: [],
       sellingPricePerUnit: 120,
       enableByproductProcessing: false,
       chowryProcessingCost: 10,
-      nonRemyHairProducts: [{ size: '5-10', quantity: 10, price: 20 }],
+      nonRemyHairProducts: [],
     },
   });
 
