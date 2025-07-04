@@ -25,6 +25,9 @@ Analyze the following hair product:
 - Format: {{{format}}}
 - Length: {{{length}}}
 - Origin: {{{origin}}}
+- Texture: {{{texture}}}
+- Quality: {{{quality}}}
+- Color: {{{color}}}
 - Target Currency: {{{currency}}}
 
 Based on your knowledge, provide the following:
@@ -32,7 +35,7 @@ Based on your knowledge, provide the following:
 1.  A realistic market selling price range (lower and upper bound) per unit/bundle in {{{currency}}}.
 2.  A confidence score between 0 and 1 for your estimation.
 3.  A comprehensive analysis that includes:
-    - The reasoning for your price estimation, considering factors like hair origin (e.g., Brazilian, Indian), format (e.g. Weave, Tape-in), length, texture, perceived quality, and typical market demand.
+    - The reasoning for your price estimation, considering all provided factors like hair origin (e.g., Brazilian, Indian), format (e.g. Weave, Tape-in), length, texture, quality/grade (e.g. Virgin, Remy), color, and typical market demand.
     - A brief discussion on how pricing for this product might differ in at least two other major international markets (e.g., North America, Europe, Asia, Africa), explaining the factors for these variations.
   `,
 });

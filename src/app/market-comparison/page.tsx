@@ -37,6 +37,10 @@ const lengths = [
 ];
 
 const origins = [ 'Indian', 'Brazilian', 'Peruvian', 'Malaysian', 'Vietnamese', 'Cambodian', 'Eurasian' ];
+const textures = ['Straight', 'Wavy', 'Body Wave', 'Deep Wave', 'Curly', 'Kinky Curly'];
+const qualities = ['Virgin', 'Remy', 'Non-Remy'];
+const colors = ['Natural Black', 'Natural Brown', 'Dark Brown', '#1B (Off Black)', '#613 (Blonde)'];
+
 const currencies = [
     { value: 'INR', label: 'INR - Indian Rupee' },
     { value: 'USD', label: 'USD - US Dollar' },
@@ -50,6 +54,9 @@ export default function MarketComparisonPage() {
     format: 'tape-in',
     length: '10 inches',
     origin: 'Indian',
+    texture: 'Straight',
+    quality: 'Virgin',
+    color: 'Natural Black',
   });
   const [currency, setCurrency] = useState('INR');
   const [result, setResult] = useState<MarketComparisonOutput | null>(null);
@@ -63,7 +70,7 @@ export default function MarketComparisonPage() {
     setError(null);
 
     const input = { ...formData, currency };
-    const hairDescription = `${formData.length} ${formData.origin} ${formData.format}`;
+    const hairDescription = `${formData.length} ${formData.origin} ${formData.texture} hair`;
 
     toast({
       title: 'Analyzing Market...',
@@ -104,7 +111,7 @@ export default function MarketComparisonPage() {
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold tracking-tight">Market Price Comparison</h1>
             <p className="text-muted-foreground mt-2">
-              Get an AI-powered market price estimation for '{formData.origin}' hair.
+              Get an AI-powered market price estimation for '{formData.origin} {formData.texture}' hair.
             </p>
           </div>
 
@@ -166,6 +173,48 @@ export default function MarketComparisonPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {origins.map((orig) => <SelectItem key={orig} value={orig}>{orig}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+               <div>
+                <Label htmlFor="texture" className="text-base font-medium">Texture</Label>
+                <Select
+                  value={formData.texture}
+                  onValueChange={(value) => setFormData(prev => ({...prev, texture: value}))}
+                >
+                  <SelectTrigger id="texture" className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {textures.map((tex) => <SelectItem key={tex} value={tex}>{tex}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="quality" className="text-base font-medium">Quality/Grade</Label>
+                <Select
+                  value={formData.quality}
+                  onValueChange={(value) => setFormData(prev => ({...prev, quality: value}))}
+                >
+                  <SelectTrigger id="quality" className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {qualities.map((qual) => <SelectItem key={qual} value={qual}>{qual}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="color" className="text-base font-medium">Color</Label>
+                <Select
+                  value={formData.color}
+                  onValueChange={(value) => setFormData(prev => ({...prev, color: value}))}
+                >
+                  <SelectTrigger id="color" className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colors.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

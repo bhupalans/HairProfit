@@ -15,7 +15,7 @@ export const nonRemyHairProductSchema = z.object({
 });
 
 export const hairProfitDataSchema = z.object({
-  hairType: z.string().min(1, 'Hair type is required.'),
+  hairType: z.string(),
   purchaseQuantity: z.union([z.string(), z.number()]),
   purchasePrice: z.union([z.string(), z.number()]),
   currency: z.string().min(2, 'A currency must be selected.'),
@@ -34,6 +34,9 @@ export const MarketComparisonInputSchema = z.object({
   format: z.string().describe('The format of the hair product, e.g., "Tape-in", "Weave".'),
   length: z.string().describe('The length of the hair, e.g., "10 inches".'),
   origin: z.string().describe('The origin of the hair, e.g., "Indian", "Brazilian".'),
+  texture: z.string().describe('The texture of the hair, e.g., "Straight", "Wavy".'),
+  quality: z.string().describe('The quality grade of the hair, e.g., "Virgin", "Remy".'),
+  color: z.string().describe('The color of the hair, e.g., "Natural Black", "#613 Blonde".'),
   currency: z.string().describe('The currency for the price estimation, e.g., "USD", "INR".'),
 });
 export type MarketComparisonInput = z.infer<typeof MarketComparisonInputSchema>;
