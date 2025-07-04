@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { Sparkles, FileDown, FileUp, Loader2 } from 'lucide-react';
+import { Sparkles, FileDown, FileUp, Loader2, BarChart2 } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import { z } from 'zod';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
+import Link from 'next/link';
 
 
 const initialData: HairProfitData = {
@@ -362,6 +363,11 @@ export default function HairProfitDashboard() {
               ) : (
                   <><FileDown className="mr-2 h-4 w-4" /> Download PDF</>
               )}
+            </Button>
+            <Button asChild>
+              <Link href="/market-comparison">
+                <BarChart2 className="mr-2 h-4 w-4" /> Market Comparison
+              </Link>
             </Button>
           </div>
         </header>

@@ -31,8 +31,10 @@ export type NonRemyHairProduct = z.infer<typeof nonRemyHairProductSchema>;
 export type HairProfitData = z.infer<typeof hairProfitDataSchema>;
 
 export const MarketComparisonInputSchema = z.object({
-  hairType: z.string().describe('The type or name of the hair product, e.g., "Brazilian Body Wave".'),
-  currency: z.string().describe('The currency for the price estimation, e.g., "USD".'),
+  format: z.string().describe('The format of the hair product, e.g., "Tape-in", "Weave".'),
+  length: z.string().describe('The length of the hair, e.g., "10 inches".'),
+  origin: z.string().describe('The origin of the hair, e.g., "Indian", "Brazilian".'),
+  currency: z.string().describe('The currency for the price estimation, e.g., "USD", "INR".'),
 });
 export type MarketComparisonInput = z.infer<typeof MarketComparisonInputSchema>;
 
