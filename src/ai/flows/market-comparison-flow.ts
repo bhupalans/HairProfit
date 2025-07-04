@@ -28,13 +28,21 @@ Analyze the following hair product:
 - Texture: {{{texture}}}
 - Quality: {{{quality}}}
 - Color: {{{color}}}
+{{#if targetMarket}}- Target Market: {{{targetMarket}}}{{/if}}
 - Target Currency: {{{currency}}}
+
+{{#if laceType}}
+This is a wig with the following specifications, which are critically important for accurate pricing:
+- Lace Type: {{{laceType}}}
+- Cap Construction: {{{capConstruction}}}
+- Density: {{{density}}}
+{{/if}}
 
 Based on your knowledge, provide a structured analysis for the user.
 
 First, provide a realistic market selling price range (lower and upper bound) per unit/bundle in {{{currency}}}.
 
-Second, provide your detailed reasoning for this price estimation into the 'reasoning' field. Consider all provided factors like hair origin, format, length, texture, quality/grade, color, and typical market demand.
+Second, provide your detailed reasoning for this price estimation into the 'reasoning' field. Consider all provided factors like hair origin, format, length, texture, quality/grade, color, and typical market demand. If wig specifications are provided, they should be a primary driver of your reasoning.
 
 Third, provide a brief discussion on how pricing for this product might differ in at least two other major international markets (e.g., North America, Europe, Asia, Africa) into the 'crossMarketAnalysis' field. Explain the factors for these variations and use numbered points for each market (e.g., "1. North America: ...\\n2. Europe: ...").
 

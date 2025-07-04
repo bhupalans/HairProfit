@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Lightbulb, Loader2, Terminal } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -40,6 +41,11 @@ const origins = [ 'Indian', 'Brazilian', 'Peruvian', 'Malaysian', 'Vietnamese', 
 const textures = ['Straight', 'Wavy', 'Body Wave', 'Deep Wave', 'Curly', 'Kinky Curly'];
 const qualities = ['Virgin', 'Remy', 'Non-Remy'];
 const colors = ['Natural Black', 'Natural Brown', 'Dark Brown', '#1B (Off Black)', '#613 (Blonde)'];
+const targetMarkets = ['Budget/Economy', 'Mid-Range/Salon', 'Luxury/High-End'];
+const laceTypes = ['Standard Lace', 'Swiss Lace', 'Transparent Lace', 'HD Lace'];
+const capConstructions = ['Lace Front', 'Full Lace', '360 Lace', 'U-Part'];
+const densities = ['130%', '150%', '180%', '200%'];
+
 
 const currencies = [
     { value: 'INR', label: 'INR - Indian Rupee' },
@@ -50,19 +56,40 @@ const currencies = [
 
 
 export default function MarketComparisonPage() {
-  const [formData, setFormData] = useState<Omit<MarketComparisonInput, 'currency'>>({
+  const [formData, setFormData] = useState<Partial<Omit<MarketComparisonInput, 'currency'>>>({
     format: 'tape-in',
     length: '10 inches',
     origin: 'Indian',
     texture: 'Straight',
     quality: 'Virgin',
     color: 'Natural Black',
+    targetMarket: 'Mid-Range/Salon',
   });
   const [currency, setCurrency] = useState('INR');
   const [result, setResult] = useState<MarketComparisonOutput | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const handleFormatChange = (value: string) => {
+    setFormData(prev => {
+        const newState: Partial<Omit<MarketComparisonInput, 'currency'>> = { ...prev, format: value };
+
+        // If switching to wig, set defaults for wig-specific fields
+        if (value === 'wig') {
+            newState.laceType = prev.laceType || 'HD Lace';
+            newState.capConstruction = prev.capConstruction || 'Lace Front';
+            newState.density = prev.density || '150%';
+        } 
+        // If switching away from wig, clear wig-specific fields
+        else {
+            delete newState.laceType;
+            delete newState.capConstruction;
+            delete newState.density;
+        }
+        return newState;
+    });
+  };
 
   const handleCompare = async () => {
     setLoading(true);
@@ -77,7 +104,7 @@ export default function MarketComparisonPage() {
       description: `Getting data for ${hairDescription}`,
     });
     
-    const response = await getMarketComparison(input);
+    const response = await getMarketComparison(input as MarketComparisonInput);
     
     setLoading(false);
     if (response.success && response.data) {
@@ -120,7 +147,7 @@ export default function MarketComparisonPage() {
               <Label className="text-base font-medium">Format</Label>
               <RadioGroup
                 value={formData.format}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, format: value }))}
+                onValueChange={handleFormatChange}
                 className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mt-2"
               >
                 {formats.map((format) => (
@@ -219,19 +246,74 @@ export default function MarketComparisonPage() {
                 </Select>
               </div>
               <div>
-                <Label htmlFor="currency" className="text-base font-medium">Currency</Label>
-                 <Select
-                  value={currency}
-                  onValueChange={setCurrency}
+                <Label htmlFor="targetMarket" className="text-base font-medium">Target Market</Label>
+                <Select
+                  value={formData.targetMarket}
+                  onValueChange={(value) => setFormData(prev => ({...prev, targetMarket: value}))}
                 >
-                  <SelectTrigger id="currency" className="mt-2">
+                  <SelectTrigger id="targetMarket" className="mt-2">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {currencies.map((curr) => <SelectItem key={curr.value} value={curr.value}>{curr.label}</SelectItem>)}
+                    {targetMarkets.map((market) => <SelectItem key={market} value={market}>{market}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            
+            <AnimatePresence>
+              {formData.format === 'wig' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                  animate={{ opacity: 1, height: 'auto', marginTop: '2rem' }}
+                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="space-y-6 rounded-lg border bg-muted/30 p-6">
+                    <h3 className="text-lg font-medium text-center">Wig Specifications</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div>
+                        <Label htmlFor="laceType" className="text-base font-medium">Lace Type</Label>
+                        <Select value={formData.laceType} onValueChange={(value) => setFormData(prev => ({...prev, laceType: value}))}>
+                          <SelectTrigger id="laceType" className="mt-2"><SelectValue /></SelectTrigger>
+                          <SelectContent>{laceTypes.map((lt) => <SelectItem key={lt} value={lt}>{lt}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="capConstruction" className="text-base font-medium">Cap Construction</Label>
+                        <Select value={formData.capConstruction} onValueChange={(value) => setFormData(prev => ({...prev, capConstruction: value}))}>
+                          <SelectTrigger id="capConstruction" className="mt-2"><SelectValue /></SelectTrigger>
+                          <SelectContent>{capConstructions.map((cc) => <SelectItem key={cc} value={cc}>{cc}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="density" className="text-base font-medium">Density</Label>
+                        <Select value={formData.density} onValueChange={(value) => setFormData(prev => ({...prev, density: value}))}>
+                          <SelectTrigger id="density" className="mt-2"><SelectValue /></SelectTrigger>
+                          <SelectContent>{densities.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div>
+                    <Label htmlFor="currency" className="text-base font-medium">Currency</Label>
+                     <Select
+                      value={currency}
+                      onValueChange={setCurrency}
+                    >
+                      <SelectTrigger id="currency" className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {currencies.map((curr) => <SelectItem key={curr.value} value={curr.value}>{curr.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
             </div>
 
             {result && (

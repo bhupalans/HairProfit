@@ -38,6 +38,10 @@ export const MarketComparisonInputSchema = z.object({
   quality: z.string().describe('The quality grade of the hair, e.g., "Virgin", "Remy".'),
   color: z.string().describe('The color of the hair, e.g., "Natural Black", "#613 Blonde".'),
   currency: z.string().describe('The currency for the price estimation, e.g., "USD", "INR".'),
+  targetMarket: z.string().optional().describe('The target market segment for the product, e.g., "Budget", "Mid-Range", "Luxury".'),
+  laceType: z.string().optional().describe('ONLY for wigs. The type of lace used, e.g., "HD Lace", "Transparent Lace".'),
+  capConstruction: z.string().optional().describe('ONLY for wigs. The cap construction of the wig, e.g., "Lace Front", "Full Lace".'),
+  density: z.string().optional().describe('ONLY for wigs. The density of the wig, e.g., "150%", "180%".'),
 });
 export type MarketComparisonInput = z.infer<typeof MarketComparisonInputSchema>;
 
