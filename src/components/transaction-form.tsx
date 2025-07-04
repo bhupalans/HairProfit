@@ -32,39 +32,45 @@ export function TransactionForm({ form }: TransactionFormProps) {
     name: 'nonRemyHairProducts',
   });
 
-  const watchedValues = form.watch();
+  const purchaseQuantity = form.watch('purchaseQuantity');
+  const purchasePrice = form.watch('purchasePrice');
+  const currency = form.watch('currency');
+  const processingSteps = form.watch('processingSteps');
+  const sellingPricePerUnit = form.watch('sellingPricePerUnit');
+  const enableByproductProcessing = form.watch('enableByproductProcessing');
+  const chowryProcessingCost = form.watch('chowryProcessingCost');
+  const nonRemyHairProducts = form.watch('nonRemyHairProducts');
 
-  const purchaseQuantity = Number(watchedValues.purchaseQuantity || 0);
-  const purchasePrice = Number(watchedValues.purchasePrice || 0);
-  const sellingPricePerUnit = Number(watchedValues.sellingPricePerUnit || 0);
-  const enableByproductProcessing = watchedValues.enableByproductProcessing;
+  const numPurchaseQuantity = Number(purchaseQuantity || 0);
+  const numPurchasePrice = Number(purchasePrice || 0);
+  const numSellingPricePerUnit = Number(sellingPricePerUnit || 0);
 
-  const totalWastageUnits = (watchedValues.processingSteps || []).reduce(
+  const totalWastageUnits = (processingSteps || []).reduce(
     (acc, step) => acc + Number(step.wastage || 0),
     0
   );
   
-  const unitsRemaining = Math.max(0, purchaseQuantity - totalWastageUnits);
+  const unitsRemaining = Math.max(0, numPurchaseQuantity - totalWastageUnits);
 
-  const totalPurchaseCost = purchaseQuantity * purchasePrice;
+  const totalPurchaseCost = numPurchaseQuantity * numPurchasePrice;
 
-  const totalProcessingCost = (watchedValues.processingSteps || []).reduce(
+  const totalProcessingCost = (processingSteps || []).reduce(
     (acc, step) => acc + Number(step.expense || 0),
     0
   );
   
-  const totalWastageCost = totalWastageUnits * purchasePrice;
+  const totalWastageCost = totalWastageUnits * numPurchasePrice;
 
-  const chowryProcessingCostPerUnit = Number(watchedValues.chowryProcessingCost || 0);
+  const chowryProcessingCostPerUnit = Number(chowryProcessingCost || 0);
   const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * unitsRemaining : 0;
   
-  const nonRemyHairProducts = watchedValues.nonRemyHairProducts || [];
-  const assignedNonRemyQuantity = nonRemyHairProducts.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
-  const nonRemyRevenue = nonRemyHairProducts.reduce((acc, p) => acc + Number(p.quantity || 0) * Number(p.price || 0), 0);
+  const nonRemyHairProductsValues = nonRemyHairProducts || [];
+  const assignedNonRemyQuantity = nonRemyHairProductsValues.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
+  const nonRemyRevenue = nonRemyHairProductsValues.reduce((acc, p) => acc + Number(p.quantity || 0) * Number(p.price || 0), 0);
   
   const grandTotalCost = totalPurchaseCost + totalProcessingCost + totalChowryProcessingCost;
   
-  const totalRevenue = enableByproductProcessing ? nonRemyRevenue : sellingPricePerUnit * unitsRemaining;
+  const totalRevenue = enableByproductProcessing ? nonRemyRevenue : numSellingPricePerUnit * unitsRemaining;
   
   const projectedProfit = totalRevenue - grandTotalCost;
 
@@ -73,7 +79,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
     
   const formatCurrency = (value: number) => {
     if (isNaN(value)) value = 0;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: watchedValues.currency || 'USD' }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || 'USD' }).format(value);
   }
 
   return (
@@ -148,7 +154,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
                           <FormItem><FormLabel>Process Name</FormLabel><FormControl><Input placeholder="e.g., Coloring" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name={`processingSteps.${index}.expense`} render={({ field }) => (
-                          <FormItem><FormLabel>Expense ({watchedValues.currency})</FormLabel><FormControl><Input type="number" className="w-28" placeholder="e.g., 250" {...field} /></FormControl><FormMessage /></FormItem>
+                          <FormItem><FormLabel>Expense ({currency})</FormLabel><FormControl><Input type="number" className="w-28" placeholder="e.g., 250" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name={`processingSteps.${index}.wastage`} render={({ field }) => (
                           <FormItem><FormLabel>Wastage (units)</FormLabel><FormControl><Input type="number" className="w-28" placeholder="e.g., 5" {...field} /></FormControl><FormMessage /></FormItem>
@@ -268,7 +274,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
                   </div>
                   <div className="p-4 bg-muted rounded-lg text-center">
                       <Label className="text-muted-foreground">Overall Selling Price</Label>
-                      <p className="text-2xl font-bold">{formatCurrency(sellingPricePerUnit * unitsRemaining)}</p>
+                      <p className="text-2xl font-bold">{formatCurrency(numSellingPricePerUnit * unitsRemaining)}</p>
                       <p className="text-xs text-muted-foreground">Based on {unitsRemaining.toFixed(0)} remaining units.</p>
                   </div>
                 </CardContent>
