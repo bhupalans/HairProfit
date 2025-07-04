@@ -25,8 +25,8 @@ interface HistoryCardProps {
 }
 
 export function HistoryCard({ transactions }: HistoryCardProps) {
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  const formatCurrency = (value: number, currency: string) =>
+    new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 
   return (
     <Card>
@@ -42,6 +42,7 @@ export function HistoryCard({ transactions }: HistoryCardProps) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Product</TableHead>
                 <TableHead>Total Cost</TableHead>
                 <TableHead>Selling Price</TableHead>
                 <TableHead>Profit</TableHead>
@@ -51,7 +52,7 @@ export function HistoryCard({ transactions }: HistoryCardProps) {
             <TableBody>
               {transactions.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                     No transactions yet.
                   </TableCell>
                 </TableRow>
@@ -66,14 +67,15 @@ export function HistoryCard({ transactions }: HistoryCardProps) {
                       transition={{ delay: index * 0.05 }}
                       className="hover:bg-muted/50"
                     >
+                      <TableCell className="font-medium">{t.hairType}</TableCell>
                       <TableCell className="font-medium">
-                        {formatCurrency(t.totalCost)}
+                        {formatCurrency(t.totalCost, t.currency)}
                       </TableCell>
-                      <TableCell>{formatCurrency(t.sellingPrice)}</TableCell>
+                      <TableCell>{formatCurrency(t.sellingPrice, t.currency)}</TableCell>
                       <TableCell
                         className={t.profit >= 0 ? 'text-green-600' : 'text-red-600'}
                       >
-                        {formatCurrency(t.profit)}
+                        {formatCurrency(t.profit, t.currency)}
                       </TableCell>
                       <TableCell className="text-right">
                         <Badge

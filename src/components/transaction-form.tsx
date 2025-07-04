@@ -23,6 +23,13 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { TransactionData } from '@/types';
 import {
   ShoppingCart,
@@ -35,12 +42,14 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 
 const formSchema = z.object({
+  hairType: z.string().min(1, 'Hair type is required.'),
   purchaseQuantity: z.coerce
     .number({ invalid_type_error: 'Must be a number' })
     .min(1, 'Quantity must be at least 1.'),
   purchasePrice: z.coerce
     .number({ invalid_type_error: 'Must be a number' })
     .min(0.01, 'Price must be positive.'),
+  currency: z.string().min(2, 'A currency must be selected.'),
   processingSteps: z.array(
     z.object({
       name: z.string().min(1, 'Step name is required.'),
@@ -68,8 +77,10 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      hairType: '',
       purchaseQuantity: 1,
       purchasePrice: undefined,
+      currency: 'USD',
       processingSteps: [],
       sellingPrice: undefined,
     },
@@ -109,7 +120,7 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
     totalCost > 0 ? (profit / totalCost) * 100 : (watchedValues.sellingPrice || 0) > 0 ? 100 : 0;
     
   const formatCurrency = (value: number) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: watchedValues.currency || 'USD' }).format(value);
 
   const onSubmit = (data: TransactionFormValues) => {
     onSaveTransaction(data);
@@ -130,17 +141,35 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
             <fieldset className="space-y-4">
               <legend className="text-lg font-medium flex items-center gap-2 mb-2">
                 <ShoppingCart className="h-5 w-5 text-primary" />
-                Purchase
+                Purchase Details
               </legend>
-              <div className="grid grid-cols-2 gap-4">
+              <p className="text-sm text-muted-foreground -mt-2 mb-4">
+                Enter the initial product information.
+              </p>
+              
+              <FormField
+                control={form.control}
+                name="hairType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Hair Type / Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Brazilian Body Wave" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="purchaseQuantity"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Quantity</FormLabel>
+                      <FormLabel>Quantity (Units / KG)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 10" {...field} />
+                        <Input type="number" placeholder="e.g., 100" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -151,10 +180,35 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
                   name="purchasePrice"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Price per Item ($)</FormLabel>
+                      <FormLabel>Purchase Price (Per Unit / KG)</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="e.g., 15.50" {...field} />
+                        <Input type="number" placeholder="e.g., 100" {...field} />
                       </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="currency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Currency</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="USD">USD - US Dollar</SelectItem>
+                          <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                          <SelectItem value="EUR">EUR - Euro</SelectItem>
+                          <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                          <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                          <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -199,7 +253,7 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
                         name={`processingSteps.${index}.cost`}
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Cost ($)</FormLabel>
+                            <FormLabel>Cost</FormLabel>
                             <FormControl>
                               <Input type="number" className="w-24" placeholder="e.g., 5" {...field} />
                             </FormControl>
@@ -277,7 +331,7 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
               name="sellingPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-lg font-medium">Selling Price ($)</FormLabel>
+                  <FormLabel className="text-lg font-medium">Selling Price</FormLabel>
                    <FormControl>
                         <Input type="number" placeholder="e.g., 50.00" {...field} className="text-base py-6" />
                    </FormControl>

@@ -5,8 +5,10 @@ export interface ProcessingStep {
 }
 
 export interface TransactionData {
+  hairType: string;
   purchaseQuantity: number;
   purchasePrice: number;
+  currency: string;
   processingSteps: ProcessingStep[];
   sellingPrice: number;
 }
