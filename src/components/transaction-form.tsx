@@ -33,7 +33,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
     name: 'nonRemyHairProducts',
   });
 
-  const [
+  const {
     purchaseQuantity,
     purchasePrice,
     currency,
@@ -42,17 +42,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
     enableByproductProcessing,
     chowryProcessingCost,
     nonRemyHairProducts,
-  ] = form.watch([
-    'purchaseQuantity',
-    'purchasePrice',
-    'currency',
-    'processingSteps',
-    'sellingPricePerUnit',
-    'enableByproductProcessing',
-    'chowryProcessingCost',
-    'nonRemyHairProducts',
-  ]);
-
+  } = form.watch();
 
   const numPurchaseQuantity = Number(purchaseQuantity || 0);
   const numPurchasePrice = Number(purchasePrice || 0);
