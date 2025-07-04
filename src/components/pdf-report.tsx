@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { HairProfitData } from '@/types';
 
 interface PDFReportProps {
@@ -18,6 +19,12 @@ interface PDFReportProps {
 }
 
 const PDFReport = ({ data, summary }: PDFReportProps) => {
+    const [generatedDate, setGeneratedDate] = useState('');
+
+    useEffect(() => {
+        setGeneratedDate(new Date().toLocaleDateString());
+    }, []);
+
     const formatCurrency = (value: number) => {
         if (isNaN(value)) value = 0;
         return new Intl.NumberFormat('en-US', {
@@ -32,7 +39,7 @@ const PDFReport = ({ data, summary }: PDFReportProps) => {
         <h1 className="text-4xl font-bold text-gray-800">Profitability Report</h1>
         <div className="text-right">
           <p className="text-gray-600">Generated on:</p>
-          <p className="font-medium">{new Date().toLocaleDateString()}</p>
+          <p className="font-medium">{generatedDate}</p>
         </div>
       </header>
       
