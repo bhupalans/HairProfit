@@ -90,6 +90,8 @@ export function TransactionForm() {
     0
   );
 
+  const totalWastageCost = totalWastageUnits * purchasePrice;
+
   const chowryProcessingCostPerUnit = Number(watchedValues.chowryProcessingCost || 0);
   const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * unitsRemaining : 0;
   
@@ -321,10 +323,11 @@ export function TransactionForm() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Purchase Cost</span><span className="font-medium">{formatCurrency(totalPurchaseCost)}</span></div>
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Processing Cost</span><span className="font-medium">{formatCurrency(totalProcessingCost)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Wastage Cost</span><span className="font-medium text-red-600">{formatCurrency(totalWastageCost)}</span></div>
                 <AnimatePresence>
                   {enableByproductProcessing && (
                     <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex justify-between items-center text-sm">
-                      <span className="text-muted-foreground">Total Chowry Cost</span><span className="font-medium">{formatCurrency(totalChowryProcessingCost)}</span>
+                      <span className="text-muted-foreground">Byproduct Processing Cost</span><span className="font-medium">{formatCurrency(totalChowryProcessingCost)}</span>
                     </motion.div>
                   )}
                 </AnimatePresence>
