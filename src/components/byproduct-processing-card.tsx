@@ -68,7 +68,7 @@ export default function ByproductProcessingCard({
                   id="byproduct-cost"
                   type="number"
                   value={byproductProcessingCost}
-                  onChange={(e) => onDataChange('byproductProcessingCost', Number(e.target.value))}
+                  onChange={(e) => onDataChange('byproductProcessingCost', e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   This cost is applied to each remaining unit to process it into a different sellable product.

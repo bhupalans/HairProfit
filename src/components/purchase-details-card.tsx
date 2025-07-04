@@ -40,7 +40,7 @@ export default function PurchaseDetailsCard({ data, onDataChange }: PurchaseDeta
               type="number"
               placeholder="e.g., 100"
               value={data.purchaseQuantity}
-              onChange={(e) => onDataChange('purchaseQuantity', Number(e.target.value))}
+              onChange={(e) => onDataChange('purchaseQuantity', e.target.value)}
             />
           </div>
           <div>
@@ -50,7 +50,7 @@ export default function PurchaseDetailsCard({ data, onDataChange }: PurchaseDeta
               type="number"
               placeholder="e.g., 50"
               value={data.purchasePrice}
-              onChange={(e) => onDataChange('purchasePrice', Number(e.target.value))}
+              onChange={(e) => onDataChange('purchasePrice', e.target.value)}
             />
           </div>
           <div>

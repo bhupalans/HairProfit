@@ -41,13 +41,7 @@ export default function HairProfitDashboard() {
   ) => {
     const newSteps = [...(data.processingSteps ?? [])];
     const step = { ...newSteps[index] };
-
-    if (field === 'cost' || field === 'wastage') {
-      step[field] = Number(value);
-    } else {
-      step[field] = value as string;
-    }
-
+    (step as any)[field] = value;
     newSteps[index] = step;
     handleDataChange('processingSteps', newSteps);
   };
@@ -72,11 +66,7 @@ export default function HairProfitDashboard() {
   ) => {
     const newProducts = [...(data.nonRemyHairProducts ?? [])];
     const product = { ...newProducts[index] };
-    if (field === 'quantity' || field === 'price') {
-       product[field] = Number(value);
-    } else {
-       product[field] = value as string;
-    }
+    (product as any)[field] = value;
     newProducts[index] = product;
     handleDataChange('nonRemyHairProducts', newProducts);
   };

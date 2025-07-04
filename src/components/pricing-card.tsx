@@ -50,7 +50,7 @@ export default function PricingCard({ data, onDataChange, unitsRemaining }: Pric
                 type="number"
                 placeholder="e.g., 120"
                 value={sellingPricePerUnit}
-                onChange={(e) => onDataChange('sellingPricePerUnit', Number(e.target.value))}
+                onChange={(e) => onDataChange('sellingPricePerUnit', e.target.value)}
               />
             </div>
             <div>
