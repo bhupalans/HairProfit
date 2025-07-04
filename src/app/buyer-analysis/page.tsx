@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Loader2, Terminal, Users, Target, Megaphone, Info } from 'lucide-react';
+import { ArrowLeft, Loader2, Terminal, Users, Target, Megaphone, Info, HelpCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { Button } from '@/components/ui/button';
@@ -319,6 +319,20 @@ export default function BuyerAnalysisPage() {
                                                ))}
                                            </div>
                                        </div>
+
+                                       {persona.exampleQuestions && (
+                                            <div>
+                                                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                                                    <HelpCircle className="h-5 w-5 text-primary/80" />
+                                                    Example Questions to Ask
+                                                </h3>
+                                                <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                                                    {persona.exampleQuestions.map(question => (
+                                                        <li key={question}>{question}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                       )}
                                    </CardContent>
                                </Card>
                            </motion.div>

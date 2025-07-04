@@ -59,7 +59,8 @@ export const BuyerPersonaSchema = z.object({
   buyerType: z.string().describe('A title for the buyer persona (e.g., "High-End Salon Owner", "Bulk Importer", "E-commerce Brand").'),
   description: z.string().describe('A detailed description of this buyer persona, including their typical business model and what they look for.'),
   keyNeeds: z.array(z.string()).describe('A list of key needs or purchasing drivers for this buyer (e.g., "Consistent Quality", "High-Profit Margin", "Unique Textures").'),
-  marketingChannels: z.array(z.string()).describe('The best channels to reach this type of buyer (e.g., "Instagram DMs", "Trade Shows", "B2B Platforms").')
+  marketingChannels: z.array(z.string()).describe('The best channels to reach this type of buyer (e.g., "Instagram DMs", "Trade Shows", "B2B Platforms").'),
+  exampleQuestions: z.array(z.string()).describe('A list of 2-3 insightful questions to ask this buyer to understand their pain points and qualify them as a potential partner.')
 });
 
 export const BuyerAnalysisOutputSchema = z.object({

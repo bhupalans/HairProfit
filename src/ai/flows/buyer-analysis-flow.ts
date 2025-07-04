@@ -44,6 +44,7 @@ For each persona, you must provide:
 3.  **description**: A paragraph detailing who this buyer is, their business model, and what they're looking for in a product.
 4.  **keyNeeds**: A list of 2-3 primary purchasing drivers for this persona. What is most important to them? (e.g., "Consistent Quality," "High-Profit Margins," "Brand Exclusivity," "Bulk Discounts").
 5.  **marketingChannels**: A list of 2-3 effective channels to reach this buyer persona (e.g., "Instagram DMs," "AliBaba," "Hair & Beauty Trade Shows," "Local Beauty Supply Distributors").
+6.  **exampleQuestions**: A list of 2-3 insightful, open-ended questions to ask this buyer to understand their pain points and qualify them as a potential partner.
 
 Provide a diverse range of personas that reflect different scales of business and market segments.
   `,
