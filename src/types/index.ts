@@ -53,3 +53,16 @@ export const MarketComparisonOutputSchema = z.object({
   confidenceScore: z.number().min(0).max(1).describe('A score from 0 to 1 indicating the confidence in the estimation.'),
 });
 export type MarketComparisonOutput = z.infer<typeof MarketComparisonOutputSchema>;
+
+export const BuyerPersonaSchema = z.object({
+  market: z.string().describe('The geographical market (e.g., North America, West Africa, Europe).'),
+  buyerType: z.string().describe('A title for the buyer persona (e.g., "High-End Salon Owner", "Bulk Importer", "E-commerce Brand").'),
+  description: z.string().describe('A detailed description of this buyer persona, including their typical business model and what they look for.'),
+  keyNeeds: z.array(z.string()).describe('A list of key needs or purchasing drivers for this buyer (e.g., "Consistent Quality", "High-Profit Margin", "Unique Textures").'),
+  marketingChannels: z.array(z.string()).describe('The best channels to reach this type of buyer (e.g., "Instagram DMs", "Trade Shows", "B2B Platforms").')
+});
+
+export const BuyerAnalysisOutputSchema = z.object({
+  personas: z.array(BuyerPersonaSchema).describe('A list of 3-4 potential buyer personas for the specified hair product.')
+});
+export type BuyerAnalysisOutput = z.infer<typeof BuyerAnalysisOutputSchema>;
