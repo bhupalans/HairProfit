@@ -36,7 +36,7 @@ const lengths = [
   '22 inches', '24 inches', '26 inches', '28 inches', '30 inches',
 ];
 
-const origins = [ 'Indian', 'Brazilian', 'Peruvian', 'Malaysian', 'Vietnamese', 'Cambodian', 'Eurasian' ];
+const origins = [ 'Indian', 'Brazilian', 'Peruvian', 'Malaysian', 'Vietnamese', 'Cambodian', 'Eurasian', 'Chinese', 'Russian', 'Burmese' ];
 const textures = ['Straight', 'Wavy', 'Body Wave', 'Deep Wave', 'Curly', 'Kinky Curly'];
 const qualities = ['Virgin', 'Remy', 'Non-Remy'];
 const colors = ['Natural Black', 'Natural Brown', 'Dark Brown', '#1B (Off Black)', '#613 (Blonde)'];
