@@ -226,7 +226,7 @@ export function TransactionForm() {
                       >
                         <FormField control={form.control} name="chowryProcessingCost" render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Chowry Processing Cost (per unit)</FormLabel>
+                            <FormLabel>Byproduct Processing Cost (per unit)</FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
                             <p className="text-xs text-muted-foreground">This cost is applied to each unit remaining after initial wastage.</p>
