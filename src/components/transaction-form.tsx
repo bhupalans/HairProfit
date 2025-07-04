@@ -1,8 +1,8 @@
 'use client';
 
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import type { UseFormReturn } from 'react-hook-form';
+import { useFieldArray } from 'react-hook-form';
+import type { TransactionFormValues } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,48 +17,11 @@ import {
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-const formSchema = z.object({
-  hairType: z.string().min(1, 'Hair type is required.'),
-  purchaseQuantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
-  purchasePrice: z.coerce.number().min(0, 'Price must be a positive number.'),
-  currency: z.string().min(2, 'A currency must be selected.'),
-  processingSteps: z.array(
-    z.object({
-      name: z.string().min(1, 'Step name is required.'),
-      expense: z.coerce.number().min(0, 'Expense cannot be negative.'),
-      wastage: z.coerce.number().min(0, 'Wastage cannot be negative.'),
-    })
-  ),
-  sellingPricePerUnit: z.coerce.number().min(0, 'Selling price must be a positive number.'),
-  enableByproductProcessing: z.boolean().default(false),
-  chowryProcessingCost: z.coerce.number().min(0, 'Cost must be a positive number.').optional(),
-  nonRemyHairProducts: z.array(
-    z.object({
-      size: z.string().min(1, 'Size is required.'),
-      quantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
-      price: z.coerce.number().min(0, 'Price must be a positive number.'),
-    })
-  ).optional(),
-});
+interface TransactionFormProps {
+  form: UseFormReturn<TransactionFormValues>;
+}
 
-type TransactionFormValues = z.infer<typeof formSchema>;
-
-export function TransactionForm() {
-  const form = useForm<TransactionFormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      hairType: '',
-      purchaseQuantity: 100,
-      purchasePrice: 50,
-      currency: 'USD',
-      processingSteps: [{ name: 'Coloring', expense: 250, wastage: 5 }],
-      sellingPricePerUnit: 120,
-      enableByproductProcessing: false,
-      chowryProcessingCost: 10,
-      nonRemyHairProducts: [{ size: '5-10', quantity: 10, price: 20 }],
-    },
-  });
-
+export function TransactionForm({ form }: TransactionFormProps) {
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: 'processingSteps',
@@ -89,11 +52,11 @@ export function TransactionForm() {
     (acc, step) => acc + Number(step.expense || 0),
     0
   );
-
+  
   const totalWastageCost = totalWastageUnits * purchasePrice;
 
   const chowryProcessingCostPerUnit = Number(watchedValues.chowryProcessingCost || 0);
-  const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * unitsRemaining : 0;
+  const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * totalWastageUnits : 0;
   
   const nonRemyHairProducts = watchedValues.nonRemyHairProducts || [];
   const assignedNonRemyQuantity = nonRemyHairProducts.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
@@ -229,7 +192,7 @@ export function TransactionForm() {
                             <FormLabel>Byproduct Processing Cost (per unit)</FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
-                            <p className="text-xs text-muted-foreground">This cost is applied to each unit remaining after initial wastage.</p>
+                            <p className="text-xs text-muted-foreground">This cost is applied to each unit of WASTAGE to turn it into a sellable byproduct.</p>
                           </FormItem>
                         )} />
                         
@@ -259,16 +222,16 @@ export function TransactionForm() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > unitsRemaining ? 'bg-destructive/20' : 'bg-muted/50')}>
+                            <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > totalWastageUnits ? 'bg-destructive/20' : 'bg-muted/50')}>
                                 <Label className="text-muted-foreground">Total Units Available</Label>
-                                <p className="text-2xl font-bold">{unitsRemaining.toFixed(2)}</p>
+                                <p className="text-2xl font-bold">{totalWastageUnits.toFixed(2)}</p>
                             </div>
-                             <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > unitsRemaining ? 'bg-destructive/20' : 'bg-muted/50')}>
+                             <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > totalWastageUnits ? 'bg-destructive/20' : 'bg-muted/50')}>
                                 <Label className="text-muted-foreground">Quantity Assigned</Label>
                                 <p className="text-2xl font-bold">{assignedNonRemyQuantity.toFixed(2)}</p>
                             </div>
                         </div>
-                         {assignedNonRemyQuantity > unitsRemaining && (
+                         {assignedNonRemyQuantity > totalWastageUnits && (
                             <p className="text-sm text-destructive text-center">Assigned quantity cannot exceed available units.</p>
                         )}
                       </motion.div>
@@ -323,7 +286,7 @@ export function TransactionForm() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Purchase Cost</span><span className="font-medium">{formatCurrency(totalPurchaseCost)}</span></div>
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Processing Cost</span><span className="font-medium">{formatCurrency(totalProcessingCost)}</span></div>
-                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Wastage Cost</span><span className="font-medium text-red-600">{formatCurrency(totalWastageCost)}</span></div>
+                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Wastage Cost</span><span className="font-medium text-red-600">({formatCurrency(totalWastageCost)})</span></div>
                 <AnimatePresence>
                   {enableByproductProcessing && (
                     <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex justify-between items-center text-sm">

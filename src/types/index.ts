@@ -1,29 +1,34 @@
-export interface ProcessingStep {
-  name: string;
-  expense: number;
-  wastage: number; // in units, not percentage
-}
+import * as z from 'zod';
 
-export interface NonRemyHairProduct {
-  size: string;
-  quantity: number;
-  price: number;
-}
+export const transactionSchema = z.object({
+  hairType: z.string().min(1, 'Hair type is required.'),
+  purchaseQuantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
+  purchasePrice: z.coerce.number().min(0, 'Price must be a positive number.'),
+  currency: z.string().min(2, 'A currency must be selected.'),
+  processingSteps: z.array(
+    z.object({
+      name: z.string().min(1, 'Step name is required.'),
+      expense: z.coerce.number().min(0, 'Expense cannot be negative.'),
+      wastage: z.coerce.number().min(0, 'Wastage cannot be negative.'),
+    })
+  ),
+  sellingPricePerUnit: z.coerce.number().min(0, 'Selling price must be a positive number.'),
+  enableByproductProcessing: z.boolean().default(false),
+  chowryProcessingCost: z.coerce.number().min(0, 'Cost must be a positive number.').optional(),
+  nonRemyHairProducts: z
+    .array(
+      z.object({
+        size: z.string().min(1, 'Size is required.'),
+        quantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
+        price: z.coerce.number().min(0, 'Price must be a positive number.'),
+      })
+    )
+    .optional(),
+});
 
-export interface TransactionData {
-  hairType: string;
-  purchaseQuantity: number;
-  purchasePrice: number;
-  currency: string;
-  processingSteps: ProcessingStep[];
-  sellingPricePerUnit: number;
-  enableByproductProcessing: boolean;
-  chowryProcessingCost?: number;
-  nonRemyHairProducts?: NonRemyHairProduct[];
-}
+export type TransactionFormValues = z.infer<typeof transactionSchema>;
 
-// Kept for compatibility with other components that might exist, though the main view no longer creates a list of transactions.
-export interface Transaction extends TransactionData {
+export interface Transaction extends TransactionFormValues {
   id: string;
   totalCost: number;
   profit: number;
