@@ -10,9 +10,10 @@ import { Package } from 'lucide-react';
 interface PurchaseDetailsCardProps {
   data: HairProfitData;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
+  onNumericChange: (field: keyof HairProfitData, value: string) => void;
 }
 
-export default function PurchaseDetailsCard({ data, onDataChange }: PurchaseDetailsCardProps) {
+export default function PurchaseDetailsCard({ data, onDataChange, onNumericChange }: PurchaseDetailsCardProps) {
   return (
     <Card>
       <CardHeader>
@@ -40,7 +41,7 @@ export default function PurchaseDetailsCard({ data, onDataChange }: PurchaseDeta
               type="number"
               placeholder="e.g., 100"
               value={data.purchaseQuantity}
-              onChange={(e) => onDataChange('purchaseQuantity', e.target.value)}
+              onChange={(e) => onNumericChange('purchaseQuantity', e.target.value)}
             />
           </div>
           <div>
@@ -50,7 +51,7 @@ export default function PurchaseDetailsCard({ data, onDataChange }: PurchaseDeta
               type="number"
               placeholder="e.g., 50"
               value={data.purchasePrice}
-              onChange={(e) => onDataChange('purchasePrice', e.target.value)}
+              onChange={(e) => onNumericChange('purchasePrice', e.target.value)}
             />
           </div>
           <div>

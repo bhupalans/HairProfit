@@ -11,10 +11,11 @@ import { cn } from '@/lib/utils';
 interface PricingCardProps {
   data: HairProfitData;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
+  onNumericChange: (field: keyof HairProfitData, value: string) => void;
   unitsRemaining: number;
 }
 
-export default function PricingCard({ data, onDataChange, unitsRemaining }: PricingCardProps) {
+export default function PricingCard({ data, onDataChange, onNumericChange, unitsRemaining }: PricingCardProps) {
   const { sellingPricePerUnit, currency, enableByproductProcessing } = data;
   const numSellingPricePerUnit = Number(sellingPricePerUnit) || 0;
 
@@ -50,7 +51,7 @@ export default function PricingCard({ data, onDataChange, unitsRemaining }: Pric
                 type="number"
                 placeholder="e.g., 120"
                 value={sellingPricePerUnit}
-                onChange={(e) => onDataChange('sellingPricePerUnit', e.target.value)}
+                onChange={(e) => onNumericChange('sellingPricePerUnit', e.target.value)}
               />
             </div>
             <div>

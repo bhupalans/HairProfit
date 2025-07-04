@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 interface ByproductProcessingCardProps {
   data: HairProfitData;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
+  onNumericChange: (field: keyof HairProfitData, value: string) => void;
   onProductChange: (index: number, field: keyof Omit<NonRemyHairProduct, 'id'>, value: string | number) => void;
   onAddProduct: () => void;
   onRemoveProduct: (index: number) => void;
@@ -23,6 +24,7 @@ interface ByproductProcessingCardProps {
 export default function ByproductProcessingCard({
   data,
   onDataChange,
+  onNumericChange,
   onProductChange,
   onAddProduct,
   onRemoveProduct,
@@ -68,7 +70,7 @@ export default function ByproductProcessingCard({
                   id="byproduct-cost"
                   type="number"
                   value={byproductProcessingCost}
-                  onChange={(e) => onDataChange('byproductProcessingCost', e.target.value)}
+                  onChange={(e) => onNumericChange('byproductProcessingCost', e.target.value)}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
                   This cost is applied to each remaining unit to process it into a different sellable product.

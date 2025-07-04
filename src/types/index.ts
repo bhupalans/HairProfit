@@ -3,26 +3,26 @@ import * as z from 'zod';
 export const processingStepSchema = z.object({
   id: z.string(),
   name: z.string().min(1, 'Step name is required.'),
-  cost: z.coerce.number().min(0, 'Expense cannot be negative.'),
-  wastage: z.coerce.number().min(0, 'Wastage cannot be negative.'),
+  cost: z.union([z.string(), z.number()]),
+  wastage: z.union([z.string(), z.number()]),
 });
 
 export const nonRemyHairProductSchema = z.object({
   id: z.string(),
   size: z.string().min(1, 'Size is required.'),
-  quantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
-  price: z.coerce.number().min(0, 'Price must be a positive number.'),
+  quantity: z.union([z.string(), z.number()]),
+  price: z.union([z.string(), z.number()]),
 });
 
 export const hairProfitDataSchema = z.object({
   hairType: z.string().min(1, 'Hair type is required.'),
-  purchaseQuantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
-  purchasePrice: z.coerce.number().min(0, 'Price must be a positive number.'),
+  purchaseQuantity: z.union([z.string(), z.number()]),
+  purchasePrice: z.union([z.string(), z.number()]),
   currency: z.string().min(2, 'A currency must be selected.'),
   processingSteps: z.array(processingStepSchema),
-  sellingPricePerUnit: z.coerce.number().min(0, 'Selling price must be a positive number.'),
+  sellingPricePerUnit: z.union([z.string(), z.number()]),
   enableByproductProcessing: z.boolean().default(false),
-  byproductProcessingCost: z.coerce.number().min(0, 'Cost must be a positive number.').optional(),
+  byproductProcessingCost: z.union([z.string(), z.number()]).optional(),
   nonRemyHairProducts: z.array(nonRemyHairProductSchema).optional(),
 });
 

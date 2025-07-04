@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { Sparkles, FileDown, FileUp } from 'lucide-react';
+import { Sparkles, FileDown, FileUp, Loader2 } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,10 @@ import PricingCard from '@/components/pricing-card';
 import SummaryCard from '@/components/summary-card';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import PDFReport from './pdf-report';
+
 
 const initialData: HairProfitData = {
   hairType: 'Brazilian Body Wave',
@@ -27,65 +31,102 @@ const initialData: HairProfitData = {
 
 export default function HairProfitDashboard() {
   const [data, setData] = useState<HairProfitData>(initialData);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const pdfReportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  const handleDataChange = (field: keyof HairProfitData, value: any) => {
+  const handleDataChange = useCallback((field: keyof HairProfitData, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handleProcessingStepChange = (
-    index: number,
-    field: keyof Omit<ProcessingStep, 'id'>,
-    value: string | number
-  ) => {
-    const newSteps = [...(data.processingSteps ?? [])];
-    const step = { ...newSteps[index] };
-    (step as any)[field] = value;
-    newSteps[index] = step;
-    handleDataChange('processingSteps', newSteps);
-  };
+  const handleNumericChange = useCallback((field: keyof HairProfitData, value: string) => {
+    if (value === '') {
+      handleDataChange(field, '');
+    } else {
+      const numValue = parseFloat(value);
+      handleDataChange(field, isNaN(numValue) ? '' : numValue);
+    }
+  }, [handleDataChange]);
 
-  const addProcessingStep = () => {
+
+  const handleProcessingStepChange = useCallback(
+    (
+      index: number,
+      field: keyof Omit<ProcessingStep, 'id'>,
+      value: string | number
+    ) => {
+      const newSteps = [...data.processingSteps];
+      const step = { ...newSteps[index] };
+      
+      if (field === 'name') {
+        step.name = value as string;
+      } else {
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        if(value === '') {
+          (step as any)[field] = '';
+        } else {
+          (step as any)[field] = isNaN(numValue) ? '' : numValue;
+        }
+      }
+
+      newSteps[index] = step;
+      handleDataChange('processingSteps', newSteps);
+    },
+    [data.processingSteps, handleDataChange]
+  );
+
+  const addProcessingStep = useCallback(() => {
     const newSteps = [
-      ...(data.processingSteps ?? []),
-      { id: crypto.randomUUID(), name: '', cost: 0, wastage: 0 },
+      ...data.processingSteps,
+      { id: crypto.randomUUID(), name: '', cost: '', wastage: '' },
     ];
     handleDataChange('processingSteps', newSteps);
-  };
+  },[data.processingSteps, handleDataChange]);
 
-  const removeProcessingStep = (index: number) => {
-    const newSteps = [...(data.processingSteps ?? [])].filter((_, i) => i !== index);
+  const removeProcessingStep = useCallback((index: number) => {
+    const newSteps = data.processingSteps.filter((_, i) => i !== index);
     handleDataChange('processingSteps', newSteps);
-  };
+  }, [data.processingSteps, handleDataChange]);
   
-  const handleNonRemyProductChange = (
+  const handleNonRemyProductChange = useCallback((
     index: number,
     field: keyof Omit<NonRemyHairProduct, 'id'>,
     value: string | number
   ) => {
-    const newProducts = [...(data.nonRemyHairProducts ?? [])];
-    const product = { ...newProducts[index] };
-    (product as any)[field] = value;
-    newProducts[index] = product;
-    handleDataChange('nonRemyHairProducts', newProducts);
-  };
+     const newProducts = [...data.nonRemyHairProducts];
+     const product = {...newProducts[index]};
 
-  const addNonRemyProduct = () => {
+      if (field === 'size') {
+        product.size = value as string;
+      } else {
+        const numValue = typeof value === 'string' ? parseFloat(value) : value;
+        if (value === '') {
+          (product as any)[field] = '';
+        } else {
+          (product as any)[field] = isNaN(numValue) ? '' : numValue;
+        }
+      }
+
+      newProducts[index] = product;
+      handleDataChange('nonRemyHairProducts', newProducts);
+  }, [data.nonRemyHairProducts, handleDataChange]);
+
+
+  const addNonRemyProduct = useCallback(() => {
     const newProducts = [
-      ...(data.nonRemyHairProducts ?? []),
-      { id: crypto.randomUUID(), size: '', quantity: 0, price: 0 },
+      ...data.nonRemyHairProducts,
+      { id: crypto.randomUUID(), size: '', quantity: '', price: '' },
     ];
     handleDataChange('nonRemyHairProducts', newProducts);
-  };
+  },[data.nonRemyHairProducts, handleDataChange]);
 
-  const removeNonRemyProduct = (index: number) => {
-    const newProducts = [...(data.nonRemyHairProducts ?? [])].filter(
+  const removeNonRemyProduct = useCallback((index: number) => {
+    const newProducts = data.nonRemyHairProducts.filter(
       (_, i) => i !== index
     );
     handleDataChange('nonRemyHairProducts', newProducts);
-  };
-
+  }, [data.nonRemyHairProducts, handleDataChange]);
 
   const {
     totalWastageUnits,
@@ -214,6 +255,80 @@ export default function HairProfitDashboard() {
       fileInputRef.current.value = '';
     }
   };
+  
+  const handleDownloadPdf = async () => {
+    const reportElement = pdfReportRef.current;
+    if (!reportElement) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not generate PDF. Report element not found.',
+        });
+        return;
+    }
+
+    setIsGeneratingPdf(true);
+    toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
+
+    try {
+        const canvas = await html2canvas(reportElement, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const canvasWidth = canvas.width;
+        const canvasHeight = canvas.height;
+        const ratio = canvasWidth / canvasHeight;
+        
+        let imgWidth = pdfWidth;
+        let imgHeight = imgWidth / ratio;
+        
+        if (imgHeight > pdfHeight) {
+            imgHeight = pdfHeight;
+            imgWidth = imgHeight * ratio;
+        }
+
+        const x = (pdfWidth - imgWidth) / 2;
+        const y = 0;
+
+        pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+        pdf.save(`hair-profit-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        
+    } catch (error) {
+        console.error('Failed to generate PDF', error);
+        toast({
+            variant: 'destructive',
+            title: 'PDF Generation Failed',
+            description: 'An unexpected error occurred.',
+        });
+    } finally {
+        setIsGeneratingPdf(false);
+    }
+  };
+  
+  const summaryForPdf = {
+    totalPurchaseCost,
+    totalProcessingCost,
+    totalWastageCost,
+    totalByproductProcessingCost,
+    grandTotalCost,
+    totalRevenue,
+    projectedProfit,
+    profitMargin,
+    unitsRemaining
+  };
+
 
   return (
     <div className="bg-background min-h-screen text-foreground font-body">
@@ -241,8 +356,12 @@ export default function HairProfitDashboard() {
             <Button variant="outline" onClick={handleExportJson}>
               <FileDown className="mr-2 h-4 w-4" /> Export JSON
             </Button>
-            <Button>
-              <FileDown className="mr-2 h-4 w-4" /> Download PDF
+            <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+              {isGeneratingPdf ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating...</>
+              ) : (
+                  <><FileDown className="mr-2 h-4 w-4" /> Download PDF</>
+              )}
             </Button>
           </div>
         </header>
@@ -250,7 +369,7 @@ export default function HairProfitDashboard() {
         <main>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-8">
-              <PurchaseDetailsCard data={data} onDataChange={handleDataChange} />
+              <PurchaseDetailsCard data={data} onDataChange={handleDataChange} onNumericChange={handleNumericChange} />
               <ProcessingStepsCard
                 steps={data.processingSteps ?? []}
                 currency={data.currency}
@@ -261,6 +380,7 @@ export default function HairProfitDashboard() {
               <ByproductProcessingCard
                 data={data}
                 onDataChange={handleDataChange}
+                onNumericChange={handleNumericChange}
                 onProductChange={handleNonRemyProductChange}
                 onAddProduct={addNonRemyProduct}
                 onRemoveProduct={removeNonRemyProduct}
@@ -272,6 +392,7 @@ export default function HairProfitDashboard() {
               <PricingCard
                 data={data}
                 onDataChange={handleDataChange}
+                onNumericChange={handleNumericChange}
                 unitsRemaining={unitsRemaining}
               />
               <SummaryCard
@@ -289,6 +410,11 @@ export default function HairProfitDashboard() {
             </div>
           </div>
         </main>
+      </div>
+      <div className="absolute -z-10 -left-[9999px] top-0">
+        <div ref={pdfReportRef}>
+          <PDFReport data={data} summary={summaryForPdf} />
+        </div>
       </div>
     </div>
   );
