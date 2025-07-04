@@ -24,7 +24,7 @@ const formSchema = z.object({
   processingSteps: z.array(
     z.object({
       name: z.string().min(1, 'Step name is required.'),
-      cost: z.coerce.number().min(0, 'Cost cannot be negative.'),
+      expense: z.coerce.number().min(0, 'Expense cannot be negative.'),
       wastage: z.coerce.number().min(0, 'Wastage cannot be negative.'),
     })
   ),
@@ -42,7 +42,7 @@ export function TransactionForm() {
       purchaseQuantity: 100,
       purchasePrice: 50,
       currency: 'USD',
-      processingSteps: [{ name: 'Coloring', cost: 250, wastage: 5 }],
+      processingSteps: [{ name: 'Coloring', expense: 250, wastage: 5 }],
       sellingPricePerUnit: 120,
       enableByproductProcessing: false,
     },
@@ -69,7 +69,7 @@ export function TransactionForm() {
   const totalPurchaseCost = purchaseQuantity * purchasePrice;
 
   const totalProcessingCost = (watchedValues.processingSteps || []).reduce(
-    (acc, step) => acc + (step.cost || 0),
+    (acc, step) => acc + (step.expense || 0),
     0
   );
   
@@ -162,8 +162,8 @@ export function TransactionForm() {
                         <FormField control={form.control} name={`processingSteps.${index}.name`} render={({ field }) => (
                           <FormItem><FormLabel>Process Name</FormLabel><FormControl><Input placeholder="e.g., Coloring" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField control={form.control} name={`processingSteps.${index}.cost`} render={({ field }) => (
-                          <FormItem><FormLabel>Cost ({watchedValues.currency})</FormLabel><FormControl><Input type="number" className="w-28" placeholder="e.g., 250" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormField control={form.control} name={`processingSteps.${index}.expense`} render={({ field }) => (
+                          <FormItem><FormLabel>Expense ({watchedValues.currency})</FormLabel><FormControl><Input type="number" className="w-28" placeholder="e.g., 250" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField control={form.control} name={`processingSteps.${index}.wastage`} render={({ field }) => (
                           <FormItem><FormLabel>Wastage (units)</FormLabel><FormControl><Input type="number" className="w-28" placeholder="e.g., 5" {...field} /></FormControl><FormMessage /></FormItem>
@@ -173,7 +173,7 @@ export function TransactionForm() {
                     ))}
                   </AnimatePresence>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', cost: 0, wastage: 0 })}>
+                <Button type="button" variant="outline" size="sm" onClick={() => append({ name: '', expense: 0, wastage: 0 })}>
                   <PlusCircle className="mr-2 h-4 w-4" /> Add Processing Step
                 </Button>
               </CardContent>

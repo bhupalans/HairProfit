@@ -1,6 +1,6 @@
 export interface ProcessingStep {
   name: string;
-  cost: number;
+  expense: number;
   wastage: number; // in units, not percentage
 }
 
