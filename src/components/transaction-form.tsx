@@ -15,6 +15,7 @@ import {
   Package, Wrench, Recycle, DollarSign, History, BarChart2, PlusCircle, Trash2
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   hairType: z.string().min(1, 'Hair type is required.'),
@@ -30,6 +31,14 @@ const formSchema = z.object({
   ),
   sellingPricePerUnit: z.coerce.number().min(0, 'Selling price must be a positive number.'),
   enableByproductProcessing: z.boolean().default(false),
+  chowryProcessingCost: z.coerce.number().min(0, 'Cost must be a positive number.').optional(),
+  nonRemyHairProducts: z.array(
+    z.object({
+      size: z.string().min(1, 'Size is required.'),
+      quantity: z.coerce.number().min(0, 'Quantity must be a positive number.'),
+      price: z.coerce.number().min(0, 'Price must be a positive number.'),
+    })
+  ).optional(),
 });
 
 type TransactionFormValues = z.infer<typeof formSchema>;
@@ -45,6 +54,8 @@ export function TransactionForm() {
       processingSteps: [{ name: 'Coloring', expense: 250, wastage: 5 }],
       sellingPricePerUnit: 120,
       enableByproductProcessing: false,
+      chowryProcessingCost: 10,
+      nonRemyHairProducts: [{ size: '5-10', quantity: 10, price: 20 }],
     },
   });
 
@@ -53,11 +64,17 @@ export function TransactionForm() {
     name: 'processingSteps',
   });
 
+  const { fields: nonRemyFields, append: appendNonRemy, remove: removeNonRemy } = useFieldArray({
+    control: form.control,
+    name: 'nonRemyHairProducts',
+  });
+
   const watchedValues = form.watch();
 
   const purchaseQuantity = Number(watchedValues.purchaseQuantity || 0);
   const purchasePrice = Number(watchedValues.purchasePrice || 0);
   const sellingPricePerUnit = Number(watchedValues.sellingPricePerUnit || 0);
+  const enableByproductProcessing = watchedValues.enableByproductProcessing;
 
   const totalWastageUnits = (watchedValues.processingSteps || []).reduce(
     (acc, step) => acc + Number(step.wastage || 0),
@@ -72,10 +89,17 @@ export function TransactionForm() {
     (acc, step) => acc + Number(step.expense || 0),
     0
   );
+
+  const chowryProcessingCostPerUnit = Number(watchedValues.chowryProcessingCost || 0);
+  const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * unitsRemaining : 0;
   
-  const grandTotalCost = totalPurchaseCost + totalProcessingCost;
+  const nonRemyHairProducts = watchedValues.nonRemyHairProducts || [];
+  const assignedNonRemyQuantity = nonRemyHairProducts.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
+  const nonRemyRevenue = nonRemyHairProducts.reduce((acc, p) => acc + Number(p.quantity || 0) * Number(p.price || 0), 0);
   
-  const totalRevenue = sellingPricePerUnit * unitsRemaining;
+  const grandTotalCost = totalPurchaseCost + totalProcessingCost + totalChowryProcessingCost;
+  
+  const totalRevenue = enableByproductProcessing ? nonRemyRevenue : sellingPricePerUnit * unitsRemaining;
   
   const projectedProfit = totalRevenue - grandTotalCost;
 
@@ -92,7 +116,6 @@ export function TransactionForm() {
       <form>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           <div className="lg:col-span-2 space-y-8">
-            {/* Purchase Details Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -143,7 +166,6 @@ export function TransactionForm() {
               </CardContent>
             </Card>
 
-            {/* Processing Steps Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -177,7 +199,6 @@ export function TransactionForm() {
               </CardContent>
             </Card>
 
-            {/* Chowry Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -186,51 +207,109 @@ export function TransactionForm() {
                 </CardTitle>
                 <CardDescription>Optionally, process remaining units into sellable non-remy hair.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-6">
                  <FormField control={form.control} name="enableByproductProcessing" render={({ field }) => (
                     <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <FormLabel className="text-base m-0">Enable Byproduct Processing</FormLabel>
                       <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
                     </FormItem>
                   )} />
+                  <AnimatePresence>
+                    {enableByproductProcessing && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-6 overflow-hidden"
+                      >
+                        <FormField control={form.control} name="chowryProcessingCost" render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Chowry Processing Cost (per unit)</FormLabel>
+                            <FormControl><Input type="number" {...field} /></FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-muted-foreground">This cost is applied to each unit remaining after initial wastage.</p>
+                          </FormItem>
+                        )} />
+                        
+                        <div className="space-y-4">
+                            <Label className="font-medium">Non-Remy Hair Products</Label>
+                            <div className="space-y-3">
+                              <AnimatePresence>
+                                {nonRemyFields.map((field, index) => (
+                                  <motion.div key={field.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-[1fr,1fr,1fr,auto] items-end gap-2">
+                                      <FormField control={form.control} name={`nonRemyHairProducts.${index}.size`} render={({ field }) => (
+                                          <FormItem><FormLabel className="text-xs">Size (in)</FormLabel><FormControl><Input placeholder="5-10" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )} />
+                                      <FormField control={form.control} name={`nonRemyHairProducts.${index}.quantity`} render={({ field }) => (
+                                          <FormItem><FormLabel className="text-xs">Qty (units)</FormLabel><FormControl><Input type="number" placeholder="10" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )} />
+                                      <FormField control={form.control} name={`nonRemyHairProducts.${index}.price`} render={({ field }) => (
+                                          <FormItem><FormLabel className="text-xs">Price/unit</FormLabel><FormControl><Input type="number" placeholder="20" {...field} /></FormControl><FormMessage /></FormItem>
+                                      )} />
+                                      <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive" onClick={() => removeNonRemy(index)}><Trash2 className="h-4 w-4" /></Button>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+                            </div>
+                            <Button type="button" variant="outline" size="sm" onClick={() => appendNonRemy({ size: '', quantity: 0, price: 0 })}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Non-Remy Hair Size
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > unitsRemaining ? 'bg-destructive/20' : 'bg-muted/50')}>
+                                <Label className="text-muted-foreground">Total Units Available</Label>
+                                <p className="text-2xl font-bold">{unitsRemaining.toFixed(2)}</p>
+                            </div>
+                             <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > unitsRemaining ? 'bg-destructive/20' : 'bg-muted/50')}>
+                                <Label className="text-muted-foreground">Quantity Assigned</Label>
+                                <p className="text-2xl font-bold">{assignedNonRemyQuantity.toFixed(2)}</p>
+                            </div>
+                        </div>
+                         {assignedNonRemyQuantity > unitsRemaining && (
+                            <p className="text-sm text-destructive text-center">Assigned quantity cannot exceed available units.</p>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
               </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-1 space-y-8">
-            {/* Pricing Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <DollarSign className="h-6 w-6 text-primary" />
-                  Pricing
-                </CardTitle>
-                <CardDescription>Set your price to see AI-powered insights.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button variant="outline" className="w-full"><BarChart2 className="mr-2 h-4 w-4" /> Compare to Market</Button>
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField control={form.control} name="sellingPricePerUnit" render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Selling Price (per unit)</FormLabel>
-                      <FormControl><Input type="number" placeholder="e.g., 120" {...field} /></FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )} />
-                  <div>
-                      <Label>Units Remaining</Label>
-                      <Input readOnly value={`${unitsRemaining.toFixed(2)} units`} className="bg-muted/50" />
+            <fieldset disabled={enableByproductProcessing} className="space-y-8">
+              <Card className={cn(enableByproductProcessing && "bg-muted/50")}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <DollarSign className="h-6 w-6 text-primary" />
+                    Pricing
+                  </CardTitle>
+                  <CardDescription>Set your price for the primary product. Disabled when byproduct processing is active.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button variant="outline" className="w-full"><BarChart2 className="mr-2 h-4 w-4" /> Compare to Market</Button>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField control={form.control} name="sellingPricePerUnit" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Selling Price (per unit)</FormLabel>
+                        <FormControl><Input type="number" placeholder="e.g., 120" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div>
+                        <Label>Units Remaining</Label>
+                        <Input readOnly value={`${unitsRemaining.toFixed(2)} units`} className="bg-muted/50" />
+                    </div>
                   </div>
-                </div>
-                 <div className="p-4 bg-muted/50 rounded-lg text-center">
-                    <Label className="text-muted-foreground">Overall Selling Price</Label>
-                    <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
-                    <p className="text-xs text-muted-foreground">Based on {unitsRemaining.toFixed(2)} remaining units.</p>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="p-4 bg-muted rounded-lg text-center">
+                      <Label className="text-muted-foreground">Overall Selling Price</Label>
+                      <p className="text-2xl font-bold">{formatCurrency(sellingPricePerUnit * unitsRemaining)}</p>
+                      <p className="text-xs text-muted-foreground">Based on {unitsRemaining.toFixed(2)} remaining units.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </fieldset>
 
-            {/* Summary Card */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -242,6 +321,13 @@ export function TransactionForm() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Purchase Cost</span><span className="font-medium">{formatCurrency(totalPurchaseCost)}</span></div>
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Processing Cost</span><span className="font-medium">{formatCurrency(totalProcessingCost)}</span></div>
+                <AnimatePresence>
+                  {enableByproductProcessing && (
+                    <motion.div initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Total Chowry Cost</span><span className="font-medium">{formatCurrency(totalChowryProcessingCost)}</span>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 <Separator />
                 <div className="flex justify-between items-center font-bold text-base"><span >Grand Total Cost</span><span>{formatCurrency(grandTotalCost)}</span></div>
                 <div className="flex justify-between items-center font-bold text-base"><span className="text-green-600">Total Revenue</span><span className="text-green-600">{formatCurrency(totalRevenue)}</span></div>

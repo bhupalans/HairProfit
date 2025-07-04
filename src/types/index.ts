@@ -4,6 +4,12 @@ export interface ProcessingStep {
   wastage: number; // in units, not percentage
 }
 
+export interface NonRemyHairProduct {
+  size: string;
+  quantity: number;
+  price: number;
+}
+
 export interface TransactionData {
   hairType: string;
   purchaseQuantity: number;
@@ -12,6 +18,8 @@ export interface TransactionData {
   processingSteps: ProcessingStep[];
   sellingPricePerUnit: number;
   enableByproductProcessing: boolean;
+  chowryProcessingCost?: number;
+  nonRemyHairProducts?: NonRemyHairProduct[];
 }
 
 // Kept for compatibility with other components that might exist, though the main view no longer creates a list of transactions.
