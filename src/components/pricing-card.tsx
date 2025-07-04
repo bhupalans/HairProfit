@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BarChart2, DollarSign } from 'lucide-react';
+import { BarChart2, DollarSign, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface PricingCardProps {
   data: HairProfitData;
@@ -28,52 +29,71 @@ export default function PricingCard({ data, onDataChange, onNumericChange, units
   };
 
   return (
-    <fieldset disabled={enableByproductProcessing} className="space-y-8">
-      <Card className={cn(enableByproductProcessing && 'bg-muted/50')}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-3">
-            <DollarSign className="h-6 w-6 text-primary" />
-            Pricing
-          </CardTitle>
-          <CardDescription>
-            Set your price for the primary product. Disabled when byproduct processing is active.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Button variant="outline" className="w-full">
-            <BarChart2 className="mr-2 h-4 w-4" /> Compare to Market
-          </Button>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="sellingPricePerUnit">Selling Price (per unit)</Label>
-              <Input
-                id="sellingPricePerUnit"
-                type="number"
-                placeholder="e.g., 120"
-                value={sellingPricePerUnit}
-                onChange={(e) => onNumericChange('sellingPricePerUnit', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label>Units Remaining</Label>
-              <Input
-                readOnly
-                value={`${unitsRemaining.toFixed(0)} units`}
-                className="bg-muted/50"
-              />
-            </div>
-          </div>
-          <div className="p-4 bg-muted rounded-lg text-center">
-            <Label className="text-muted-foreground">Overall Selling Price</Label>
-            <p className="text-2xl font-bold">
-              {formatCurrency(numSellingPricePerUnit * unitsRemaining)}
+    <Card className="relative overflow-hidden">
+      <AnimatePresence>
+        {enableByproductProcessing && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 p-4 text-center backdrop-blur-sm"
+          >
+            <Info className="mb-4 h-10 w-10 text-primary" />
+            <h3 className="mb-1 text-lg font-bold">Pricing Handled by Byproduct</h3>
+            <p className="text-sm text-muted-foreground">
+              Disable 'Byproduct Processing' to set a price for the main product.
             </p>
-            <p className="text-xs text-muted-foreground">
-              Based on {unitsRemaining.toFixed(0)} remaining units.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </fieldset>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <fieldset disabled={enableByproductProcessing}>
+        <div className={cn('transition-filter', enableByproductProcessing && 'blur-[3px]')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <DollarSign className="h-6 w-6 text-primary" />
+              Pricing
+            </CardTitle>
+            <CardDescription>
+              Set your price for the primary product. Disabled when byproduct processing is active.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Button variant="outline" className="w-full" tabIndex={-1}>
+              <BarChart2 className="mr-2 h-4 w-4" /> Compare to Market
+            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="sellingPricePerUnit">Selling Price (per unit)</Label>
+                <Input
+                  id="sellingPricePerUnit"
+                  type="number"
+                  placeholder="e.g., 120"
+                  value={sellingPricePerUnit}
+                  onChange={(e) => onNumericChange('sellingPricePerUnit', e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>Units Remaining</Label>
+                <Input
+                  readOnly
+                  value={`${unitsRemaining.toFixed(0)} units`}
+                  className="bg-muted/50"
+                />
+              </div>
+            </div>
+            <div className="p-4 bg-muted rounded-lg text-center">
+              <Label className="text-muted-foreground">Overall Selling Price</Label>
+              <p className="text-2xl font-bold">
+                {formatCurrency(numSellingPricePerUnit * unitsRemaining)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Based on {unitsRemaining.toFixed(0)} remaining units.
+              </p>
+            </div>
+          </CardContent>
+        </div>
+      </fieldset>
+    </Card>
   );
 }
