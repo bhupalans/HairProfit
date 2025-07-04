@@ -73,9 +73,7 @@ export function TransactionForm() {
     0
   );
   
-  const totalWastageCost = totalWastageUnits * purchasePrice;
-
-  const grandTotalCost = totalPurchaseCost + totalProcessingCost + totalWastageCost;
+  const grandTotalCost = totalPurchaseCost + totalProcessingCost;
   
   const totalRevenue = sellingPricePerUnit * unitsRemaining;
   
@@ -244,7 +242,6 @@ export function TransactionForm() {
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Purchase Cost</span><span className="font-medium">{formatCurrency(totalPurchaseCost)}</span></div>
                 <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Processing Cost</span><span className="font-medium">{formatCurrency(totalProcessingCost)}</span></div>
-                <div className="flex justify-between items-center text-sm"><span className="text-muted-foreground">Total Wastage Cost</span><span className="font-medium">{formatCurrency(totalWastageCost)}</span></div>
                 <Separator />
                 <div className="flex justify-between items-center font-bold text-base"><span >Grand Total Cost</span><span>{formatCurrency(grandTotalCost)}</span></div>
                 <div className="flex justify-between items-center font-bold text-base"><span className="text-green-600">Total Revenue</span><span className="text-green-600">{formatCurrency(totalRevenue)}</span></div>
