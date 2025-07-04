@@ -43,9 +43,9 @@ export default function ProcessingStepsCard({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-[1fr,auto,auto,auto] items-end gap-2"
+                className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/20 p-3"
               >
-                <div>
+                <div className="flex-1 min-w-[150px]">
                   <Label htmlFor={`step-name-${index}`}>Process Name</Label>
                   <Input
                     id={`step-name-${index}`}

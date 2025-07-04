@@ -43,7 +43,7 @@ export default function PricingCard({ data, onDataChange, onNumericChange, units
           <Button variant="outline" className="w-full">
             <BarChart2 className="mr-2 h-4 w-4" /> Compare to Market
           </Button>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="sellingPricePerUnit">Selling Price (per unit)</Label>
               <Input

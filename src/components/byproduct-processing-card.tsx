@@ -88,9 +88,9 @@ export default function ByproductProcessingCard({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="grid grid-cols-[1fr,1fr,1fr,auto] items-end gap-2"
+                        className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/20 p-3"
                       >
-                        <div>
+                        <div className="flex-1 min-w-[100px]">
                           <Label htmlFor={`nr-size-${index}`} className="text-xs">Size (in)</Label>
                           <Input
                             id={`nr-size-${index}`}
@@ -99,7 +99,7 @@ export default function ByproductProcessingCard({
                             onChange={(e) => onProductChange(index, 'size', e.target.value)}
                           />
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-[100px]">
                           <Label htmlFor={`nr-quantity-${index}`} className="text-xs">Qty (units)</Label>
                           <Input
                             id={`nr-quantity-${index}`}
@@ -109,7 +109,7 @@ export default function ByproductProcessingCard({
                             onChange={(e) => onProductChange(index, 'quantity', e.target.value)}
                           />
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-[100px]">
                           <Label htmlFor={`nr-price-${index}`} className="text-xs">Price/unit</Label>
                           <Input
                             id={`nr-price-${index}`}
