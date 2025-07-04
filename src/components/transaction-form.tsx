@@ -132,9 +132,9 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <Card className="overflow-hidden">
           <CardHeader>
-            <CardTitle>New Transaction</CardTitle>
+            <CardTitle>Transaction Calculator</CardTitle>
             <CardDescription>
-              Enter the details below to calculate cost and profit.
+              Enter the details of your product to calculate total cost and profit margin.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -300,11 +300,26 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
 
             <Separator />
 
-            <div>
-              <div className="text-lg font-medium flex items-center gap-2 mb-4">
-                <Calculator className="h-5 w-5 text-primary" />
-                Profit Calculation
-              </div>
+            <fieldset className="space-y-4">
+              <legend className="text-lg font-medium flex items-center gap-2 mb-2">
+                  <Calculator className="h-5 w-5 text-primary" />
+                  Pricing & Summary
+              </legend>
+
+              <FormField
+                control={form.control}
+                name="sellingPrice"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Selling Price</FormLabel>
+                    <FormControl>
+                          <Input type="number" placeholder="e.g., 50.00" {...field} className="text-base py-6" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Purchase Cost</span>
@@ -324,32 +339,19 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
                   <span>{formatCurrency(totalCost)}</span>
                 </div>
               </div>
-            </div>
-
-            <FormField
-              control={form.control}
-              name="sellingPrice"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-lg font-medium">Selling Price</FormLabel>
-                   <FormControl>
-                        <Input type="number" placeholder="e.g., 50.00" {...field} className="text-base py-6" />
-                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             
-            <div className="space-y-2 p-4 bg-primary/10 rounded-lg">
-                <div className="flex justify-between items-center font-bold text-xl">
-                  <span>Profit</span>
-                  <span className={profit >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCurrency(profit)}</span>
-                </div>
-                 <div className="flex justify-between items-center text-muted-foreground">
-                  <span>Profit Margin</span>
-                  <span className={margin >= 0 ? 'text-green-600' : 'text-red-600'}>{margin.toFixed(2)}%</span>
-                </div>
-            </div>
+              <div className="space-y-2 p-4 bg-primary/10 rounded-lg">
+                  <div className="flex justify-between items-center font-bold text-xl">
+                    <span>Profit</span>
+                    <span className={profit >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCurrency(profit)}</span>
+                  </div>
+                   <div className="flex justify-between items-center text-muted-foreground">
+                    <span>Profit Margin</span>
+                    <span className={margin >= 0 ? 'text-green-600' : 'text-red-600'}>{margin.toFixed(2)}%</span>
+                  </div>
+              </div>
+
+            </fieldset>
 
           </CardContent>
           <CardFooter>
