@@ -47,6 +47,10 @@ const formSchema = z.object({
       cost: z.coerce
         .number({ invalid_type_error: 'Must be a number' })
         .min(0, 'Cost cannot be negative.'),
+      wastage: z.coerce
+        .number({ invalid_type_error: 'Must be a number' })
+        .min(0, 'Wastage must be between 0 and 100.')
+        .max(100, 'Wastage must be between 0 and 100.'),
     })
   ),
   sellingPrice: z.coerce
@@ -80,11 +84,26 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
 
   const purchaseCost =
     (watchedValues.purchaseQuantity || 0) * (watchedValues.purchasePrice || 0);
+
   const processingCost = (watchedValues.processingSteps || []).reduce(
     (acc, step) => acc + (step.cost || 0),
     0
   );
-  const totalCost = purchaseCost + processingCost;
+
+  let cumulativeQuantity = watchedValues.purchaseQuantity || 0;
+  let totalQuantityLost = 0;
+  (watchedValues.processingSteps || []).forEach(step => {
+    const wastagePercent = step.wastage || 0;
+    if (cumulativeQuantity > 0 && wastagePercent > 0) {
+      const quantityLost = cumulativeQuantity * (wastagePercent / 100);
+      totalQuantityLost += quantityLost;
+      cumulativeQuantity -= quantityLost;
+    }
+  });
+
+  const wastageCost = totalQuantityLost * (watchedValues.purchasePrice || 0);
+
+  const totalCost = purchaseCost + processingCost + wastageCost;
   const profit = (watchedValues.sellingPrice || 0) - totalCost;
   const margin =
     totalCost > 0 ? (profit / totalCost) * 100 : (watchedValues.sellingPrice || 0) > 0 ? 100 : 0;
@@ -182,7 +201,20 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
                           <FormItem>
                             <FormLabel>Cost ($)</FormLabel>
                             <FormControl>
-                              <Input type="number" className="w-28" placeholder="e.g., 5" {...field} />
+                              <Input type="number" className="w-24" placeholder="e.g., 5" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name={`processingSteps.${index}.wastage`}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Wastage (%)</FormLabel>
+                            <FormControl>
+                              <Input type="number" className="w-24" placeholder="e.g., 10" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -205,7 +237,7 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => append({ name: '', cost: 0 })}
+                onClick={() => append({ name: '', cost: 0, wastage: 0 })}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Processing Step
@@ -227,6 +259,10 @@ export function TransactionForm({ onSaveTransaction }: TransactionFormProps) {
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Processing Cost</span>
                   <span className="font-medium">{formatCurrency(processingCost)}</span>
+                </div>
+                 <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Wastage Cost</span>
+                  <span className="font-medium">{formatCurrency(wastageCost)}</span>
                 </div>
                  <Separator/>
                 <div className="flex justify-between items-center font-bold text-lg">

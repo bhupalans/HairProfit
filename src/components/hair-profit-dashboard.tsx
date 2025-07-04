@@ -11,8 +11,22 @@ export default function HairProfitDashboard() {
 
   const handleSaveTransaction = (data: TransactionData) => {
     const purchaseCost = data.purchaseQuantity * data.purchasePrice;
-    const processingCost = data.processingSteps.reduce((acc, step) => acc.cost + step.cost, { name: '', cost: 0 });
-    const totalCost = purchaseCost + processingCost;
+    const processingCost = data.processingSteps.reduce((acc, step) => acc + step.cost, 0);
+
+    let cumulativeQuantity = data.purchaseQuantity;
+    let totalQuantityLost = 0;
+    data.processingSteps.forEach(step => {
+      const wastagePercent = step.wastage || 0;
+      if (cumulativeQuantity > 0 && wastagePercent > 0) {
+        const quantityLost = cumulativeQuantity * (wastagePercent / 100);
+        totalQuantityLost += quantityLost;
+        cumulativeQuantity -= quantityLost;
+      }
+    });
+
+    const wastageCost = totalQuantityLost * data.purchasePrice;
+    const totalCost = purchaseCost + processingCost + wastageCost;
+
     const revenue = data.sellingPrice;
     const profit = revenue - totalCost;
     const margin = totalCost > 0 ? (profit / totalCost) * 100 : revenue > 0 ? 100 : 0;

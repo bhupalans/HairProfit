@@ -1,6 +1,7 @@
 export interface ProcessingStep {
   name: string;
   cost: number;
+  wastage: number;
 }
 
 export interface TransactionData {
