@@ -56,7 +56,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
   const totalWastageCost = totalWastageUnits * purchasePrice;
 
   const chowryProcessingCostPerUnit = Number(watchedValues.chowryProcessingCost || 0);
-  const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * totalWastageUnits : 0;
+  const totalChowryProcessingCost = enableByproductProcessing ? chowryProcessingCostPerUnit * unitsRemaining : 0;
   
   const nonRemyHairProducts = watchedValues.nonRemyHairProducts || [];
   const assignedNonRemyQuantity = nonRemyHairProducts.reduce((acc, p) => acc + Number(p.quantity || 0), 0);
@@ -192,7 +192,7 @@ export function TransactionForm({ form }: TransactionFormProps) {
                             <FormLabel>Byproduct Processing Cost (per unit)</FormLabel>
                             <FormControl><Input type="number" {...field} /></FormControl>
                             <FormMessage />
-                            <p className="text-xs text-muted-foreground">This cost is applied to each unit of WASTAGE to turn it into a sellable byproduct.</p>
+                            <p className="text-xs text-muted-foreground">This cost is applied to each remaining unit to process it into a different sellable product.</p>
                           </FormItem>
                         )} />
                         
@@ -222,16 +222,16 @@ export function TransactionForm({ form }: TransactionFormProps) {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > totalWastageUnits ? 'bg-destructive/20' : 'bg-muted/50')}>
+                            <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > unitsRemaining ? 'bg-destructive/20' : 'bg-muted/50')}>
                                 <Label className="text-muted-foreground">Total Units Available</Label>
-                                <p className="text-2xl font-bold">{totalWastageUnits}</p>
+                                <p className="text-2xl font-bold">{unitsRemaining.toFixed(0)}</p>
                             </div>
-                             <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > totalWastageUnits ? 'bg-destructive/20' : 'bg-muted/50')}>
+                             <div className={cn("p-4 rounded-lg text-center", assignedNonRemyQuantity > unitsRemaining ? 'bg-destructive/20' : 'bg-muted/50')}>
                                 <Label className="text-muted-foreground">Quantity Assigned</Label>
-                                <p className="text-2xl font-bold">{assignedNonRemyQuantity}</p>
+                                <p className="text-2xl font-bold">{assignedNonRemyQuantity.toFixed(0)}</p>
                             </div>
                         </div>
-                         {assignedNonRemyQuantity > totalWastageUnits && (
+                         {assignedNonRemyQuantity > unitsRemaining && (
                             <p className="text-sm text-destructive text-center">Assigned quantity cannot exceed available units.</p>
                         )}
                       </motion.div>
@@ -263,13 +263,13 @@ export function TransactionForm({ form }: TransactionFormProps) {
                     )} />
                     <div>
                         <Label>Units Remaining</Label>
-                        <Input readOnly value={`${unitsRemaining} units`} className="bg-muted/50" />
+                        <Input readOnly value={`${unitsRemaining.toFixed(0)} units`} className="bg-muted/50" />
                     </div>
                   </div>
                   <div className="p-4 bg-muted rounded-lg text-center">
                       <Label className="text-muted-foreground">Overall Selling Price</Label>
                       <p className="text-2xl font-bold">{formatCurrency(sellingPricePerUnit * unitsRemaining)}</p>
-                      <p className="text-xs text-muted-foreground">Based on {unitsRemaining} remaining units.</p>
+                      <p className="text-xs text-muted-foreground">Based on {unitsRemaining.toFixed(0)} remaining units.</p>
                   </div>
                 </CardContent>
               </Card>
