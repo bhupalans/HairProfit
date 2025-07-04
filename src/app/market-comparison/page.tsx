@@ -32,7 +32,7 @@ const formats = [
 ];
 
 const lengths = [
-  '10 inches', '12 inches', '14 inches', '16 inches', '18 inches', '20 inches',
+  '6 inches', '8 inches', '10 inches', '12 inches', '14 inches', '16 inches', '18 inches', '20 inches',
   '22 inches', '24 inches', '26 inches', '28 inches', '30 inches',
 ];
 
