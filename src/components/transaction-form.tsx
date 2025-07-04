@@ -49,8 +49,10 @@ interface TransactionFormProps {
 }
 
 export function TransactionForm({ form }: TransactionFormProps) {
+  const { control } = form;
+
   const { fields, append, remove } = useFieldArray({
-    control: form.control,
+    control: control,
     name: 'processingSteps',
   });
 
@@ -59,21 +61,18 @@ export function TransactionForm({ form }: TransactionFormProps) {
     append: appendNonRemy,
     remove: removeNonRemy,
   } = useFieldArray({
-    control: form.control,
+    control: control,
     name: 'nonRemyHairProducts',
   });
 
-  const watchedValues = useWatch({ control: form.control });
-  const {
-    purchaseQuantity,
-    purchasePrice,
-    currency,
-    processingSteps,
-    sellingPricePerUnit,
-    enableByproductProcessing,
-    chowryProcessingCost,
-    nonRemyHairProducts,
-  } = watchedValues;
+  const purchaseQuantity = useWatch({ control, name: 'purchaseQuantity' });
+  const purchasePrice = useWatch({ control, name: 'purchasePrice' });
+  const currency = useWatch({ control, name: 'currency' });
+  const processingSteps = useWatch({ control, name: 'processingSteps' });
+  const sellingPricePerUnit = useWatch({ control, name: 'sellingPricePerUnit' });
+  const enableByproductProcessing = useWatch({ control, name: 'enableByproductProcessing' });
+  const chowryProcessingCost = useWatch({ control, name: 'chowryProcessingCost' });
+  const nonRemyHairProducts = useWatch({ control, name: 'nonRemyHairProducts' });
 
   const numPurchaseQuantity = useMemo(
     () => Number(purchaseQuantity || 0),
