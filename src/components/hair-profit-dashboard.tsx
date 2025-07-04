@@ -19,14 +19,14 @@ import Link from 'next/link';
 
 
 const initialData: HairProfitData = {
-  hairType: 'Brazilian Body Wave',
-  purchaseQuantity: 100,
-  purchasePrice: 50,
+  hairType: '',
+  purchaseQuantity: '',
+  purchasePrice: '',
   currency: 'USD',
   processingSteps: [],
-  sellingPricePerUnit: 120,
+  sellingPricePerUnit: '',
   enableByproductProcessing: false,
-  byproductProcessingCost: 10,
+  byproductProcessingCost: '',
   nonRemyHairProducts: [],
 };
 
@@ -377,7 +377,6 @@ export default function HairProfitDashboard() {
             <div className="lg:col-span-2 space-y-8">
               <PurchaseDetailsCard
                 data={data}
-                initialData={initialData}
                 onDataChange={handleDataChange}
                 onNumericChange={handleNumericChange}
               />
