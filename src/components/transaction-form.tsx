@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { UseFormReturn } from 'react-hook-form';
@@ -32,14 +33,26 @@ export function TransactionForm({ form }: TransactionFormProps) {
     name: 'nonRemyHairProducts',
   });
 
-  const purchaseQuantity = form.watch('purchaseQuantity');
-  const purchasePrice = form.watch('purchasePrice');
-  const currency = form.watch('currency');
-  const processingSteps = form.watch('processingSteps');
-  const sellingPricePerUnit = form.watch('sellingPricePerUnit');
-  const enableByproductProcessing = form.watch('enableByproductProcessing');
-  const chowryProcessingCost = form.watch('chowryProcessingCost');
-  const nonRemyHairProducts = form.watch('nonRemyHairProducts');
+  const [
+    purchaseQuantity,
+    purchasePrice,
+    currency,
+    processingSteps,
+    sellingPricePerUnit,
+    enableByproductProcessing,
+    chowryProcessingCost,
+    nonRemyHairProducts,
+  ] = form.watch([
+    'purchaseQuantity',
+    'purchasePrice',
+    'currency',
+    'processingSteps',
+    'sellingPricePerUnit',
+    'enableByproductProcessing',
+    'chowryProcessingCost',
+    'nonRemyHairProducts',
+  ]);
+
 
   const numPurchaseQuantity = Number(purchaseQuantity || 0);
   const numPurchasePrice = Number(purchasePrice || 0);
