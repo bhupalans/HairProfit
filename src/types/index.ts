@@ -1,7 +1,7 @@
 export interface ProcessingStep {
   name: string;
   cost: number;
-  wastage: number;
+  wastage: number; // in units, not percentage
 }
 
 export interface TransactionData {
@@ -10,9 +10,11 @@ export interface TransactionData {
   purchasePrice: number;
   currency: string;
   processingSteps: ProcessingStep[];
-  sellingPrice: number;
+  sellingPricePerUnit: number;
+  enableByproductProcessing: boolean;
 }
 
+// Kept for compatibility with other components that might exist, though the main view no longer creates a list of transactions.
 export interface Transaction extends TransactionData {
   id: string;
   totalCost: number;
