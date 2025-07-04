@@ -238,12 +238,28 @@ export default function MarketComparisonPage() {
               <Alert className="border-primary/50 bg-primary/5">
                 <Lightbulb className="h-4 w-4 text-primary" />
                 <AlertTitle className="text-primary font-bold">Market Analysis</AlertTitle>
-                <AlertDescription className="text-foreground/80 space-y-2">
-                   <p className="font-semibold text-lg">
-                     Suggested Range: {formatCurrency(result.lowerBoundPrice)} - {formatCurrency(result.upperBoundPrice)} (per bundle)
-                   </p>
-                   <p>{result.analysis}</p>
-                   <p className="text-xs text-muted-foreground pt-2">Confidence: {(result.confidenceScore * 100).toFixed(0)}%</p>
+                <AlertDescription className="text-foreground/80 space-y-4 !mt-4">
+                  <p className="font-semibold text-xl">
+                    Suggested Range: {formatCurrency(result.lowerBoundPrice)} - {formatCurrency(result.upperBoundPrice)} (per bundle)
+                  </p>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-2">Reasoning</h3>
+                    <p className="text-sm leading-relaxed">{result.reasoning}</p>
+                  </div>
+
+                  {result.crossMarketAnalysis && (
+                    <div>
+                      <h3 className="font-semibold mb-2">Pricing Variations in Other Markets</h3>
+                      <div className="text-sm space-y-2 leading-relaxed">
+                        {result.crossMarketAnalysis.split('\n').map((line, index) => (
+                          line.trim() && <p key={index}>{line}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-xs text-muted-foreground pt-2">Confidence: {(result.confidenceScore * 100).toFixed(0)}%</p>
                 </AlertDescription>
               </Alert>
             )}

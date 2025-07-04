@@ -30,13 +30,15 @@ Analyze the following hair product:
 - Color: {{{color}}}
 - Target Currency: {{{currency}}}
 
-Based on your knowledge, provide the following:
+Based on your knowledge, provide a structured analysis for the user.
 
-1.  A realistic market selling price range (lower and upper bound) per unit/bundle in {{{currency}}}.
-2.  A confidence score between 0 and 1 for your estimation.
-3.  A comprehensive analysis that includes:
-    - The reasoning for your price estimation, considering all provided factors like hair origin (e.g., Brazilian, Indian), format (e.g. Weave, Tape-in), length, texture, quality/grade (e.g. Virgin, Remy), color, and typical market demand.
-    - A brief discussion on how pricing for this product might differ in at least two other major international markets (e.g., North America, Europe, Asia, Africa), explaining the factors for these variations.
+First, provide a realistic market selling price range (lower and upper bound) per unit/bundle in {{{currency}}}.
+
+Second, provide your detailed reasoning for this price estimation into the 'reasoning' field. Consider all provided factors like hair origin, format, length, texture, quality/grade, color, and typical market demand.
+
+Third, provide a brief discussion on how pricing for this product might differ in at least two other major international markets (e.g., North America, Europe, Asia, Africa) into the 'crossMarketAnalysis' field. Explain the factors for these variations and use numbered points for each market (e.g., "1. North America: ...\\n2. Europe: ...").
+
+Finally, provide a confidence score between 0 and 1 for your estimation.
   `,
 });
 

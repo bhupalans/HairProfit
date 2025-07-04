@@ -44,7 +44,8 @@ export type MarketComparisonInput = z.infer<typeof MarketComparisonInputSchema>;
 export const MarketComparisonOutputSchema = z.object({
   lowerBoundPrice: z.number().describe('The lower bound of the estimated market price range per unit.'),
   upperBoundPrice: z.number().describe('The upper bound of the estimated market price range per unit.'),
-  analysis: z.string().describe('A brief analysis explaining the price range, considering factors like origin, quality, and demand.'),
+  reasoning: z.string().describe('The detailed reasoning for the price estimation, considering all provided factors like hair origin, format, length, texture, quality, color, and typical market demand.'),
+  crossMarketAnalysis: z.string().describe('A brief discussion on how pricing for this product might differ in at least two other major international markets (e.g., North America, Europe, Asia, Africa). The response should explain the factors for these variations and use numbered points for each market (e.g., "1. North America: ...\\n2. Europe: ...").'),
   confidenceScore: z.number().min(0).max(1).describe('A score from 0 to 1 indicating the confidence in the estimation.'),
 });
 export type MarketComparisonOutput = z.infer<typeof MarketComparisonOutputSchema>;
