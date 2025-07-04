@@ -375,7 +375,12 @@ export default function HairProfitDashboard() {
         <main>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-8">
-              <PurchaseDetailsCard data={data} onDataChange={handleDataChange} onNumericChange={handleNumericChange} />
+              <PurchaseDetailsCard
+                data={data}
+                initialData={initialData}
+                onDataChange={handleDataChange}
+                onNumericChange={handleNumericChange}
+              />
               <ProcessingStepsCard
                 steps={data.processingSteps ?? []}
                 currency={data.currency}

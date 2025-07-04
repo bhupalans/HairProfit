@@ -9,11 +9,33 @@ import { Package } from 'lucide-react';
 
 interface PurchaseDetailsCardProps {
   data: HairProfitData;
+  initialData: HairProfitData;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
   onNumericChange: (field: keyof HairProfitData, value: string) => void;
 }
 
-export default function PurchaseDetailsCard({ data, onDataChange, onNumericChange }: PurchaseDetailsCardProps) {
+export default function PurchaseDetailsCard({ data, initialData, onDataChange, onNumericChange }: PurchaseDetailsCardProps) {
+  const handleFocus = (field: 'hairType' | 'purchaseQuantity' | 'purchasePrice') => {
+    if (data[field] === initialData[field]) {
+      if (field === 'hairType') {
+        onDataChange(field, '');
+      } else {
+        onNumericChange(field, '');
+      }
+    }
+  };
+
+  const handleBlur = (field: 'hairType' | 'purchaseQuantity' | 'purchasePrice') => {
+    const value = data[field];
+    if (value === '' || value === null || value === undefined) {
+      if (field === 'hairType') {
+        onDataChange(field, initialData[field]);
+      } else {
+        onNumericChange(field, String(initialData[field]));
+      }
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -32,6 +54,8 @@ export default function PurchaseDetailsCard({ data, onDataChange, onNumericChang
               placeholder="e.g., Brazilian Body Wave"
               value={data.hairType}
               onChange={(e) => onDataChange('hairType', e.target.value)}
+              onFocus={() => handleFocus('hairType')}
+              onBlur={() => handleBlur('hairType')}
             />
           </div>
           <div>
@@ -42,6 +66,8 @@ export default function PurchaseDetailsCard({ data, onDataChange, onNumericChang
               placeholder="e.g., 100"
               value={data.purchaseQuantity}
               onChange={(e) => onNumericChange('purchaseQuantity', e.target.value)}
+              onFocus={() => handleFocus('purchaseQuantity')}
+              onBlur={() => handleBlur('purchaseQuantity')}
             />
           </div>
           <div>
@@ -52,6 +78,8 @@ export default function PurchaseDetailsCard({ data, onDataChange, onNumericChang
               placeholder="e.g., 50"
               value={data.purchasePrice}
               onChange={(e) => onNumericChange('purchasePrice', e.target.value)}
+              onFocus={() => handleFocus('purchasePrice')}
+              onBlur={() => handleBlur('purchasePrice')}
             />
           </div>
           <div>
