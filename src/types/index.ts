@@ -29,3 +29,17 @@ export const hairProfitDataSchema = z.object({
 export type ProcessingStep = z.infer<typeof processingStepSchema>;
 export type NonRemyHairProduct = z.infer<typeof nonRemyHairProductSchema>;
 export type HairProfitData = z.infer<typeof hairProfitDataSchema>;
+
+export const MarketComparisonInputSchema = z.object({
+  hairType: z.string().describe('The type or name of the hair product, e.g., "Brazilian Body Wave".'),
+  currency: z.string().describe('The currency for the price estimation, e.g., "USD".'),
+});
+export type MarketComparisonInput = z.infer<typeof MarketComparisonInputSchema>;
+
+export const MarketComparisonOutputSchema = z.object({
+  lowerBoundPrice: z.number().describe('The lower bound of the estimated market price range per unit.'),
+  upperBoundPrice: z.number().describe('The upper bound of the estimated market price range per unit.'),
+  analysis: z.string().describe('A brief analysis explaining the price range, considering factors like origin, quality, and demand.'),
+  confidenceScore: z.number().min(0).max(1).describe('A score from 0 to 1 indicating the confidence in the estimation.'),
+});
+export type MarketComparisonOutput = z.infer<typeof MarketComparisonOutputSchema>;
