@@ -55,21 +55,21 @@ export function TransactionForm() {
 
   const watchedValues = form.watch();
 
+  const purchaseQuantity = Number(watchedValues.purchaseQuantity || 0);
+  const purchasePrice = Number(watchedValues.purchasePrice || 0);
+  const sellingPricePerUnit = Number(watchedValues.sellingPricePerUnit || 0);
+
   const totalWastageUnits = (watchedValues.processingSteps || []).reduce(
-    (acc, step) => acc + (step.wastage || 0),
+    (acc, step) => acc + Number(step.wastage || 0),
     0
   );
   
-  const purchaseQuantity = watchedValues.purchaseQuantity || 0;
-  const purchasePrice = watchedValues.purchasePrice || 0;
-  const sellingPricePerUnit = watchedValues.sellingPricePerUnit || 0;
-
   const unitsRemaining = Math.max(0, purchaseQuantity - totalWastageUnits);
 
   const totalPurchaseCost = purchaseQuantity * purchasePrice;
 
   const totalProcessingCost = (watchedValues.processingSteps || []).reduce(
-    (acc, step) => acc + (step.expense || 0),
+    (acc, step) => acc + Number(step.expense || 0),
     0
   );
   
