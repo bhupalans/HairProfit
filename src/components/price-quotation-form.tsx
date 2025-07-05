@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import type { QuotationItem, QuotationData } from '@/types';
 import { quotationDataSchema } from '@/types';
@@ -87,7 +94,8 @@ export default function PriceQuotationForm() {
   const [data, setData] = useState<QuotationData>(getInitialData());
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
-  
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
   const pdfRef = useRef<HTMLDivElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
@@ -193,7 +201,6 @@ export default function PriceQuotationForm() {
     if (data.currency === data.displayCurrency || rate === 0) {
       return grandTotal;
     }
-    // With the label "1 Display = ? Pricing", we always divide the pricing total by the rate.
     return grandTotal / rate;
   }, [grandTotal, data.currency, data.displayCurrency, data.exchangeRate]);
 
@@ -341,6 +348,9 @@ export default function PriceQuotationForm() {
                 <input type="file" ref={jsonFileInputRef} onChange={handleImportJson} className="hidden" accept="application/json" />
                 <Button variant="outline" size="sm" onClick={handleExportJson}>
                     <FileDown className="mr-2 h-4 w-4" /> Export
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(true)}>
+                  <Eye className="mr-2 h-4 w-4" /> Preview
                 </Button>
                 <Button size="sm" onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
                     {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
@@ -545,6 +555,26 @@ export default function PriceQuotationForm() {
             />
         </div>
       </div>
+      <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+        <DialogContent className="max-w-4xl w-full h-[90vh] p-0 flex flex-col">
+          <DialogHeader className="p-6 pb-2 border-b">
+            <DialogTitle>Quotation Preview</DialogTitle>
+            <DialogDescription>
+              This is a preview of the final PDF document. Scroll to see the full page.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto bg-muted/40 p-8">
+            <div className="mx-auto bg-white shadow-lg" style={{ width: '210mm' }}>
+              <QuotationPdfReport
+                data={data}
+                subtotal={subtotal}
+                grandTotal={grandTotal}
+                convertedGrandTotal={convertedGrandTotal}
+              />
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
