@@ -23,7 +23,7 @@ export default function QuotationPdfReport({
   const { 
     logo, quotationRef, date, validUntil, clientInfo, myInfo, 
     productFormat, productOrigin, items, currency, shippingCost, 
-    shippingCarrier, bankDetails, displayCurrency, exchangeRate 
+    shippingCarrier, paymentDetails, termsAndConditions, displayCurrency, exchangeRate 
   } = data;
     
   const finalCurrency = displayCurrency || currency;
@@ -33,7 +33,13 @@ export default function QuotationPdfReport({
   const getConvertedValue = (value: number | string) => {
     const numericValue = Number(value) || 0;
     if (performConversion && conversionRate !== 0) {
+      if (currency === 'INR' && finalCurrency === 'USD') {
         return numericValue / conversionRate;
+      }
+      if (currency === 'USD' && finalCurrency === 'INR') {
+        return numericValue * conversionRate;
+      }
+      return numericValue / conversionRate;
     }
     return numericValue;
   }
@@ -98,7 +104,7 @@ export default function QuotationPdfReport({
                         <div className="w-[50%]">{item.length}</div>
                         <div className="w-[15%] text-right">{Number(item.quantity) || 0}</div>
                         <div className="w-[15%] text-right">{formatCurrency(getConvertedValue(item.price), finalCurrency)}</div>
-                        <div className="w-[20%] text-right font-semibold">{formatCurrency(getConvertedValue(Number(item.quantity) * Number(item.price)), finalCurrency)}</div>
+                        <div className="w-[20%] text-right font-semibold">{formatCurrency(getConvertedValue((Number(item.quantity) || 0) * (Number(item.price) || 0)), finalCurrency)}</div>
                     </div>
                 ))}
             </div>
@@ -126,25 +132,12 @@ export default function QuotationPdfReport({
         <footer className="mt-auto pt-8 text-xs border-t border-gray-200 text-gray-500">
             <div className="grid grid-cols-2 gap-8 items-start">
                 <div>
-                    <h3 className="font-bold uppercase mb-2 text-gray-700 tracking-wider">Payment & Logistics</h3>
-                    <div className="space-y-1">
-                        <div className="flex items-start">
-                            <span className="mr-2 mt-1 leading-none" style={{color: 'hsl(var(--primary))'}}>•</span>
-                            <p className="flex-1"><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</p>
-                        </div>
-                        <div className="flex items-start">
-                            <span className="mr-2 mt-1 leading-none" style={{color: 'hsl(var(--primary))'}}>•</span>
-                            <p className="flex-1"><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</p>
-                        </div>
-                        <div className="flex items-start">
-                            <span className="mr-2 mt-1 leading-none" style={{color: 'hsl(var(--primary))'}}>•</span>
-                            <p className="flex-1"><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</p>
-                        </div>
-                    </div>
+                    <h3 className="font-bold uppercase mb-2 text-gray-700 tracking-wider">Terms &amp; Conditions</h3>
+                    <div className="whitespace-pre-wrap leading-relaxed">{termsAndConditions}</div>
                 </div>
                     <div>
-                    <h3 className="font-bold uppercase mb-2 text-gray-700 tracking-wider">Bank/Payment Details:</h3>
-                    <div className="whitespace-pre-wrap leading-relaxed">{bankDetails}</div>
+                    <h3 className="font-bold uppercase mb-2 text-gray-700 tracking-wider">Payment Details</h3>
+                    <div className="whitespace-pre-wrap leading-relaxed">{paymentDetails}</div>
                 </div>
             </div>
             <p className="mt-8 text-center italic">

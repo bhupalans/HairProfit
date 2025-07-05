@@ -61,7 +61,10 @@ const getInitialData = (): QuotationData => ({
   currency: 'USD',
   displayCurrency: 'INR',
   exchangeRate: 83.5,
-  bankDetails: 'Bank: [Your Bank Name]\nAccount #: [Your Account #]\nUPI: [your-upi@okbank]',
+  paymentDetails: 'Bank: [Your Bank Name]\nAccount #: [Your Account #]\nUPI: [your-upi@okbank]',
+  termsAndConditions: `• Payment: 50% advance (Bank Transfer / Wise / PayPal)
+• Delivery Time: 3-7 business days after payment confirmation.
+• Packaging: Standard polybag (custom branding available on bulk orders).`,
 });
 
 
@@ -522,25 +525,12 @@ export default function PriceQuotationForm() {
             <footer className="mt-auto pt-8 text-sm border-t">
                 <div className="grid grid-cols-2 gap-8 items-start">
                     <div>
-                        <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Payment & Logistics</h3>
-                        <ul className="text-muted-foreground space-y-1 list-none p-0">
-                             <li className="flex items-start">
-                                <span className="mr-2 mt-1 leading-none text-primary">•</span>
-                                <p className="flex-1"><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</p>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="mr-2 mt-1 leading-none text-primary">•</span>
-                                <p className="flex-1"><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</p>
-                            </li>
-                            <li className="flex items-start">
-                                <span className="mr-2 mt-1 leading-none text-primary">•</span>
-                                <p className="flex-1"><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</p>
-                            </li>
-                        </ul>
+                        <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Terms &amp; Conditions</h3>
+                        <Textarea value={data.termsAndConditions} onChange={e => handleFieldChange('termsAndConditions', e.target.value)} rows={4} className="bg-muted/50 border-none p-2 leading-relaxed" />
                     </div>
                      <div>
-                        <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Bank/Payment Details:</h3>
-                        <Textarea value={data.bankDetails} onChange={e => handleFieldChange('bankDetails', e.target.value)} rows={3} className="bg-muted/50 border-none p-2 leading-relaxed" />
+                        <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Payment Details</h3>
+                        <Textarea value={data.paymentDetails} onChange={e => handleFieldChange('paymentDetails', e.target.value)} rows={4} className="bg-muted/50 border-none p-2 leading-relaxed" />
                     </div>
                 </div>
                 <p className="mt-8 text-center text-muted-foreground italic">
