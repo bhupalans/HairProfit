@@ -178,15 +178,15 @@ export default function PriceQuotationForm() {
                     <h2 className="text-4xl font-bold uppercase text-primary">Quotation</h2>
                     <div className="flex items-center justify-end mt-4">
                         <Label htmlFor="quotationRef" className="text-right mr-2">Ref:</Label>
-                        <Input id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40 h-8 text-right" />
+                        <Input id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40 text-right" />
                     </div>
                     <div className="flex items-center justify-end mt-2">
                         <Label htmlFor="date" className="text-right mr-2">Date:</Label>
-                        <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40 h-8 text-right" />
+                        <Input id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40 text-right" />
                     </div>
                     <div className="flex items-center justify-end mt-2">
                         <Label htmlFor="validUntil" className="text-right mr-2">Valid Until:</Label>
-                        <Input id="validUntil" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="w-40 h-8 text-right" />
+                        <Input id="validUntil" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="w-40 text-right" />
                     </div>
                 </div>
             </header>
@@ -245,8 +245,8 @@ export default function PriceQuotationForm() {
                      <div className="flex justify-between items-center">
                         <span className="font-medium">Shipping via</span>
                         <div className="flex items-center gap-2">
-                            <Input value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-28 h-8" />:
-                            <Input type="number" value={shippingCost} onChange={e => setShippingCost(Number(e.target.value))} className="w-24 h-8 text-right" />
+                            <Input value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-28" />:
+                            <Input type="number" value={shippingCost} onChange={e => setShippingCost(Number(e.target.value))} className="w-24 text-right" />
                         </div>
                      </div>
                      <div className="border-t pt-3 flex justify-between items-center text-xl font-bold text-primary">
