@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, ChangeEvent } from 'react';
+import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,7 @@ const QuotationTextarea = (props: React.ComponentProps<typeof Textarea>) => (
 
 export default function PriceQuotationForm() {
   const [logo, setLogo] = useState<string | null>(null);
-  const [quotationRef, setQuotationRef] = useState('Q-2024-001');
+  const [quotationRef, setQuotationRef] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [validUntil, setValidUntil] = useState(() => {
     const d = new Date();
@@ -75,6 +75,34 @@ export default function PriceQuotationForm() {
   const pdfRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const lastRef = localStorage.getItem('lastQuotationRef');
+    let nextRef = '';
+    const currentYear = new Date().getFullYear().toString();
+
+    if (lastRef) {
+      const parts = lastRef.split('-');
+      if (parts.length === 3) {
+        const year = parts[1];
+        const num = parseInt(parts[2], 10);
+        if (!isNaN(num)) {
+          if (year === currentYear) {
+            const nextNum = (num + 1).toString().padStart(3, '0');
+            nextRef = `Q-${currentYear}-${nextNum}`;
+          } else {
+            nextRef = `Q-${currentYear}-001`;
+          }
+        }
+      }
+    }
+    
+    if (!nextRef) {
+      nextRef = `Q-${currentYear}-001`;
+    }
+    
+    setQuotationRef(nextRef);
+  }, []);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -139,14 +167,10 @@ export default function PriceQuotationForm() {
   }, [subtotal, shippingCost]);
   
   const convertedGrandTotal = useMemo(() => {
-    if (currency === displayCurrency) {
+    const rate = Number(exchangeRate) || 1;
+    if (currency === displayCurrency || rate === 0) {
       return grandTotal;
     }
-    // Rate is how many pricing currency units are in 1 display currency unit
-    // E.g., if pricing is INR and display is USD, rate is 83.5 (1 USD = 83.5 INR)
-    // To convert from INR to USD, we divide.
-    const rate = Number(exchangeRate) || 1;
-    if (rate === 0) return 0;
     return grandTotal / rate;
   }, [grandTotal, currency, displayCurrency, exchangeRate]);
 
@@ -161,6 +185,8 @@ export default function PriceQuotationForm() {
         toast({ variant: "destructive", title: "Error", description: "Could not find content to generate PDF." });
         return;
     }
+
+    localStorage.setItem('lastQuotationRef', quotationRef);
 
     setIsGeneratingPdf(true);
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
@@ -373,7 +399,7 @@ export default function PriceQuotationForm() {
             <footer className="mt-auto pt-8 text-sm border-t">
                 <div className="grid grid-cols-2 gap-8 items-start">
                     <div>
-                        <h3 className="font-bold mb-2 uppercase text-xs tracking-wider text-muted-foreground">Payment & Logistics</h3>
+                        <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Payment & Logistics</h3>
                         <div className="text-muted-foreground space-y-1">
                              <div className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
@@ -390,7 +416,7 @@ export default function PriceQuotationForm() {
                         </div>
                     </div>
                      <div>
-                        <h3 className="font-bold mb-2 uppercase text-xs tracking-wider text-muted-foreground">Bank/Payment Details:</h3>
+                        <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Bank/Payment Details:</h3>
                         <Textarea value={bankDetails} onChange={e => setBankDetails(e.target.value)} rows={3} className="bg-muted/50 border-none p-2 leading-relaxed" />
                     </div>
                 </div>
