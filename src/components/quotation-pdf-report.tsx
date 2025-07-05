@@ -1,25 +1,11 @@
 'use client';
 
-import type { QuotationItem } from '@/types';
+import type { QuotationData } from '@/types';
 
 interface QuotationPdfReportProps {
-  logo: string | null;
-  quotationRef: string;
-  date: string;
-  validUntil: string;
-  clientInfo: { toName: string; toAddress: string; };
-  myInfo: { fromName: string; fromAddress: string; };
-  productFormat: string;
-  productOrigin: string;
-  items: QuotationItem[];
-  currency: string;
-  shippingCost: number | string;
-  shippingCarrier: string;
-  bankDetails: string;
+  data: QuotationData;
   subtotal: number;
   grandTotal: number;
-  displayCurrency: string;
-  exchangeRate: number | string;
   convertedGrandTotal: number;
 }
 
@@ -29,34 +15,24 @@ const formatCurrency = (value: number, currency: string) => {
 };
 
 export default function QuotationPdfReport({
-    logo,
-    quotationRef,
-    date,
-    validUntil,
-    clientInfo,
-    myInfo,
-    productFormat,
-    productOrigin,
-    items,
-    currency,
-    shippingCost,
-    shippingCarrier,
-    bankDetails,
+    data,
     subtotal,
     grandTotal,
-    displayCurrency,
-    exchangeRate,
 }: QuotationPdfReportProps) {
   
+  const { 
+    logo, quotationRef, date, validUntil, clientInfo, myInfo, 
+    productFormat, productOrigin, items, currency, shippingCost, 
+    shippingCarrier, bankDetails, displayCurrency, exchangeRate 
+  } = data;
+    
   const finalCurrency = displayCurrency || currency;
   const performConversion = currency !== finalCurrency && finalCurrency;
-  // Ensure we don't divide by zero if user enters 0 or blank
   const conversionRate = performConversion ? (Number(exchangeRate) || 1) : 1;
 
   const getConvertedValue = (value: number | string) => {
     const numericValue = Number(value) || 0;
-    if (performConversion) {
-        // use division for conversion
+    if (performConversion && conversionRate !== 0) {
         return numericValue / conversionRate;
     }
     return numericValue;

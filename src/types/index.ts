@@ -75,3 +75,28 @@ export const quotationItemSchema = z.object({
   price: z.union([z.string(), z.number()]),
 });
 export type QuotationItem = z.infer<typeof quotationItemSchema>;
+
+export const quotationDataSchema = z.object({
+  logo: z.string().nullable().optional(),
+  quotationRef: z.string(),
+  date: z.string(),
+  validUntil: z.string(),
+  clientInfo: z.object({
+    toName: z.string(),
+    toAddress: z.string(),
+  }),
+  myInfo: z.object({
+    fromName: z.string(),
+    fromAddress: z.string(),
+  }),
+  productFormat: z.string(),
+  productOrigin: z.string(),
+  items: z.array(quotationItemSchema),
+  shippingCost: z.union([z.string(), z.number()]),
+  shippingCarrier: z.string(),
+  currency: z.string(),
+  displayCurrency: z.string(),
+  exchangeRate: z.union([z.string(), z.number()]),
+  bankDetails: z.string(),
+});
+export type QuotationData = z.infer<typeof quotationDataSchema>;
