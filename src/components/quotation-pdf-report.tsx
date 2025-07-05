@@ -121,7 +121,7 @@ export default function QuotationPdfReport({
         <div className="flex-grow" style={{ minHeight: '100px' }}></div>
 
         <footer className="mt-auto pt-8 text-xs border-t border-gray-200 text-gray-500">
-            <div className="grid grid-cols-2 gap-8">
+            <div className="grid grid-cols-2 gap-8 items-start">
                 <div>
                     <h3 className="font-semibold mb-2 text-gray-700">Payment & Logistics</h3>
                     <ul className="list-disc list-inside space-y-1">

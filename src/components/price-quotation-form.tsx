@@ -73,12 +73,12 @@ export default function PriceQuotationForm() {
     }
   };
   
-  const handleClientInfoChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleClientInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setClientInfo(prev => ({...prev, [name]: value}));
   };
 
-  const handleMyInfoChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleMyInfoChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setMyInfo(prev => ({...prev, [name]: value}));
   };
@@ -122,6 +122,7 @@ export default function PriceQuotationForm() {
   }, [subtotal, shippingCost]);
 
   const formatCurrency = (value: number) => {
+    if (isNaN(value)) value = 0;
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   };
   
@@ -292,7 +293,7 @@ export default function PriceQuotationForm() {
             <div className="flex-grow" style={{ minHeight: '100px' }}></div>
 
             <footer className="mt-auto pt-8 text-sm border-t">
-                <div className="grid grid-cols-2 gap-8">
+                <div className="grid grid-cols-2 gap-8 items-start">
                     <div>
                         <h3 className="font-semibold mb-2">Payment & Logistics</h3>
                         <ul className="list-disc list-inside text-muted-foreground space-y-1">
@@ -302,8 +303,8 @@ export default function PriceQuotationForm() {
                         </ul>
                     </div>
                      <div>
-                        <Label className="font-semibold text-foreground">Bank/Payment Details:</Label>
-                        <Textarea value={bankDetails} onChange={e => setBankDetails(e.target.value)} rows={3} className="mt-1 bg-muted/50 border-none" />
+                        <h3 className="font-semibold mb-2">Bank/Payment Details:</h3>
+                        <Textarea value={bankDetails} onChange={e => setBankDetails(e.target.value)} rows={3} className="bg-muted/50 border-none" />
                     </div>
                 </div>
                 <p className="mt-8 text-center text-muted-foreground italic">
