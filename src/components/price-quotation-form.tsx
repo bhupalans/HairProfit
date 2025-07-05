@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { QuotationItem } from '@/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { cn } from '@/lib/utils';
 
 const initialItem: QuotationItem = {
   id: crypto.randomUUID(),
@@ -28,6 +29,11 @@ const initialItem: QuotationItem = {
   quantity: 10,
   price: 55,
 };
+
+// This input is styled to be subtle and part of the document flow.
+const QuotationInput = (props: React.ComponentProps<typeof Input>) => (
+    <Input {...props} className="bg-muted/50 border-none h-auto py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0" />
+);
 
 export default function PriceQuotationForm() {
   const [logo, setLogo] = useState<string | null>(null);
@@ -65,6 +71,16 @@ export default function PriceQuotationForm() {
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const handleClientInfoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setClientInfo(prev => ({...prev, [name]: value}));
+  };
+
+  const handleMyInfoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setMyInfo(prev => ({...prev, [name]: value}));
   };
 
   const handleItemChange = (id: string, field: keyof Omit<QuotationItem, 'id'>, value: string | number) => {
@@ -152,12 +168,6 @@ export default function PriceQuotationForm() {
     }
   };
 
-  // This input is styled to be subtle and part of the document flow.
-  const QuotationInput = (props: React.ComponentProps<typeof Input>) => (
-    <Input {...props} className="bg-muted/50 border-none h-auto py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0" />
-  );
-
-
   return (
     <div className="bg-muted min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-body">
       <div className="max-w-5xl mx-auto">
@@ -182,7 +192,13 @@ export default function PriceQuotationForm() {
             <header className="flex justify-between items-start pb-8 border-b">
                 <div className="w-1/3">
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                    <button onClick={() => fileInputRef.current?.click()} className="w-48 h-24 border-2 border-dashed rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "w-48 h-24 rounded-lg flex items-center justify-center hover:bg-muted/50 transition-colors",
+                        !logo && "border-2 border-dashed"
+                      )}
+                    >
                         {logo ? <img src={logo} alt="Business Logo" className="max-h-full max-w-full object-contain" /> : <span className="text-muted-foreground text-sm flex items-center gap-2"><Upload className="h-4 w-4" /> Upload Logo</span>}
                     </button>
                 </div>
@@ -206,15 +222,15 @@ export default function PriceQuotationForm() {
                 <div>
                     <h3 className="font-semibold text-muted-foreground">To:</h3>
                     <div className="mt-2 space-y-2 text-sm">
-                        <QuotationInput placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={e => setClientInfo(prev => ({ ...prev, toName: e.target.value }))} />
-                        <QuotationInput placeholder="Email / Phone" value={clientInfo.toContact} onChange={e => setClientInfo(prev => ({ ...prev, toContact: e.target.value }))} />
+                        <QuotationInput name="toName" placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={handleClientInfoChange} />
+                        <QuotationInput name="toContact" placeholder="Email / Phone" value={clientInfo.toContact} onChange={handleClientInfoChange} />
                     </div>
                 </div>
                 <div className="text-right">
                     <h3 className="font-semibold text-muted-foreground">From:</h3>
                      <div className="mt-2 space-y-2 text-sm">
-                        <QuotationInput placeholder="Your Business Name" value={myInfo.fromName} onChange={e => setMyInfo(prev => ({ ...prev, fromName: e.target.value }))} className="text-right" />
-                        <QuotationInput placeholder="Your Email / Phone" value={myInfo.fromContact} onChange={e => setMyInfo(prev => ({ ...prev, fromContact: e.target.value }))} className="text-right" />
+                        <QuotationInput name="fromName" placeholder="Your Business Name" value={myInfo.fromName} onChange={handleMyInfoChange} className="text-right" />
+                        <QuotationInput name="fromContact" placeholder="Your Email / Phone" value={myInfo.fromContact} onChange={handleMyInfoChange} className="text-right" />
                     </div>
                 </div>
             </section>
