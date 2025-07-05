@@ -300,11 +300,20 @@ export default function PriceQuotationForm() {
                 <div className="grid grid-cols-2 gap-8 items-start">
                     <div>
                         <h3 className="font-semibold mb-2">Payment & Logistics</h3>
-                        <ul className="list-disc list-outside pl-4 text-muted-foreground space-y-1">
-                            <li><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</li>
-                            <li><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</li>
-                            <li><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</li>
-                        </ul>
+                        <div className="text-muted-foreground space-y-1">
+                            <div className="flex items-start">
+                                <span className="mr-2 mt-1 leading-none text-primary">•</span>
+                                <p className="flex-1"><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</p>
+                            </div>
+                            <div className="flex items-start">
+                                <span className="mr-2 mt-1 leading-none text-primary">•</span>
+                                <p className="flex-1"><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</p>
+                            </div>
+                            <div className="flex items-start">
+                                <span className="mr-2 mt-1 leading-none text-primary">•</span>
+                                <p className="flex-1"><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</p>
+                            </div>
+                        </div>
                     </div>
                      <div>
                         <h3 className="font-semibold mb-2">Bank/Payment Details:</h3>
