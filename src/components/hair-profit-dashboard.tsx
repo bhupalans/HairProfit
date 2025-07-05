@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { Sparkles, FileDown, FileUp, Loader2, BarChart2, Users } from 'lucide-react';
+import { Sparkles, FileDown, FileUp, Loader2, BarChart2, Users, FileText } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -372,6 +372,11 @@ export default function HairProfitDashboard() {
              <Button asChild>
               <Link href="/buyer-analysis">
                 <Users className="mr-2 h-4 w-4" /> Buyer Analysis
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/price-quotation">
+                <FileText className="mr-2 h-4 w-4" /> Price Quotation
               </Link>
             </Button>
           </div>
