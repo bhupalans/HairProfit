@@ -46,7 +46,18 @@ export default function QuotationPdfReport({
 }: QuotationPdfReportProps) {
   
   const finalCurrency = displayCurrency || currency;
-  const rate = currency === finalCurrency ? 1 : (Number(exchangeRate) || 1);
+  const performConversion = currency !== finalCurrency && finalCurrency;
+  // Ensure we don't divide by zero if user enters 0 or blank
+  const conversionRate = performConversion ? (Number(exchangeRate) || 1) : 1;
+
+  const getConvertedValue = (value: number | string) => {
+    const numericValue = Number(value) || 0;
+    if (performConversion) {
+        // use division for conversion
+        return numericValue / conversionRate;
+    }
+    return numericValue;
+  }
 
   return (
     <div className="bg-white text-black p-12 font-sans" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
@@ -58,13 +69,13 @@ export default function QuotationPdfReport({
             <div className="text-right space-y-2">
                 <h2 className="text-4xl font-bold uppercase" style={{color: 'hsl(var(--primary))'}}>QUOTATION</h2>
                 <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1 text-sm text-right">
-                    <span className="font-bold text-gray-700">Ref:</span>
+                    <span className="font-bold text-gray-700 text-base">Ref:</span>
                     <span className="text-left font-normal">{quotationRef}</span>
                 
-                    <span className="font-bold text-gray-700">Date:</span>
+                    <span className="font-bold text-gray-700 text-base">Date:</span>
                     <span className="text-left font-normal">{date}</span>
                 
-                    <span className="font-bold text-gray-700">Valid Until:</span>
+                    <span className="font-bold text-gray-700 text-base">Valid Until:</span>
                     <span className="text-left font-normal">{validUntil}</span>
                 </div>
             </div>
@@ -72,14 +83,14 @@ export default function QuotationPdfReport({
 
         <section className="grid grid-cols-2 mt-8 text-sm">
             <div>
-                <h3 className="font-semibold text-gray-500 mb-2">To:</h3>
+                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-2">To:</h3>
                 <div className="space-y-1 pr-4">
                     <p className="font-semibold">{clientInfo.toName}</p>
                     <p className="whitespace-pre-wrap">{clientInfo.toAddress}</p>
                 </div>
             </div>
             <div className="text-right">
-                <h3 className="font-semibold text-gray-500 mb-2">From:</h3>
+                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-2">From:</h3>
                 <div className="space-y-1 pl-4">
                     <p className="font-semibold">{myInfo.fromName}</p>
                     <p className="whitespace-pre-wrap">{myInfo.fromAddress}</p>
@@ -104,26 +115,26 @@ export default function QuotationPdfReport({
                         <div className="w-[15%]">{item.length}</div>
                         <div className="w-[15%]">{item.origin}</div>
                         <div className="w-[10%] text-right">{item.quantity}</div>
-                        <div className="w-[15%] text-right">{formatCurrency((Number(item.price) || 0) * rate, finalCurrency)}</div>
-                        <div className="w-[20%] text-right font-semibold">{formatCurrency(((Number(item.quantity) || 0) * (Number(item.price) || 0)) * rate, finalCurrency)}</div>
+                        <div className="w-[15%] text-right">{formatCurrency(getConvertedValue(item.price), finalCurrency)}</div>
+                        <div className="w-[20%] text-right font-semibold">{formatCurrency(getConvertedValue(Number(item.quantity) * Number(item.price)), finalCurrency)}</div>
                     </div>
                 ))}
             </div>
         </section>
         
         <section className="flex justify-end mt-4">
-            <div className="w-1/2 space-y-2 text-sm">
-                    <div className="inline-grid grid-cols-[1fr_auto] items-baseline w-full">
+             <div className="w-1/2 space-y-2 text-sm">
+                    <div className="grid grid-cols-[1fr_auto] items-baseline w-full">
                         <span className="text-gray-600">Subtotal</span>
-                        <span className="font-semibold text-right">{formatCurrency(subtotal * rate, finalCurrency)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(getConvertedValue(subtotal), finalCurrency)}</span>
                     </div>
-                    <div className="inline-grid grid-cols-[1fr_auto] items-baseline w-full">
+                    <div className="grid grid-cols-[1fr_auto] items-baseline w-full">
                         <span className="text-gray-600">Shipping via {shippingCarrier}</span>
-                        <span className="font-semibold text-right">{formatCurrency((Number(shippingCost) || 0) * rate, finalCurrency)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(getConvertedValue(shippingCost), finalCurrency)}</span>
                     </div>
                     <div className="border-t border-gray-300 mt-2 pt-2 grid grid-cols-2 text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
                         <span>Grand Total ({finalCurrency})</span>
-                        <span className="text-right">{formatCurrency(grandTotal * rate, finalCurrency)}</span>
+                        <span className="text-right">{formatCurrency(getConvertedValue(grandTotal), finalCurrency)}</span>
                     </div>
             </div>
         </section>

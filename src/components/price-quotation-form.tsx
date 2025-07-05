@@ -143,7 +143,9 @@ export default function PriceQuotationForm() {
     if (currency === displayCurrency) {
       return grandTotal;
     }
-    return grandTotal * (Number(exchangeRate) || 1);
+    const rate = Number(exchangeRate) || 1;
+    if (rate === 0) return 0;
+    return grandTotal / rate;
   }, [grandTotal, currency, displayCurrency, exchangeRate]);
 
   const formatCurrency = (value: number, curr: string) => {
@@ -234,13 +236,13 @@ export default function PriceQuotationForm() {
                 <div className="text-right space-y-2">
                     <h2 className="text-4xl font-bold uppercase text-primary">Quotation</h2>
                     <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-right text-sm font-semibold">
-                        <Label htmlFor="quotationRef" className="font-bold">Ref:</Label>
+                        <Label htmlFor="quotationRef" className="font-bold text-base">Ref:</Label>
                         <QuotationInput id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40 text-left font-normal" />
                     
-                        <Label htmlFor="date" className="font-bold">Date:</Label>
+                        <Label htmlFor="date" className="font-bold text-base">Date:</Label>
                         <QuotationInput id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40 text-left font-normal" />
                     
-                        <Label htmlFor="validUntil" className="font-bold">Valid Until:</Label>
+                        <Label htmlFor="validUntil" className="font-bold text-base">Valid Until:</Label>
                         <QuotationInput id="validUntil" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="w-40 text-left font-normal" />
                     </div>
                 </div>
@@ -248,14 +250,14 @@ export default function PriceQuotationForm() {
 
             <section className="grid grid-cols-2 mt-8">
                 <div>
-                    <h3 className="font-semibold text-muted-foreground mb-2">To:</h3>
+                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">To:</h3>
                     <div className="space-y-2 text-sm pr-4">
                         <QuotationInput name="toName" placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={handleClientInfoChange} />
                         <QuotationTextarea name="toAddress" placeholder="Buyer Address" value={clientInfo.toAddress} onChange={handleClientInfoChange} />
                     </div>
                 </div>
                 <div className="text-right">
-                    <h3 className="font-semibold text-muted-foreground mb-2">From:</h3>
+                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">From:</h3>
                      <div className="space-y-2 text-sm pl-4">
                         <QuotationInput name="fromName" placeholder="Your Business Name" value={myInfo.fromName} onChange={handleMyInfoChange} className="text-right" />
                         <QuotationTextarea name="fromAddress" placeholder="Your Business Address" value={myInfo.fromAddress} onChange={handleMyInfoChange} className="text-right" />
@@ -328,7 +330,7 @@ export default function PriceQuotationForm() {
 
                         {isConversionActive && (
                             <>
-                                <Label htmlFor="exchangeRate" className="font-medium text-muted-foreground">Rate (1 {currency} to {displayCurrency})</Label>
+                                <Label htmlFor="exchangeRate" className="font-medium text-muted-foreground">Rate (1 {displayCurrency} = ? {currency})</Label>
                                 <QuotationInput id="exchangeRate" type="number" value={exchangeRate} onChange={e => setExchangeRate(e.target.value === '' ? '' : Number(e.target.value))} className="w-24 text-right justify-self-end" />
                             </>
                         )}
@@ -361,7 +363,7 @@ export default function PriceQuotationForm() {
                     <div>
                         <h3 className="font-bold mb-2 uppercase text-xs tracking-wider text-muted-foreground">Payment & Logistics</h3>
                         <div className="text-muted-foreground space-y-1">
-                            <div className="flex items-start">
+                             <div className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
                                 <p className="flex-1"><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</p>
                             </div>
