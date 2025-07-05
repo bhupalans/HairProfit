@@ -420,6 +420,51 @@ export default function PriceQuotationForm() {
                 </div>
             </section>
 
+            <section className="mt-8">
+                <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Currency & Exchange Rate</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-3 rounded-lg items-end">
+                    <div>
+                        <Label htmlFor="pricingCurrency" className="text-sm font-medium">Pricing Currency</Label>
+                        <Select value={data.currency} onValueChange={(value) => handleFieldChange('currency', value)}>
+                            <SelectTrigger id="pricingCurrency" className="bg-white focus:ring-primary focus-visible:ring-1 focus-visible:ring-offset-0">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="INR">INR</SelectItem>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                                <SelectItem value="GBP">GBP</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="displayCurrency" className="text-sm font-medium">Display Currency</Label>
+                        <Select value={data.displayCurrency} onValueChange={(value) => handleFieldChange('displayCurrency', value)}>
+                            <SelectTrigger id="displayCurrency" className="bg-white focus:ring-primary focus-visible:ring-1 focus-visible:ring-offset-0">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="USD">USD</SelectItem>
+                                <SelectItem value="INR">INR</SelectItem>
+                                <SelectItem value="EUR">EUR</SelectItem>
+                                <SelectItem value="GBP">GBP</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {isConversionActive && (
+                        <div>
+                            <Label htmlFor="exchangeRate" className="text-sm font-medium">Rate (1 {data.displayCurrency} = ? {data.currency})</Label>
+                            <div className="flex items-center gap-2">
+                                <QuotationInput id="exchangeRate" type="number" value={data.exchangeRate} onChange={e => handleFieldChange('exchangeRate', e.target.value === '' ? '' : Number(e.target.value))} className="bg-white text-right" />
+                                <Button size="icon" variant="ghost" onClick={handleFetchRate} disabled={isFetchingRate} className="h-9 w-9 flex-shrink-0">
+                                    {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
             <section className="mt-6">
                 <div className="rounded-lg overflow-hidden">
                     <Table>
@@ -452,46 +497,7 @@ export default function PriceQuotationForm() {
             
             <section className="flex justify-end mt-8">
                  <div className="w-1/2 space-y-2 text-sm">
-                    <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 w-full">
-                        <span className="font-medium text-muted-foreground">Pricing Currency</span>
-                        <Select value={data.currency} onValueChange={(value) => handleFieldChange('currency', value)}>
-                          <SelectTrigger className="bg-muted/50 border-none h-auto py-1 px-2 focus:ring-1 focus:ring-primary focus:ring-offset-0 justify-end">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="INR">INR</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                            <SelectItem value="GBP">GBP</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        <span className="font-medium text-muted-foreground">Display Currency</span>
-                        <Select value={data.displayCurrency} onValueChange={(value) => handleFieldChange('displayCurrency', value)}>
-                          <SelectTrigger className="bg-muted/50 border-none h-auto py-1 px-2 focus:ring-1 focus:ring-primary focus:ring-offset-0 justify-end">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="INR">INR</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                            <SelectItem value="GBP">GBP</SelectItem>
-                          </SelectContent>
-                        </Select>
-
-                        {isConversionActive && (
-                            <>
-                                <Label htmlFor="exchangeRate" className="font-medium text-muted-foreground">Rate (1 {data.displayCurrency} = ? {data.currency})</Label>
-                                <div className="flex items-center gap-2 justify-self-end">
-                                    <QuotationInput id="exchangeRate" type="number" value={data.exchangeRate} onChange={e => handleFieldChange('exchangeRate', e.target.value === '' ? '' : Number(e.target.value))} className="w-24 text-right" />
-                                    <Button size="icon" variant="ghost" onClick={handleFetchRate} disabled={isFetchingRate} className="h-7 w-7">
-                                        {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                    </Button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                     <div className="border-t pt-2 mt-2 grid grid-cols-[1fr_auto] items-baseline">
+                     <div className="grid grid-cols-[1fr_auto] items-baseline">
                         <span className="font-medium text-muted-foreground">Subtotal</span>
                         <span className="font-semibold text-right">{formatCurrency(subtotal, data.currency)}</span>
                      </div>
