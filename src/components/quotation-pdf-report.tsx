@@ -45,15 +45,15 @@ export default function QuotationPdfReport({
 
             <div className="text-right space-y-2">
                 <h2 className="text-4xl font-bold uppercase" style={{color: 'hsl(var(--primary))'}}>QUOTATION</h2>
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 text-sm">
+                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 text-sm text-right">
                     <span className="font-semibold text-gray-600">Ref:</span>
-                    <span>{quotationRef}</span>
+                    <span className="text-left">{quotationRef}</span>
                 
                     <span className="font-semibold text-gray-600">Date:</span>
-                    <span>{date}</span>
+                    <span className="text-left">{date}</span>
                 
                     <span className="font-semibold text-gray-600">Valid Until:</span>
-                    <span>{validUntil}</span>
+                    <span className="text-left">{validUntil}</span>
                 </div>
             </div>
         </header>
@@ -70,14 +70,14 @@ export default function QuotationPdfReport({
                 <h3 className="font-semibold text-gray-500">From:</h3>
                     <div className="mt-2 space-y-1">
                     <p>{myInfo.fromName}</p>
-                    <p>{myInfo.fromContact}</p>
+                    <p>{myInfo.toContact}</p>
                 </div>
             </div>
         </section>
 
         <section className="mt-10">
             {/* Table Header */}
-            <div className="flex bg-gray-50 rounded-md p-2 text-xs font-semibold text-gray-600">
+            <div className="flex bg-gray-50 rounded-t-md p-2 text-xs font-semibold text-gray-600">
                 <div className="w-[25%]">Format</div>
                 <div className="w-[15%]">Length</div>
                 <div className="w-[15%]">Origin</div>
@@ -87,9 +87,9 @@ export default function QuotationPdfReport({
             </div>
             
             {/* Table Body */}
-            <div className="mt-2 space-y-2 text-sm">
+            <div className="mt-2 space-y-2 text-sm border-b border-gray-100">
                 {items.map(item => (
-                    <div key={item.id} className="flex items-center p-2 border-b border-gray-100">
+                    <div key={item.id} className="flex items-center p-2">
                         <div className="w-[25%]">{item.format}</div>
                         <div className="w-[15%]">{item.length}</div>
                         <div className="w-[15%]">{item.origin}</div>
@@ -101,7 +101,7 @@ export default function QuotationPdfReport({
             </div>
         </section>
         
-        <section className="flex justify-end mt-8">
+        <section className="flex justify-end mt-4">
             <div className="w-1/2 space-y-3 text-sm">
                     <div className="flex justify-between items-center">
                     <span className="text-gray-600">Subtotal</span>
@@ -111,7 +111,7 @@ export default function QuotationPdfReport({
                     <span className="text-gray-600">Shipping via {shippingCarrier}</span>
                     <span className="font-semibold">{formatCurrency(Number(shippingCost) || 0)}</span>
                     </div>
-                    <div className="border-t border-gray-200 mt-2 pt-2 flex justify-between items-center text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
+                    <div className="border-t border-gray-300 mt-2 pt-2 flex justify-between items-center text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
                     <span>Grand Total</span>
                     <span>{formatCurrency(grandTotal)}</span>
                     </div>
@@ -124,7 +124,7 @@ export default function QuotationPdfReport({
             <div className="grid grid-cols-2 gap-8 items-start">
                 <div>
                     <h3 className="font-semibold mb-2 text-gray-700">Payment & Logistics</h3>
-                    <ul className="list-disc list-inside space-y-1">
+                    <ul className="list-disc list-outside pl-5 space-y-1">
                         <li><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</li>
                         <li><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</li>
                         <li><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</li>
@@ -132,7 +132,7 @@ export default function QuotationPdfReport({
                 </div>
                     <div>
                     <h3 className="font-semibold mb-2 text-gray-700">Bank/Payment Details:</h3>
-                    <div className="whitespace-pre-wrap">{bankDetails}</div>
+                    <div className="whitespace-pre-wrap leading-relaxed">{bankDetails}</div>
                 </div>
             </div>
             <p className="mt-8 text-center italic">
