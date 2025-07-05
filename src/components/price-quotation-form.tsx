@@ -31,9 +31,7 @@ import QuotationPdfReport from './quotation-pdf-report';
 
 const initialItem: QuotationItem = {
   id: crypto.randomUUID(),
-  format: 'Rubber Band',
   length: '16 inches',
-  origin: 'Indian',
   quantity: 10,
   price: 55,
 };
@@ -59,9 +57,12 @@ export default function PriceQuotationForm() {
   const [clientInfo, setClientInfo] = useState({ toName: '', toAddress: '' });
   const [myInfo, setMyInfo] = useState({ fromName: '', fromAddress: '' });
 
+  const [productFormat, setProductFormat] = useState('Rubber Band');
+  const [productOrigin, setProductOrigin] = useState('Indian');
+
   const [items, setItems] = useState<QuotationItem[]>([
     initialItem,
-    { id: crypto.randomUUID(), format: 'Rubber Band', length: '18 inches', origin: 'Indian', quantity: 20, price: 60 }
+    { id: crypto.randomUUID(), length: '18 inches', quantity: 20, price: 60 }
   ]);
   const [shippingCost, setShippingCost] = useState<number | string>(50);
   const [shippingCarrier, setShippingCarrier] = useState('DHL Express');
@@ -114,9 +115,7 @@ export default function PriceQuotationForm() {
       ...items,
       {
         id: crypto.randomUUID(),
-        format: '',
         length: '',
-        origin: '',
         quantity: '',
         price: '',
       },
@@ -143,6 +142,9 @@ export default function PriceQuotationForm() {
     if (currency === displayCurrency) {
       return grandTotal;
     }
+    // Rate is how many pricing currency units are in 1 display currency unit
+    // E.g., if pricing is INR and display is USD, rate is 83.5 (1 USD = 83.5 INR)
+    // To convert from INR to USD, we divide.
     const rate = Number(exchangeRate) || 1;
     if (rate === 0) return 0;
     return grandTotal / rate;
@@ -264,15 +266,27 @@ export default function PriceQuotationForm() {
                     </div>
                 </div>
             </section>
+            
+            <section className="mt-8">
+                <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Details</h3>
+                <div className="grid grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg">
+                    <div>
+                        <Label htmlFor="productFormat" className="text-sm font-medium">Format</Label>
+                        <QuotationInput id="productFormat" value={productFormat} onChange={e => setProductFormat(e.target.value)} />
+                    </div>
+                    <div>
+                        <Label htmlFor="productOrigin" className="text-sm font-medium">Origin</Label>
+                        <QuotationInput id="productOrigin" value={productOrigin} onChange={e => setProductOrigin(e.target.value)} />
+                    </div>
+                </div>
+            </section>
 
-            <section className="mt-10">
+            <section className="mt-6">
                 <div className="rounded-lg overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50">
-                                <TableHead className="w-[25%] p-2 font-bold text-gray-700">Format</TableHead>
-                                <TableHead className="p-2 font-bold text-gray-700">Length</TableHead>
-                                <TableHead className="p-2 font-bold text-gray-700">Origin</TableHead>
+                                <TableHead className="w-[50%] p-2 font-bold text-gray-700">Length / Description</TableHead>
                                 <TableHead className="p-2 text-right font-bold text-gray-700">Qty</TableHead>
                                 <TableHead className="p-2 text-right font-bold text-gray-700">Price ({currency})</TableHead>
                                 <TableHead className="text-right p-2 font-bold text-gray-700">Total</TableHead>
@@ -282,9 +296,7 @@ export default function PriceQuotationForm() {
                         <TableBody>
                             {items.map(item => (
                                 <TableRow key={item.id} className="border-b-0">
-                                    <TableCell className="p-1"><QuotationInput value={item.format} onChange={e => handleItemChange(item.id, 'format', e.target.value)} placeholder="Format" /></TableCell>
-                                    <TableCell className="p-1"><QuotationInput value={item.length} onChange={e => handleItemChange(item.id, 'length', e.target.value)} placeholder="Length" /></TableCell>
-                                    <TableCell className="p-1"><QuotationInput value={item.origin} onChange={e => handleItemChange(item.id, 'origin', e.target.value)} placeholder="Origin" /></TableCell>
+                                    <TableCell className="p-1"><QuotationInput value={item.length} onChange={e => handleItemChange(item.id, 'length', e.target.value)} placeholder="e.g., 16 inches" /></TableCell>
                                     <TableCell className="p-1"><QuotationInput type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.value)} className="w-20 text-right" /></TableCell>
                                     <TableCell className="p-1"><QuotationInput type="number" value={item.price} onChange={e => handleItemChange(item.id, 'price', e.target.value)} className="w-24 text-right" /></TableCell>
                                     <TableCell className="text-right font-medium p-1">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), currency)}</TableCell>
@@ -356,7 +368,7 @@ export default function PriceQuotationForm() {
                 </div>
             </section>
             
-            <div className="flex-grow" style={{ minHeight: '100px' }}></div>
+            <div className="flex-grow" style={{ minHeight: '50px' }}></div>
 
             <footer className="mt-auto pt-8 text-sm border-t">
                 <div className="grid grid-cols-2 gap-8 items-start">
@@ -397,6 +409,8 @@ export default function PriceQuotationForm() {
               validUntil={validUntil}
               clientInfo={clientInfo}
               myInfo={myInfo}
+              productFormat={productFormat}
+              productOrigin={productOrigin}
               items={items}
               currency={currency}
               shippingCost={shippingCost}

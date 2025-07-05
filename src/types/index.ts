@@ -70,9 +70,7 @@ export type BuyerAnalysisOutput = z.infer<typeof BuyerAnalysisOutputSchema>;
 
 export const quotationItemSchema = z.object({
   id: z.string(),
-  format: z.string(),
   length: z.string(),
-  origin: z.string(),
   quantity: z.union([z.string(), z.number()]),
   price: z.union([z.string(), z.number()]),
 });

@@ -9,6 +9,8 @@ interface QuotationPdfReportProps {
   validUntil: string;
   clientInfo: { toName: string; toAddress: string; };
   myInfo: { fromName: string; fromAddress: string; };
+  productFormat: string;
+  productOrigin: string;
   items: QuotationItem[];
   currency: string;
   shippingCost: number | string;
@@ -33,6 +35,8 @@ export default function QuotationPdfReport({
     validUntil,
     clientInfo,
     myInfo,
+    productFormat,
+    productOrigin,
     items,
     currency,
     shippingCost,
@@ -42,7 +46,6 @@ export default function QuotationPdfReport({
     grandTotal,
     displayCurrency,
     exchangeRate,
-    convertedGrandTotal
 }: QuotationPdfReportProps) {
   
   const finalCurrency = displayCurrency || currency;
@@ -98,12 +101,17 @@ export default function QuotationPdfReport({
             </div>
         </section>
 
-        <section className="mt-10">
+        <section className="mt-8 mb-4">
+            <div className="inline-block bg-gray-50 rounded-md p-2 text-sm">
+                <span className="font-bold text-gray-500">Product: </span>
+                <span className="font-semibold">{productOrigin} Hair - {productFormat}</span>
+            </div>
+        </section>
+
+        <section className="mt-2">
             <div className="flex bg-gray-50 rounded-t-md p-2 text-sm font-bold text-gray-700">
-                <div className="w-[25%]">Format</div>
-                <div className="w-[15%]">Length</div>
-                <div className="w-[15%]">Origin</div>
-                <div className="w-[10%] text-right">Qty</div>
+                <div className="w-[50%]">Length / Description</div>
+                <div className="w-[15%] text-right">Qty</div>
                 <div className="w-[15%] text-right">Price ({finalCurrency})</div>
                 <div className="w-[20%] text-right">Total</div>
             </div>
@@ -111,10 +119,8 @@ export default function QuotationPdfReport({
             <div className="mt-2 space-y-2 text-sm border-b border-gray-100">
                 {items.map(item => (
                     <div key={item.id} className="flex items-center p-2">
-                        <div className="w-[25%]">{item.format}</div>
-                        <div className="w-[15%]">{item.length}</div>
-                        <div className="w-[15%]">{item.origin}</div>
-                        <div className="w-[10%] text-right">{item.quantity}</div>
+                        <div className="w-[50%]">{item.length}</div>
+                        <div className="w-[15%] text-right">{Number(item.quantity) || 0}</div>
                         <div className="w-[15%] text-right">{formatCurrency(getConvertedValue(item.price), finalCurrency)}</div>
                         <div className="w-[20%] text-right font-semibold">{formatCurrency(getConvertedValue(Number(item.quantity) * Number(item.price)), finalCurrency)}</div>
                     </div>
