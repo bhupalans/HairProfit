@@ -33,12 +33,8 @@ export default function QuotationPdfReport({
   const getConvertedValue = (value: number | string) => {
     const numericValue = Number(value) || 0;
     if (performConversion && conversionRate !== 0) {
-      if (currency === 'INR' && finalCurrency === 'USD') {
-        return numericValue / conversionRate;
-      }
-      if (currency === 'USD' && finalCurrency === 'INR') {
-        return numericValue * conversionRate;
-      }
+      // The rate is defined as "1 Display Currency = X Pricing Currency".
+      // To convert a value from Pricing to Display, we divide by the rate.
       return numericValue / conversionRate;
     }
     return numericValue;

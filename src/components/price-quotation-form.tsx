@@ -193,17 +193,8 @@ export default function PriceQuotationForm() {
     if (data.currency === data.displayCurrency || rate === 0) {
       return grandTotal;
     }
-    
-    if (data.currency === 'INR' && data.displayCurrency === 'USD') {
-        return grandTotal / rate;
-    }
-    
-    if (data.currency === 'USD' && data.displayCurrency === 'INR') {
-        return grandTotal * rate;
-    }
-    
+    // With the label "1 Display = ? Pricing", we always divide the pricing total by the rate.
     return grandTotal / rate;
-
   }, [grandTotal, data.currency, data.displayCurrency, data.exchangeRate]);
 
 
@@ -316,12 +307,12 @@ export default function PriceQuotationForm() {
     setIsFetchingRate(true);
     toast({ title: 'Fetching live exchange rate...'});
 
-    const response = await fetchExchangeRate({ baseCurrency: data.currency, targetCurrency: data.displayCurrency });
+    const response = await fetchExchangeRate({ baseCurrency: data.displayCurrency, targetCurrency: data.currency });
 
     setIsFetchingRate(false);
     if (response.success && response.data) {
-        handleFieldChange('exchangeRate', response.data.rate.toFixed(2));
-        toast({ title: 'Success', description: `Exchange rate updated to ${response.data.rate.toFixed(2)}`});
+        handleFieldChange('exchangeRate', response.data.rate.toFixed(4));
+        toast({ title: 'Success', description: `Exchange rate updated to ${response.data.rate.toFixed(4)}`});
     } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch the exchange rate.' });
     }
