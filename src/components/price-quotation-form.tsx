@@ -31,7 +31,6 @@ const initialItem: QuotationItem = {
   price: 55,
 };
 
-// This input is styled to be subtle and part of the document flow.
 const QuotationInput = (props: React.ComponentProps<typeof Input>) => (
     <Input {...props} className="bg-muted/50 border-none h-auto py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0" />
 );
@@ -84,7 +83,7 @@ export default function PriceQuotationForm() {
     setMyInfo(prev => ({...prev, [name]: value}));
   };
 
-  const handleItemChange = (id: string, field: keyof Omit<QuotationItem, 'id'>, value: string | number) => {
+  const handleItemChange = (id: string, field: keyof Omit<QuotationItem, 'id'>, value: string) => {
     setItems(prevItems =>
       prevItems.map(item =>
         item.id === id ? { ...item, [field]: value } : item
@@ -271,21 +270,21 @@ export default function PriceQuotationForm() {
             </section>
             
             <section className="flex justify-end mt-8">
-                <div className="w-1/2 space-y-3">
-                     <div className="flex justify-between items-center">
+                 <div className="w-[55%] space-y-2">
+                     <div className="grid grid-cols-[1fr_auto] items-center">
                         <span className="font-medium">Subtotal</span>
-                        <span className="font-medium">{formatCurrency(subtotal)}</span>
+                        <span className="font-medium text-right">{formatCurrency(subtotal)}</span>
                      </div>
-                     <div className="flex justify-between items-center gap-2">
+                     <div className="grid grid-cols-[auto_1fr] items-center gap-2">
                         <span className="font-medium">Shipping via</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 justify-end">
                             <QuotationInput value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-28 text-right" />
                             <QuotationInput type="number" value={shippingCost} onChange={e => setShippingCost(e.target.value)} className="w-24 text-right" />
                         </div>
                      </div>
-                     <div className="border-t pt-3 flex justify-between items-center text-xl font-bold text-primary">
+                     <div className="border-t pt-3 mt-3 grid grid-cols-[1fr_auto] items-center text-xl font-bold text-primary">
                         <span>Grand Total</span>
-                        <span>{formatCurrency(grandTotal)}</span>
+                        <span className="text-right">{formatCurrency(grandTotal)}</span>
                      </div>
                 </div>
             </section>
