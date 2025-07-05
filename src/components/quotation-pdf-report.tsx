@@ -47,15 +47,15 @@ export default function QuotationPdfReport({
 
             <div className="text-right space-y-2">
                 <h2 className="text-4xl font-bold uppercase" style={{color: 'hsl(var(--primary))'}}>QUOTATION</h2>
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-sm text-right">
-                    <span className="font-semibold text-gray-700">Ref:</span>
-                    <span className="text-left">{quotationRef}</span>
+                <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1 text-sm text-right font-semibold">
+                    <span className="text-gray-700">Ref:</span>
+                    <span className="text-left font-normal">{quotationRef}</span>
                 
-                    <span className="font-semibold text-gray-700">Date:</span>
-                    <span className="text-left">{date}</span>
+                    <span className="text-gray-700">Date:</span>
+                    <span className="text-left font-normal">{date}</span>
                 
-                    <span className="font-semibold text-gray-700">Valid Until:</span>
-                    <span className="text-left">{validUntil}</span>
+                    <span className="text-gray-700">Valid Until:</span>
+                    <span className="text-left font-normal">{validUntil}</span>
                 </div>
             </div>
         </header>
@@ -103,11 +103,11 @@ export default function QuotationPdfReport({
         
         <section className="flex justify-end mt-4">
             <div className="w-1/2 space-y-2 text-sm">
-                    <div className="grid grid-cols-2">
+                    <div className="grid grid-cols-[1fr_auto] items-baseline">
                         <span className="text-gray-600">Subtotal</span>
                         <span className="font-semibold text-right">{formatCurrency(subtotal, currency)}</span>
                     </div>
-                    <div className="grid grid-cols-2">
+                    <div className="grid grid-cols-[1fr_auto] items-baseline">
                         <span className="text-gray-600">Shipping via {shippingCarrier}</span>
                         <span className="font-semibold text-right">{formatCurrency(Number(shippingCost) || 0, currency)}</span>
                     </div>
