@@ -45,7 +45,8 @@ export default function QuotationPdfReport({
     convertedGrandTotal
 }: QuotationPdfReportProps) {
   
-  const isConversionActive = currency !== displayCurrency;
+  const finalCurrency = displayCurrency || currency;
+  const rate = currency === finalCurrency ? 1 : (Number(exchangeRate) || 1);
 
   return (
     <div className="bg-white text-black p-12 font-sans" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
@@ -92,7 +93,7 @@ export default function QuotationPdfReport({
                 <div className="w-[15%]">Length</div>
                 <div className="w-[15%]">Origin</div>
                 <div className="w-[10%] text-right">Qty</div>
-                <div className="w-[15%] text-right">Price ({currency})</div>
+                <div className="w-[15%] text-right">Price ({finalCurrency})</div>
                 <div className="w-[20%] text-right">Total</div>
             </div>
             
@@ -103,8 +104,8 @@ export default function QuotationPdfReport({
                         <div className="w-[15%]">{item.length}</div>
                         <div className="w-[15%]">{item.origin}</div>
                         <div className="w-[10%] text-right">{item.quantity}</div>
-                        <div className="w-[15%] text-right">{formatCurrency(Number(item.price) || 0, currency)}</div>
-                        <div className="w-[20%] text-right font-semibold">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), currency)}</div>
+                        <div className="w-[15%] text-right">{formatCurrency((Number(item.price) || 0) * rate, finalCurrency)}</div>
+                        <div className="w-[20%] text-right font-semibold">{formatCurrency(((Number(item.quantity) || 0) * (Number(item.price) || 0)) * rate, finalCurrency)}</div>
                     </div>
                 ))}
             </div>
@@ -114,28 +115,16 @@ export default function QuotationPdfReport({
             <div className="w-1/2 space-y-2 text-sm">
                     <div className="inline-grid grid-cols-[1fr_auto] items-baseline w-full">
                         <span className="text-gray-600">Subtotal</span>
-                        <span className="font-semibold text-right">{formatCurrency(subtotal, currency)}</span>
+                        <span className="font-semibold text-right">{formatCurrency(subtotal * rate, finalCurrency)}</span>
                     </div>
                     <div className="inline-grid grid-cols-[1fr_auto] items-baseline w-full">
                         <span className="text-gray-600">Shipping via {shippingCarrier}</span>
-                        <span className="font-semibold text-right">{formatCurrency(Number(shippingCost) || 0, currency)}</span>
+                        <span className="font-semibold text-right">{formatCurrency((Number(shippingCost) || 0) * rate, finalCurrency)}</span>
                     </div>
                     <div className="border-t border-gray-300 mt-2 pt-2 grid grid-cols-2 text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
-                        <span>Grand Total ({currency})</span>
-                        <span className="text-right">{formatCurrency(grandTotal, currency)}</span>
+                        <span>Grand Total ({finalCurrency})</span>
+                        <span className="text-right">{formatCurrency(grandTotal * rate, finalCurrency)}</span>
                     </div>
-                    {isConversionActive && (
-                      <>
-                        <div className="grid grid-cols-2 items-center text-md font-bold text-gray-600">
-                            <span>Grand Total ({displayCurrency})</span>
-                            <span className="text-right">{formatCurrency(convertedGrandTotal, displayCurrency)}</span>
-                        </div>
-                        <div className="grid grid-cols-2 items-center text-xs text-gray-500">
-                           <span>Exchange Rate</span>
-                           <span className="text-right">1 {currency} = {exchangeRate} {displayCurrency}</span>
-                        </div>
-                      </>
-                    )}
             </div>
         </section>
         
