@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +30,7 @@ import html2canvas from 'html2canvas';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import QuotationPdfReport from './quotation-pdf-report';
+import { fetchExchangeRate } from '@/app/actions';
 
 const initialItem: QuotationItem = {
   id: crypto.randomUUID(),
@@ -82,6 +83,7 @@ const currencySymbols: { [key: string]: string } = {
 export default function PriceQuotationForm() {
   const [data, setData] = useState<QuotationData>(getInitialData());
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
   
   const pdfRef = useRef<HTMLDivElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
@@ -188,8 +190,20 @@ export default function PriceQuotationForm() {
     if (data.currency === data.displayCurrency || rate === 0) {
       return grandTotal;
     }
+    // When converting from pricing currency to display currency, we divide.
+    // e.g., INR to USD: 8350 INR / 83.5 (rate) = 100 USD
+    if (data.currency === 'INR' && data.displayCurrency === 'USD') {
+        return grandTotal / rate;
+    }
+    // e.g., USD to INR: 100 USD * 83.5 (rate) = 8350 INR
+    if (data.currency === 'USD' && data.displayCurrency === 'INR') {
+        return grandTotal * rate;
+    }
+    // Fallback for other conversions
     return grandTotal / rate;
+
   }, [grandTotal, data.currency, data.displayCurrency, data.exchangeRate]);
+
 
   const formatCurrency = (value: number, curr: string) => {
     if (isNaN(value)) value = 0;
@@ -293,6 +307,21 @@ export default function PriceQuotationForm() {
     reader.readAsText(file);
     if (jsonFileInputRef.current) {
         jsonFileInputRef.current.value = '';
+    }
+  };
+
+  const handleFetchRate = async () => {
+    setIsFetchingRate(true);
+    toast({ title: 'Fetching live exchange rate...'});
+
+    const response = await fetchExchangeRate({ baseCurrency: data.displayCurrency, targetCurrency: data.currency });
+
+    setIsFetchingRate(false);
+    if (response.success && response.data) {
+        handleFieldChange('exchangeRate', response.data.rate.toFixed(2));
+        toast({ title: 'Success', description: `Exchange rate updated to ${response.data.rate.toFixed(2)}`});
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch the exchange rate.' });
     }
   };
 
@@ -450,7 +479,12 @@ export default function PriceQuotationForm() {
                         {isConversionActive && (
                             <>
                                 <Label htmlFor="exchangeRate" className="font-medium text-muted-foreground">Rate (1 {data.displayCurrency} = ? {data.currency})</Label>
-                                <QuotationInput id="exchangeRate" type="number" value={data.exchangeRate} onChange={e => handleFieldChange('exchangeRate', e.target.value === '' ? '' : Number(e.target.value))} className="w-24 text-right justify-self-end" />
+                                <div className="flex items-center gap-2 justify-self-end">
+                                    <QuotationInput id="exchangeRate" type="number" value={data.exchangeRate} onChange={e => handleFieldChange('exchangeRate', e.target.value === '' ? '' : Number(e.target.value))} className="w-24 text-right" />
+                                    <Button size="icon" variant="ghost" onClick={handleFetchRate} disabled={isFetchingRate} className="h-7 w-7">
+                                        {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                    </Button>
+                                </div>
                             </>
                         )}
                     </div>

@@ -100,3 +100,14 @@ export const quotationDataSchema = z.object({
   bankDetails: z.string(),
 });
 export type QuotationData = z.infer<typeof quotationDataSchema>;
+
+export const ExchangeRateInputSchema = z.object({
+  baseCurrency: z.string().describe('The currency to convert from (e.g., USD).'),
+  targetCurrency: z.string().describe('The currency to convert to (e.g., INR).'),
+});
+export type ExchangeRateInput = z.infer<typeof ExchangeRateInputSchema>;
+
+export const ExchangeRateOutputSchema = z.object({
+  rate: z.number().describe('The numerical exchange rate.'),
+});
+export type ExchangeRateOutput = z.infer<typeof ExchangeRateOutputSchema>;

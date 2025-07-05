@@ -4,7 +4,8 @@ import {
   runMarketComparison,
 } from '@/ai/flows/market-comparison-flow';
 import { runBuyerAnalysis } from '@/ai/flows/buyer-analysis-flow';
-import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput } from '@/types';
+import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
+import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, ExchangeRateInput, ExchangeRateOutput } from '@/types';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -27,6 +28,19 @@ export async function getBuyerAnalysis(
     return { success: true, data: result };
   } catch (e: any) {
     console.error('Buyer analysis flow failed', e);
+    const errorMessage = e.message || 'An unknown error occurred.';
+    return { success: false, error: errorMessage };
+  }
+}
+
+export async function fetchExchangeRate(
+  input: ExchangeRateInput
+): Promise<{ success: boolean; data?: ExchangeRateOutput; error?: string }> {
+  try {
+    const result = await getExchangeRate(input);
+    return { success: true, data: result };
+  } catch (e: any) {
+    console.error('Exchange rate flow failed', e);
     const errorMessage = e.message || 'An unknown error occurred.';
     return { success: false, error: errorMessage };
   }
