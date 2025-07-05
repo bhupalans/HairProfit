@@ -20,6 +20,7 @@ import type { QuotationItem } from '@/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { cn } from '@/lib/utils';
+import QuotationPdfReport from './quotation-pdf-report';
 
 const initialItem: QuotationItem = {
   id: crypto.randomUUID(),
@@ -188,7 +189,7 @@ export default function PriceQuotationForm() {
             </Button>
         </div>
 
-        <div ref={pdfRef} className="bg-white p-12 shadow-lg" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
+        <div className="bg-white p-12 shadow-lg" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
             <header className="flex justify-between items-start pb-8 border-b">
                 <div className="w-1/3">
                     <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
@@ -310,6 +311,24 @@ export default function PriceQuotationForm() {
                     Thank you for considering {myInfo.fromName || '[Your Business Name]'}! Feel free to reach out for samples or bulk pricing.
                 </p>
             </footer>
+        </div>
+      </div>
+      <div className="absolute -z-10 -left-[9999px] top-0">
+        <div ref={pdfRef}>
+           <QuotationPdfReport
+              logo={logo}
+              quotationRef={quotationRef}
+              date={date}
+              validUntil={validUntil}
+              clientInfo={clientInfo}
+              myInfo={myInfo}
+              items={items}
+              shippingCost={shippingCost}
+              shippingCarrier={shippingCarrier}
+              bankDetails={bankDetails}
+              subtotal={subtotal}
+              grandTotal={grandTotal}
+            />
         </div>
       </div>
     </div>
