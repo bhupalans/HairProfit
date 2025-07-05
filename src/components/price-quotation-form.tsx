@@ -222,14 +222,14 @@ export default function PriceQuotationForm() {
 
                 <div className="text-right space-y-2">
                     <h2 className="text-4xl font-bold uppercase text-primary">Quotation</h2>
-                    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 text-right">
-                        <Label htmlFor="quotationRef" className="font-medium">Ref:</Label>
+                    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-right text-sm">
+                        <Label htmlFor="quotationRef" className="font-semibold">Ref:</Label>
                         <QuotationInput id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40 text-left" />
                     
-                        <Label htmlFor="date" className="font-medium">Date:</Label>
+                        <Label htmlFor="date" className="font-semibold">Date:</Label>
                         <QuotationInput id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40 text-left" />
                     
-                        <Label htmlFor="validUntil" className="font-medium">Valid Until:</Label>
+                        <Label htmlFor="validUntil" className="font-semibold">Valid Until:</Label>
                         <QuotationInput id="validUntil" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="w-40 text-left" />
                     </div>
                 </div>
@@ -257,12 +257,12 @@ export default function PriceQuotationForm() {
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50">
-                                <TableHead className="w-[25%] p-2">Format</TableHead>
-                                <TableHead className="p-2">Length</TableHead>
-                                <TableHead className="p-2">Origin</TableHead>
-                                <TableHead className="p-2 text-right">Qty</TableHead>
-                                <TableHead className="p-2 text-right">Price ({currency})</TableHead>
-                                <TableHead className="text-right p-2">Total</TableHead>
+                                <TableHead className="w-[25%] p-2 font-semibold">Format</TableHead>
+                                <TableHead className="p-2 font-semibold">Length</TableHead>
+                                <TableHead className="p-2 font-semibold">Origin</TableHead>
+                                <TableHead className="p-2 text-right font-semibold">Qty</TableHead>
+                                <TableHead className="p-2 text-right font-semibold">Price ({currency})</TableHead>
+                                <TableHead className="text-right p-2 font-semibold">Total</TableHead>
                                 <TableHead className="w-12 p-0"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -287,11 +287,11 @@ export default function PriceQuotationForm() {
             </section>
             
             <section className="flex justify-end mt-8">
-                 <div className="w-1/2 space-y-3">
+                 <div className="w-1/2 space-y-2 text-sm">
                      <div className="grid grid-cols-2 items-center">
-                        <span className="font-medium">Currency</span>
+                        <span className="font-medium text-muted-foreground">Currency</span>
                         <Select value={currency} onValueChange={setCurrency}>
-                          <SelectTrigger className="bg-muted/50 border-none h-auto py-1 px-2 focus:ring-1 focus:ring-primary focus:ring-offset-0">
+                          <SelectTrigger className="bg-muted/50 border-none h-auto py-1 px-2 focus:ring-1 focus:ring-primary focus:ring-offset-0 justify-end">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -303,17 +303,17 @@ export default function PriceQuotationForm() {
                         </Select>
                      </div>
                      <div className="grid grid-cols-2 items-center">
-                        <span className="font-medium">Subtotal</span>
-                        <span className="font-medium text-right">{formatCurrency(subtotal)}</span>
+                        <span className="font-medium text-muted-foreground">Subtotal</span>
+                        <span className="font-semibold text-right">{formatCurrency(subtotal)}</span>
                      </div>
-                     <div className="grid grid-cols-[auto_1fr] items-center gap-4">
-                        <span className="font-medium whitespace-nowrap">Shipping via</span>
+                     <div className="grid grid-cols-[1fr_auto] items-center">
+                        <span className="font-medium text-muted-foreground">Shipping via</span>
                         <div className="flex items-center gap-2 justify-end">
                             <QuotationInput value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-28 text-right" />
                             <QuotationInput type="number" value={shippingCost} onChange={e => setShippingCost(e.target.value === '' ? '' : Number(e.target.value))} className="w-24 text-right" />
                         </div>
                      </div>
-                     <div className="border-t pt-3 mt-3 grid grid-cols-2 items-center text-xl font-bold text-primary">
+                     <div className="border-t pt-2 mt-2 grid grid-cols-2 items-center text-xl font-bold text-primary">
                         <span>Grand Total</span>
                         <span className="text-right">{formatCurrency(grandTotal)}</span>
                      </div>
@@ -325,7 +325,7 @@ export default function PriceQuotationForm() {
             <footer className="mt-auto pt-8 text-sm border-t">
                 <div className="grid grid-cols-2 gap-8 items-start">
                     <div>
-                        <h3 className="font-semibold mb-2">Payment & Logistics</h3>
+                        <h3 className="font-semibold mb-2 uppercase text-xs tracking-wider text-muted-foreground">Payment & Logistics</h3>
                         <div className="text-muted-foreground space-y-1">
                              <div className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
@@ -342,7 +342,7 @@ export default function PriceQuotationForm() {
                         </div>
                     </div>
                      <div>
-                        <h3 className="font-semibold mb-2">Bank/Payment Details:</h3>
+                        <h3 className="font-semibold mb-2 uppercase text-xs tracking-wider text-muted-foreground">Bank/Payment Details:</h3>
                         <Textarea value={bankDetails} onChange={e => setBankDetails(e.target.value)} rows={3} className="bg-muted/50 border-none p-2 leading-relaxed" />
                     </div>
                 </div>

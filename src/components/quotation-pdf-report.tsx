@@ -47,14 +47,14 @@ export default function QuotationPdfReport({
 
             <div className="text-right space-y-2">
                 <h2 className="text-4xl font-bold uppercase" style={{color: 'hsl(var(--primary))'}}>QUOTATION</h2>
-                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 text-sm text-right">
-                    <span className="font-semibold text-gray-600">Ref:</span>
+                <div className="grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-sm text-right">
+                    <span className="font-semibold text-gray-700">Ref:</span>
                     <span className="text-left">{quotationRef}</span>
                 
-                    <span className="font-semibold text-gray-600">Date:</span>
+                    <span className="font-semibold text-gray-700">Date:</span>
                     <span className="text-left">{date}</span>
                 
-                    <span className="font-semibold text-gray-600">Valid Until:</span>
+                    <span className="font-semibold text-gray-700">Valid Until:</span>
                     <span className="text-left">{validUntil}</span>
                 </div>
             </div>
@@ -78,8 +78,7 @@ export default function QuotationPdfReport({
         </section>
 
         <section className="mt-10">
-            {/* Table Header */}
-            <div className="flex bg-gray-50 rounded-t-md p-2 text-xs font-semibold text-gray-600">
+            <div className="flex bg-gray-50 rounded-t-md p-2 text-sm font-semibold text-gray-700">
                 <div className="w-[25%]">Format</div>
                 <div className="w-[15%]">Length</div>
                 <div className="w-[15%]">Origin</div>
@@ -88,7 +87,6 @@ export default function QuotationPdfReport({
                 <div className="w-[20%] text-right">Total</div>
             </div>
             
-            {/* Table Body */}
             <div className="mt-2 space-y-2 text-sm border-b border-gray-100">
                 {items.map(item => (
                     <div key={item.id} className="flex items-center p-2">
@@ -104,18 +102,18 @@ export default function QuotationPdfReport({
         </section>
         
         <section className="flex justify-end mt-4">
-            <div className="w-1/2 space-y-3 text-sm">
-                    <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold">{formatCurrency(subtotal, currency)}</span>
+            <div className="w-1/2 space-y-2 text-sm">
+                    <div className="grid grid-cols-2">
+                        <span className="text-gray-600">Subtotal</span>
+                        <span className="font-semibold text-right">{formatCurrency(subtotal, currency)}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Shipping via {shippingCarrier}</span>
-                    <span className="font-semibold">{formatCurrency(Number(shippingCost) || 0, currency)}</span>
+                    <div className="grid grid-cols-2">
+                        <span className="text-gray-600">Shipping via {shippingCarrier}</span>
+                        <span className="font-semibold text-right">{formatCurrency(Number(shippingCost) || 0, currency)}</span>
                     </div>
-                    <div className="border-t border-gray-300 mt-2 pt-2 flex justify-between items-center text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
-                    <span>Grand Total</span>
-                    <span>{formatCurrency(grandTotal, currency)}</span>
+                    <div className="border-t border-gray-300 mt-2 pt-2 grid grid-cols-2 text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
+                        <span>Grand Total</span>
+                        <span className="text-right">{formatCurrency(grandTotal, currency)}</span>
                     </div>
             </div>
         </section>
@@ -125,7 +123,7 @@ export default function QuotationPdfReport({
         <footer className="mt-auto pt-8 text-xs border-t border-gray-200 text-gray-500">
             <div className="grid grid-cols-2 gap-8 items-start">
                 <div>
-                    <h3 className="font-semibold mb-2 text-gray-700">Payment & Logistics</h3>
+                    <h3 className="font-semibold uppercase mb-2 text-gray-700 tracking-wider">Payment & Logistics</h3>
                     <div className="space-y-1">
                         <div className="flex items-start">
                             <span className="mr-2 mt-1 leading-none" style={{color: 'hsl(var(--primary))'}}>•</span>
@@ -142,7 +140,7 @@ export default function QuotationPdfReport({
                     </div>
                 </div>
                     <div>
-                    <h3 className="font-semibold mb-2 text-gray-700">Bank/Payment Details:</h3>
+                    <h3 className="font-semibold uppercase mb-2 text-gray-700 tracking-wider">Bank/Payment Details:</h3>
                     <div className="whitespace-pre-wrap leading-relaxed">{bankDetails}</div>
                 </div>
             </div>
