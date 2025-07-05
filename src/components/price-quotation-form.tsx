@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent } from 'react';
-import { PlusCircle, Trash2, Upload, FileDown, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -164,6 +165,15 @@ export default function PriceQuotationForm() {
   return (
     <div className="bg-muted min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-body">
       <div className="max-w-4xl mx-auto">
+        <div className="mb-6">
+          <Button asChild variant="ghost" className="pl-0">
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Calculator
+            </Link>
+          </Button>
+        </div>
+
         <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Price Quotation Builder</h1>
             <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
