@@ -10,6 +10,7 @@ interface QuotationPdfReportProps {
   clientInfo: { toName: string; toAddress: string; };
   myInfo: { fromName: string; fromAddress: string; };
   items: QuotationItem[];
+  currency: string;
   shippingCost: number | string;
   shippingCarrier: string;
   bankDetails: string;
@@ -17,9 +18,9 @@ interface QuotationPdfReportProps {
   grandTotal: number;
 }
 
-const formatCurrency = (value: number) => {
+const formatCurrency = (value: number, currency: string) => {
     if (isNaN(value)) value = 0;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
 };
 
 export default function QuotationPdfReport({
@@ -30,6 +31,7 @@ export default function QuotationPdfReport({
     clientInfo,
     myInfo,
     items,
+    currency,
     shippingCost,
     shippingCarrier,
     bankDetails,
@@ -82,7 +84,7 @@ export default function QuotationPdfReport({
                 <div className="w-[15%]">Length</div>
                 <div className="w-[15%]">Origin</div>
                 <div className="w-[10%] text-right">Qty</div>
-                <div className="w-[15%] text-right">Price (USD)</div>
+                <div className="w-[15%] text-right">Price ({currency})</div>
                 <div className="w-[20%] text-right">Total</div>
             </div>
             
@@ -94,8 +96,8 @@ export default function QuotationPdfReport({
                         <div className="w-[15%]">{item.length}</div>
                         <div className="w-[15%]">{item.origin}</div>
                         <div className="w-[10%] text-right">{item.quantity}</div>
-                        <div className="w-[15%] text-right">{formatCurrency(Number(item.price) || 0)}</div>
-                        <div className="w-[20%] text-right font-semibold">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0))}</div>
+                        <div className="w-[15%] text-right">{formatCurrency(Number(item.price) || 0, currency)}</div>
+                        <div className="w-[20%] text-right font-semibold">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), currency)}</div>
                     </div>
                 ))}
             </div>
@@ -105,15 +107,15 @@ export default function QuotationPdfReport({
             <div className="w-1/2 space-y-3 text-sm">
                     <div className="flex justify-between items-center">
                     <span className="text-gray-600">Subtotal</span>
-                    <span className="font-semibold">{formatCurrency(subtotal)}</span>
+                    <span className="font-semibold">{formatCurrency(subtotal, currency)}</span>
                     </div>
                     <div className="flex justify-between items-center">
                     <span className="text-gray-600">Shipping via {shippingCarrier}</span>
-                    <span className="font-semibold">{formatCurrency(Number(shippingCost) || 0)}</span>
+                    <span className="font-semibold">{formatCurrency(Number(shippingCost) || 0, currency)}</span>
                     </div>
                     <div className="border-t border-gray-300 mt-2 pt-2 flex justify-between items-center text-lg font-bold" style={{color: 'hsl(var(--primary))'}}>
                     <span>Grand Total</span>
-                    <span>{formatCurrency(grandTotal)}</span>
+                    <span>{formatCurrency(grandTotal, currency)}</span>
                     </div>
             </div>
         </section>

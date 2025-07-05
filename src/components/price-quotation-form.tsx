@@ -15,6 +15,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import type { QuotationItem } from '@/types';
 import jsPDF from 'jspdf';
@@ -58,6 +65,7 @@ export default function PriceQuotationForm() {
   ]);
   const [shippingCost, setShippingCost] = useState<number | string>(50);
   const [shippingCarrier, setShippingCarrier] = useState('DHL Express');
+  const [currency, setCurrency] = useState('USD');
   const [bankDetails, setBankDetails] = useState('Bank: [Your Bank Name]\nAccount #: [Your Account #]\nUPI: [your-upi@okbank]');
 
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -131,7 +139,7 @@ export default function PriceQuotationForm() {
 
   const formatCurrency = (value: number) => {
     if (isNaN(value)) value = 0;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(value);
   };
   
   const handleDownloadPdf = async () => {
@@ -253,7 +261,7 @@ export default function PriceQuotationForm() {
                                 <TableHead className="p-2">Length</TableHead>
                                 <TableHead className="p-2">Origin</TableHead>
                                 <TableHead className="p-2 text-right">Qty</TableHead>
-                                <TableHead className="p-2 text-right">Price (USD)</TableHead>
+                                <TableHead className="p-2 text-right">Price ({currency})</TableHead>
                                 <TableHead className="text-right p-2">Total</TableHead>
                                 <TableHead className="w-12 p-0"></TableHead>
                             </TableRow>
@@ -280,6 +288,20 @@ export default function PriceQuotationForm() {
             
             <section className="flex justify-end mt-8">
                  <div className="w-1/2 space-y-3">
+                     <div className="grid grid-cols-2 items-center">
+                        <span className="font-medium">Currency</span>
+                        <Select value={currency} onValueChange={setCurrency}>
+                          <SelectTrigger className="bg-muted/50 border-none h-auto py-1 px-2 focus:ring-1 focus:ring-primary focus:ring-offset-0">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="USD">USD - US Dollar</SelectItem>
+                            <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                            <SelectItem value="EUR">EUR - Euro</SelectItem>
+                            <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                          </SelectContent>
+                        </Select>
+                     </div>
                      <div className="grid grid-cols-2 items-center">
                         <span className="font-medium">Subtotal</span>
                         <span className="font-medium text-right">{formatCurrency(subtotal)}</span>
@@ -340,6 +362,7 @@ export default function PriceQuotationForm() {
               clientInfo={clientInfo}
               myInfo={myInfo}
               items={items}
+              currency={currency}
               shippingCost={shippingCost}
               shippingCarrier={shippingCarrier}
               bankDetails={bankDetails}
