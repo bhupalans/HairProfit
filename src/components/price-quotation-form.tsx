@@ -75,11 +75,6 @@ export default function PriceQuotationForm() {
     );
   };
 
-  const handleNumericItemChange = (id: string, field: 'quantity' | 'price', value: string) => {
-     const numValue = parseFloat(value);
-     handleItemChange(id, field, isNaN(numValue) ? '' : numValue);
-  };
-
   const addNewItem = () => {
     setItems([
       ...items,
@@ -88,8 +83,8 @@ export default function PriceQuotationForm() {
         format: '',
         length: '',
         origin: '',
-        quantity: 1,
-        price: 0,
+        quantity: '',
+        price: '',
       },
     ]);
   };
@@ -157,14 +152,15 @@ export default function PriceQuotationForm() {
     }
   };
 
+  // This input is styled to be subtle and part of the document flow.
   const QuotationInput = (props: React.ComponentProps<typeof Input>) => (
-    <Input {...props} className="bg-muted/60 border-none h-auto py-2 px-3 focus-visible:ring-primary" />
+    <Input {...props} className="bg-muted/50 border-none h-auto py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0" />
   );
 
 
   return (
     <div className="bg-muted min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-body">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="mb-6">
           <Button asChild variant="ghost" className="pl-0">
             <Link href="/">
@@ -193,31 +189,33 @@ export default function PriceQuotationForm() {
 
                 <div className="text-right space-y-2">
                     <h2 className="text-4xl font-bold uppercase text-primary">Quotation</h2>
-                    <div className="flex items-center justify-end gap-2">
+                    <div className="grid grid-cols-[auto_1fr] items-center gap-x-2">
                         <Label htmlFor="quotationRef" className="text-right font-medium">Ref:</Label>
-                        <QuotationInput id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40 text-left" />
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
+                        <QuotationInput id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40" />
+                    
                         <Label htmlFor="date" className="text-right font-medium">Date:</Label>
-                        <QuotationInput id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40 text-left" />
-                    </div>
-                    <div className="flex items-center justify-end gap-2">
+                        <QuotationInput id="date" type="date" value={date} onChange={e => setDate(e.target.value)} className="w-40" />
+                    
                         <Label htmlFor="validUntil" className="text-right font-medium">Valid Until:</Label>
-                        <QuotationInput id="validUntil" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="w-40 text-left" />
+                        <QuotationInput id="validUntil" type="date" value={validUntil} onChange={e => setValidUntil(e.target.value)} className="w-40" />
                     </div>
                 </div>
             </header>
 
-            <section className="flex justify-between mt-8">
-                <div className="space-y-2">
+            <section className="grid grid-cols-2 mt-8">
+                <div>
                     <h3 className="font-semibold text-muted-foreground">To:</h3>
-                    <QuotationInput placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={e => setClientInfo(prev => ({ ...prev, toName: e.target.value }))} className="w-64" />
-                    <QuotationInput placeholder="Email / Phone" value={clientInfo.toContact} onChange={e => setClientInfo(prev => ({ ...prev, toContact: e.target.value }))} className="w-64" />
+                    <div className="mt-2 space-y-2 text-sm">
+                        <QuotationInput placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={e => setClientInfo(prev => ({ ...prev, toName: e.target.value }))} />
+                        <QuotationInput placeholder="Email / Phone" value={clientInfo.toContact} onChange={e => setClientInfo(prev => ({ ...prev, toContact: e.target.value }))} />
+                    </div>
                 </div>
-                <div className="space-y-2 text-right">
-                     <h3 className="font-semibold text-muted-foreground text-left">From:</h3>
-                    <QuotationInput placeholder="Your Business Name" value={myInfo.fromName} onChange={e => setMyInfo(prev => ({ ...prev, fromName: e.target.value }))} className="w-64" />
-                    <QuotationInput placeholder="Your Email / Phone" value={myInfo.fromContact} onChange={e => setMyInfo(prev => ({ ...prev, fromContact: e.target.value }))} className="w-64" />
+                <div className="text-right">
+                    <h3 className="font-semibold text-muted-foreground">From:</h3>
+                     <div className="mt-2 space-y-2 text-sm">
+                        <QuotationInput placeholder="Your Business Name" value={myInfo.fromName} onChange={e => setMyInfo(prev => ({ ...prev, fromName: e.target.value }))} className="text-right" />
+                        <QuotationInput placeholder="Your Email / Phone" value={myInfo.fromContact} onChange={e => setMyInfo(prev => ({ ...prev, fromContact: e.target.value }))} className="text-right" />
+                    </div>
                 </div>
             </section>
 
@@ -226,25 +224,25 @@ export default function PriceQuotationForm() {
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50">
-                                <TableHead className="w-[25%]">Format</TableHead>
-                                <TableHead>Length</TableHead>
-                                <TableHead>Origin</TableHead>
-                                <TableHead>Qty</TableHead>
-                                <TableHead>Price (USD)</TableHead>
-                                <TableHead className="text-right">Total</TableHead>
+                                <TableHead className="w-[25%] p-2">Format</TableHead>
+                                <TableHead className="p-2">Length</TableHead>
+                                <TableHead className="p-2">Origin</TableHead>
+                                <TableHead className="p-2">Qty</TableHead>
+                                <TableHead className="p-2">Price (USD)</TableHead>
+                                <TableHead className="text-right p-2">Total</TableHead>
                                 <TableHead className="w-12 p-0"></TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {items.map(item => (
                                 <TableRow key={item.id} className="border-b-0">
-                                    <TableCell className="py-2"><QuotationInput value={item.format} onChange={e => handleItemChange(item.id, 'format', e.target.value)} placeholder="e.g. Weave" /></TableCell>
-                                    <TableCell className="py-2"><QuotationInput value={item.length} onChange={e => handleItemChange(item.id, 'length', e.target.value)} placeholder="e.g. 16 inches" /></TableCell>
-                                    <TableCell className="py-2"><QuotationInput value={item.origin} onChange={e => handleItemChange(item.id, 'origin', e.target.value)} placeholder="e.g. Brazilian" /></TableCell>
-                                    <TableCell className="py-2"><QuotationInput type="number" value={item.quantity} onChange={e => handleNumericItemChange(item.id, 'quantity', e.target.value)} className="w-20" /></TableCell>
-                                    <TableCell className="py-2"><QuotationInput type="number" value={item.price} onChange={e => handleNumericItemChange(item.id, 'price', e.target.value)} className="w-24" /></TableCell>
-                                    <TableCell className="text-right font-medium py-2">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0))}</TableCell>
-                                    <TableCell className="py-2"><Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => removeItem(item.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button></TableCell>
+                                    <TableCell className="p-1"><QuotationInput value={item.format} onChange={e => handleItemChange(item.id, 'format', e.target.value)} placeholder="Format" /></TableCell>
+                                    <TableCell className="p-1"><QuotationInput value={item.length} onChange={e => handleItemChange(item.id, 'length', e.target.value)} placeholder="Length" /></TableCell>
+                                    <TableCell className="p-1"><QuotationInput value={item.origin} onChange={e => handleItemChange(item.id, 'origin', e.target.value)} placeholder="Origin" /></TableCell>
+                                    <TableCell className="p-1"><QuotationInput type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.value)} className="w-20" /></TableCell>
+                                    <TableCell className="p-1"><QuotationInput type="number" value={item.price} onChange={e => handleItemChange(item.id, 'price', e.target.value)} className="w-24" /></TableCell>
+                                    <TableCell className="text-right font-medium p-1">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0))}</TableCell>
+                                    <TableCell className="p-1"><Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => removeItem(item.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button></TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
@@ -261,11 +259,11 @@ export default function PriceQuotationForm() {
                         <span className="font-medium">Subtotal</span>
                         <span className="font-medium">{formatCurrency(subtotal)}</span>
                      </div>
-                     <div className="flex justify-between items-center">
+                     <div className="flex justify-between items-center gap-2">
                         <span className="font-medium">Shipping via</span>
                         <div className="flex items-center gap-2">
-                            <QuotationInput value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-28 text-center" />:
-                            <QuotationInput type="number" value={shippingCost} onChange={e => setShippingCost(Number(e.target.value))} className="w-24" />
+                            <QuotationInput value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-28 text-right" />
+                            <QuotationInput type="number" value={shippingCost} onChange={e => setShippingCost(e.target.value)} className="w-24 text-right" />
                         </div>
                      </div>
                      <div className="border-t pt-3 flex justify-between items-center text-xl font-bold text-primary">
@@ -275,21 +273,24 @@ export default function PriceQuotationForm() {
                 </div>
             </section>
             
-            <div className="flex-grow"></div>
+            <div className="flex-grow" style={{ minHeight: '100px' }}></div>
 
-            <section className="mt-auto pt-8 text-sm">
-                <h3 className="font-semibold mb-2">Payment & Logistics</h3>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</li>
-                    <li><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</li>
-                    <li><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</li>
-                </ul>
-            </section>
-
-            <footer className="mt-8 pt-4 border-t text-sm text-muted-foreground">
-                <Label className="font-semibold text-foreground">Bank/Payment Details:</Label>
-                <Textarea value={bankDetails} onChange={e => setBankDetails(e.target.value)} rows={3} className="mt-1 bg-muted/60 border-none" />
-                <p className="mt-6 text-center italic">
+            <footer className="mt-auto pt-8 text-sm border-t">
+                <div className="grid grid-cols-2 gap-8">
+                    <div>
+                        <h3 className="font-semibold mb-2">Payment & Logistics</h3>
+                        <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                            <li><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</li>
+                            <li><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</li>
+                            <li><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</li>
+                        </ul>
+                    </div>
+                     <div>
+                        <Label className="font-semibold text-foreground">Bank/Payment Details:</Label>
+                        <Textarea value={bankDetails} onChange={e => setBankDetails(e.target.value)} rows={3} className="mt-1 bg-muted/50 border-none" />
+                    </div>
+                </div>
+                <p className="mt-8 text-center text-muted-foreground italic">
                     Thank you for considering {myInfo.fromName || '[Your Business Name]'}! Feel free to reach out for samples or bulk pricing.
                 </p>
             </footer>
