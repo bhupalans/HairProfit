@@ -35,6 +35,10 @@ const QuotationInput = (props: React.ComponentProps<typeof Input>) => (
     <Input {...props} className="bg-muted/50 border-none h-auto py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0" />
 );
 
+const QuotationTextarea = (props: React.ComponentProps<typeof Textarea>) => (
+    <Textarea {...props} className="bg-muted/50 border-none py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 leading-snug text-sm" rows={3} />
+);
+
 export default function PriceQuotationForm() {
   const [logo, setLogo] = useState<string | null>(null);
   const [quotationRef, setQuotationRef] = useState('Q-2024-001');
@@ -45,8 +49,8 @@ export default function PriceQuotationForm() {
     return d.toISOString().split('T')[0];
   });
 
-  const [clientInfo, setClientInfo] = useState({ toName: 'Lenachu', toContact: 'manager@lenachu.com' });
-  const [myInfo, setMyInfo] = useState({ fromName: 'SJ Partners', fromContact: 'info@sjpartners.com' });
+  const [clientInfo, setClientInfo] = useState({ toName: '', toAddress: '' });
+  const [myInfo, setMyInfo] = useState({ fromName: '', fromAddress: '' });
 
   const [items, setItems] = useState<QuotationItem[]>([
     initialItem,
@@ -225,17 +229,17 @@ export default function PriceQuotationForm() {
 
             <section className="grid grid-cols-2 mt-8">
                 <div>
-                    <h3 className="font-semibold text-muted-foreground">To:</h3>
-                    <div className="mt-2 space-y-2 text-sm">
+                    <h3 className="font-semibold text-muted-foreground mb-2">To:</h3>
+                    <div className="space-y-2 text-sm pr-4">
                         <QuotationInput name="toName" placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={handleClientInfoChange} />
-                        <QuotationInput name="toContact" placeholder="Email / Phone" value={clientInfo.toContact} onChange={handleClientInfoChange} />
+                        <QuotationTextarea name="toAddress" placeholder="Buyer Address" value={clientInfo.toAddress} onChange={handleClientInfoChange} />
                     </div>
                 </div>
                 <div className="text-right">
-                    <h3 className="font-semibold text-muted-foreground">From:</h3>
-                     <div className="mt-2 space-y-2 text-sm">
+                    <h3 className="font-semibold text-muted-foreground mb-2">From:</h3>
+                     <div className="space-y-2 text-sm pl-4">
                         <QuotationInput name="fromName" placeholder="Your Business Name" value={myInfo.fromName} onChange={handleMyInfoChange} className="text-right" />
-                        <QuotationInput name="fromContact" placeholder="Your Email / Phone" value={myInfo.fromContact} onChange={handleMyInfoChange} className="text-right" />
+                        <QuotationTextarea name="fromAddress" placeholder="Your Business Address" value={myInfo.fromAddress} onChange={handleMyInfoChange} className="text-right" />
                     </div>
                 </div>
             </section>
@@ -301,7 +305,7 @@ export default function PriceQuotationForm() {
                     <div>
                         <h3 className="font-semibold mb-2">Payment & Logistics</h3>
                         <div className="text-muted-foreground space-y-1">
-                            <div className="flex items-start">
+                             <div className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
                                 <p className="flex-1"><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</p>
                             </div>

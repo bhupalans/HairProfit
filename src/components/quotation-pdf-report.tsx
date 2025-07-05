@@ -7,8 +7,8 @@ interface QuotationPdfReportProps {
   quotationRef: string;
   date: string;
   validUntil: string;
-  clientInfo: { toName: string; toContact: string; };
-  myInfo: { fromName: string; fromContact: string; };
+  clientInfo: { toName: string; toAddress: string; };
+  myInfo: { fromName: string; fromAddress: string; };
   items: QuotationItem[];
   shippingCost: number | string;
   shippingCarrier: string;
@@ -60,17 +60,17 @@ export default function QuotationPdfReport({
 
         <section className="grid grid-cols-2 mt-8 text-sm">
             <div>
-                <h3 className="font-semibold text-gray-500">To:</h3>
-                <div className="mt-2 space-y-1">
-                    <p>{clientInfo.toName}</p>
-                    <p>{clientInfo.toContact}</p>
+                <h3 className="font-semibold text-gray-500 mb-2">To:</h3>
+                <div className="space-y-1 pr-4">
+                    <p className="font-semibold">{clientInfo.toName}</p>
+                    <p className="whitespace-pre-wrap">{clientInfo.toAddress}</p>
                 </div>
             </div>
             <div className="text-right">
-                <h3 className="font-semibold text-gray-500">From:</h3>
-                    <div className="mt-2 space-y-1">
-                    <p>{myInfo.fromName}</p>
-                    <p>{myInfo.fromContact}</p>
+                <h3 className="font-semibold text-gray-500 mb-2">From:</h3>
+                <div className="space-y-1 pl-4">
+                    <p className="font-semibold">{myInfo.fromName}</p>
+                    <p className="whitespace-pre-wrap">{myInfo.fromAddress}</p>
                 </div>
             </div>
         </section>
