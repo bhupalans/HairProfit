@@ -44,6 +44,13 @@ const QuotationTextarea = (props: React.ComponentProps<typeof Textarea>) => (
     <Textarea {...props} className="bg-muted/50 border-none py-1 px-2 focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 leading-snug text-sm" rows={3} />
 );
 
+const currencySymbols: { [key: string]: string } = {
+  USD: '$',
+  INR: '₹',
+  EUR: '€',
+  GBP: '£',
+};
+
 export default function PriceQuotationForm() {
   const [logo, setLogo] = useState<string | null>(null);
   const [quotationRef, setQuotationRef] = useState('');
@@ -171,6 +178,7 @@ export default function PriceQuotationForm() {
     if (currency === displayCurrency || rate === 0) {
       return grandTotal;
     }
+    // Convert from pricing currency to display currency
     return grandTotal / rate;
   }, [grandTotal, currency, displayCurrency, exchangeRate]);
 
@@ -263,7 +271,7 @@ export default function PriceQuotationForm() {
 
                 <div className="text-right space-y-2">
                     <h2 className="text-4xl font-bold uppercase text-primary">Quotation</h2>
-                    <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-right text-sm font-semibold">
+                    <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-right text-sm">
                         <Label htmlFor="quotationRef" className="font-bold text-base">Ref:</Label>
                         <QuotationInput id="quotationRef" value={quotationRef} onChange={e => setQuotationRef(e.target.value)} className="w-40 text-left font-normal" />
                     
@@ -281,14 +289,14 @@ export default function PriceQuotationForm() {
                     <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">To:</h3>
                     <div className="space-y-2 text-sm pr-4">
                         <QuotationInput name="toName" placeholder="Buyer Name / Company" value={clientInfo.toName} onChange={handleClientInfoChange} />
-                        <QuotationTextarea name="toAddress" placeholder="Buyer Address" value={clientInfo.toAddress} onChange={handleClientInfoChange} />
+                        <QuotationTextarea name="toAddress" placeholder="Buyer Full Address..." value={clientInfo.toAddress} onChange={handleClientInfoChange} rows={4} />
                     </div>
                 </div>
                 <div className="text-right">
                     <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">From:</h3>
                      <div className="space-y-2 text-sm pl-4">
                         <QuotationInput name="fromName" placeholder="Your Business Name" value={myInfo.fromName} onChange={handleMyInfoChange} className="text-right" />
-                        <QuotationTextarea name="fromAddress" placeholder="Your Business Address" value={myInfo.fromAddress} onChange={handleMyInfoChange} className="text-right" />
+                        <QuotationTextarea name="fromAddress" placeholder="Your Full Address..." value={myInfo.fromAddress} onChange={handleMyInfoChange} className="text-right" rows={4} />
                     </div>
                 </div>
             </section>
@@ -379,7 +387,15 @@ export default function PriceQuotationForm() {
                      </div>
                      <div className="grid grid-cols-[1fr_auto] items-baseline">
                         <span className="font-medium text-muted-foreground flex items-center">Shipping via <QuotationInput value={shippingCarrier} onChange={e => setShippingCarrier(e.target.value)} className="w-24 ml-2" /></span>
-                        <QuotationInput type="number" value={shippingCost} onChange={e => setShippingCost(e.target.value === '' ? '' : Number(e.target.value))} className="w-24 text-right" />
+                        <div className="flex items-center bg-muted/50 rounded-md w-28 justify-self-end focus-within:ring-1 focus-within:ring-primary">
+                            <span className="pl-3 text-sm text-muted-foreground pointer-events-none">{currencySymbols[currency]}</span>
+                            <Input
+                                type="number"
+                                value={shippingCost}
+                                onChange={e => setShippingCost(e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-full text-right bg-transparent border-none h-auto py-1 px-2 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                />
+                        </div>
                      </div>
                      <div className="border-t pt-2 mt-2 grid grid-cols-2 items-center text-xl font-bold text-primary">
                         <span>Grand Total ({currency})</span>
@@ -400,20 +416,20 @@ export default function PriceQuotationForm() {
                 <div className="grid grid-cols-2 gap-8 items-start">
                     <div>
                         <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Payment & Logistics</h3>
-                        <div className="text-muted-foreground space-y-1">
-                             <div className="flex items-start">
+                        <ul className="text-muted-foreground space-y-1 list-none p-0">
+                             <li className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
                                 <p className="flex-1"><strong>Payment:</strong> 50% advance (Bank Transfer / Wise / PayPal)</p>
-                            </div>
-                            <div className="flex items-start">
+                            </li>
+                            <li className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
                                 <p className="flex-1"><strong>Delivery Time:</strong> 3-7 business days after payment confirmation.</p>
-                            </div>
-                            <div className="flex items-start">
+                            </li>
+                            <li className="flex items-start">
                                 <span className="mr-2 mt-1 leading-none text-primary">•</span>
                                 <p className="flex-1"><strong>Packaging:</strong> Standard polybag (custom branding available on bulk orders).</p>
-                            </div>
-                        </div>
+                            </li>
+                        </ul>
                     </div>
                      <div>
                         <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Bank/Payment Details:</h3>
