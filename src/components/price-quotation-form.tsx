@@ -193,16 +193,15 @@ export default function PriceQuotationForm() {
     if (data.currency === data.displayCurrency || rate === 0) {
       return grandTotal;
     }
-    // When converting from pricing currency to display currency, we divide.
-    // e.g., INR to USD: 8350 INR / 83.5 (rate) = 100 USD
+    
     if (data.currency === 'INR' && data.displayCurrency === 'USD') {
         return grandTotal / rate;
     }
-    // e.g., USD to INR: 100 USD * 83.5 (rate) = 8350 INR
+    
     if (data.currency === 'USD' && data.displayCurrency === 'INR') {
         return grandTotal * rate;
     }
-    // Fallback for other conversions
+    
     return grandTotal / rate;
 
   }, [grandTotal, data.currency, data.displayCurrency, data.exchangeRate]);
@@ -317,7 +316,7 @@ export default function PriceQuotationForm() {
     setIsFetchingRate(true);
     toast({ title: 'Fetching live exchange rate...'});
 
-    const response = await fetchExchangeRate({ baseCurrency: data.displayCurrency, targetCurrency: data.currency });
+    const response = await fetchExchangeRate({ baseCurrency: data.currency, targetCurrency: data.displayCurrency });
 
     setIsFetchingRate(false);
     if (response.success && response.data) {
@@ -331,8 +330,8 @@ export default function PriceQuotationForm() {
   const isConversionActive = data.currency !== data.displayCurrency;
 
   return (
-    <div className="bg-muted min-h-screen py-12 px-4 sm:px-6 lg:px-8 font-body">
-      <div className="max-w-5xl mx-auto">
+    <div className="bg-muted min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 font-body">
+      <div className="max-w-4xl mx-auto">
         <div className="mb-6">
           <Button asChild variant="ghost" className="pl-0">
             <Link href="/">
@@ -342,26 +341,26 @@ export default function PriceQuotationForm() {
           </Button>
         </div>
 
-        <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Price Quotation Builder</h1>
-            <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={() => jsonFileInputRef.current?.click()}>
-                    <FileUp className="mr-2 h-4 w-4" /> Import JSON
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+            <h1 className="text-3xl font-bold text-center sm:text-left">Price Quotation Builder</h1>
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+                <Button variant="outline" size="sm" onClick={() => jsonFileInputRef.current?.click()}>
+                    <FileUp className="mr-2 h-4 w-4" /> Import
                 </Button>
                 <input type="file" ref={jsonFileInputRef} onChange={handleImportJson} className="hidden" accept="application/json" />
-                <Button variant="outline" onClick={handleExportJson}>
-                    <FileDown className="mr-2 h-4 w-4" /> Export JSON
+                <Button variant="outline" size="sm" onClick={handleExportJson}>
+                    <FileDown className="mr-2 h-4 w-4" /> Export
                 </Button>
-                <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
+                <Button size="sm" onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
                     {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}
                     {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
                 </Button>
             </div>
         </div>
 
-        <div className="bg-white p-12 shadow-lg" style={{ width: '210mm', minHeight: '297mm', margin: '0 auto' }}>
-            <header className="flex justify-between items-start pb-8 border-b">
-                <div className="w-1/3">
+        <div className="bg-white p-6 md:p-12 shadow-lg rounded-lg">
+            <header className="flex flex-col sm:flex-row justify-between items-start gap-8 sm:gap-4 pb-8 border-b">
+                <div className="w-full sm:w-1/3">
                     <input ref={logoFileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                     <button
                       onClick={() => logoFileInputRef.current?.click()}
@@ -374,41 +373,41 @@ export default function PriceQuotationForm() {
                     </button>
                 </div>
 
-                <div className="text-right space-y-2">
+                <div className="w-full sm:w-auto text-left sm:text-right space-y-2">
                     <h2 className="text-4xl font-bold uppercase text-primary">Quotation</h2>
-                    <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-right text-sm">
+                    <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-left">
                         <Label htmlFor="quotationRef" className="font-bold text-base">Ref:</Label>
-                        <QuotationInput id="quotationRef" value={data.quotationRef} onChange={e => handleFieldChange('quotationRef', e.target.value)} className="w-40 text-left font-normal" />
+                        <QuotationInput id="quotationRef" value={data.quotationRef} onChange={e => handleFieldChange('quotationRef', e.target.value)} className="w-40 font-normal" />
                     
                         <Label htmlFor="date" className="font-bold text-base">Date:</Label>
-                        <QuotationInput id="date" type="date" value={data.date} onChange={e => handleFieldChange('date', e.target.value)} className="w-40 text-left font-normal" />
+                        <QuotationInput id="date" type="date" value={data.date} onChange={e => handleFieldChange('date', e.target.value)} className="w-40 font-normal" />
                     
                         <Label htmlFor="validUntil" className="font-bold text-base">Valid Until:</Label>
-                        <QuotationInput id="validUntil" type="date" value={data.validUntil} onChange={e => handleFieldChange('validUntil', e.target.value)} className="w-40 text-left font-normal" />
+                        <QuotationInput id="validUntil" type="date" value={data.validUntil} onChange={e => handleFieldChange('validUntil', e.target.value)} className="w-40 font-normal" />
                     </div>
                 </div>
             </header>
 
-            <section className="grid grid-cols-2 mt-8">
+            <section className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-8">
                 <div>
                     <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">To:</h3>
-                    <div className="space-y-2 text-sm pr-4">
+                    <div className="space-y-2 text-sm pr-0 sm:pr-4">
                         <QuotationInput name="toName" placeholder="Buyer Name / Company" value={data.clientInfo.toName} onChange={e => handleInfoChange('clientInfo', e)} />
                         <QuotationTextarea name="toAddress" placeholder="Buyer Full Address..." value={data.clientInfo.toAddress} onChange={e => handleInfoChange('clientInfo', e)} rows={4} />
                     </div>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                     <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">From:</h3>
-                     <div className="space-y-2 text-sm pl-4">
-                        <QuotationInput name="fromName" placeholder="Your Business Name" value={data.myInfo.fromName} onChange={e => handleInfoChange('myInfo', e)} className="text-right" />
-                        <QuotationTextarea name="fromAddress" placeholder="Your Full Address..." value={data.myInfo.fromAddress} onChange={e => handleInfoChange('myInfo', e)} className="text-right" rows={4} />
+                     <div className="space-y-2 text-sm pl-0 sm:pl-4">
+                        <QuotationInput name="fromName" placeholder="Your Business Name" value={data.myInfo.fromName} onChange={e => handleInfoChange('myInfo', e)} className="sm:text-right" />
+                        <QuotationTextarea name="fromAddress" placeholder="Your Full Address..." value={data.myInfo.fromAddress} onChange={e => handleInfoChange('myInfo', e)} className="sm:text-right" rows={4} />
                     </div>
                 </div>
             </section>
             
             <section className="mt-8">
                 <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Details</h3>
-                <div className="grid grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg">
                     <div>
                         <Label htmlFor="productFormat" className="text-sm font-medium">Format</Label>
                         <QuotationInput id="productFormat" value={data.productFormat} onChange={e => handleFieldChange('productFormat', e.target.value)} />
@@ -466,14 +465,14 @@ export default function PriceQuotationForm() {
             </section>
 
             <section className="mt-6">
-                <div className="rounded-lg overflow-hidden">
+                <div className="rounded-lg overflow-x-auto border">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50">
-                                <TableHead className="w-[50%] p-2 font-bold text-gray-700">Length / Description</TableHead>
+                                <TableHead className="p-2 font-bold text-gray-700 min-w-[150px]">Length</TableHead>
                                 <TableHead className="p-2 text-right font-bold text-gray-700">Qty</TableHead>
                                 <TableHead className="p-2 text-right font-bold text-gray-700">Price ({data.currency})</TableHead>
-                                <TableHead className="text-right p-2 font-bold text-gray-700">Total</TableHead>
+                                <TableHead className="hidden sm:table-cell text-right p-2 font-bold text-gray-700">Total</TableHead>
                                 <TableHead className="w-12 p-0"></TableHead>
                             </TableRow>
                         </TableHeader>
@@ -483,7 +482,7 @@ export default function PriceQuotationForm() {
                                     <TableCell className="p-1"><QuotationInput value={item.length} onChange={e => handleItemChange(item.id, 'length', e.target.value)} placeholder="e.g., 16 inches" /></TableCell>
                                     <TableCell className="p-1"><QuotationInput type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.value)} className="w-20 text-right" /></TableCell>
                                     <TableCell className="p-1"><QuotationInput type="number" value={item.price} onChange={e => handleItemChange(item.id, 'price', e.target.value)} className="w-24 text-right" /></TableCell>
-                                    <TableCell className="text-right font-medium p-1">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), data.currency)}</TableCell>
+                                    <TableCell className="hidden sm:table-cell text-right font-medium p-1">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), data.currency)}</TableCell>
                                     <TableCell className="p-1"><Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => removeItem(item.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button></TableCell>
                                 </TableRow>
                             ))}
@@ -496,7 +495,7 @@ export default function PriceQuotationForm() {
             </section>
             
             <section className="flex justify-end mt-8">
-                 <div className="w-1/2 space-y-2 text-sm">
+                 <div className="w-full sm:w-1/2 md:w-2/5 space-y-2 text-sm">
                      <div className="grid grid-cols-[1fr_auto] items-baseline">
                         <span className="font-medium text-muted-foreground">Subtotal</span>
                         <span className="font-semibold text-right">{formatCurrency(subtotal, data.currency)}</span>
@@ -529,7 +528,7 @@ export default function PriceQuotationForm() {
             <div className="flex-grow" style={{ minHeight: '50px' }}></div>
 
             <footer className="mt-auto pt-8 text-sm border-t">
-                <div className="grid grid-cols-2 gap-8 items-start">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 items-start">
                     <div>
                         <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Terms &amp; Conditions</h3>
                         <Textarea value={data.termsAndConditions} onChange={e => handleFieldChange('termsAndConditions', e.target.value)} rows={4} className="bg-muted/50 border-none p-2 leading-relaxed" />
