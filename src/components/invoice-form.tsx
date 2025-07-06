@@ -37,6 +37,7 @@ import html2canvas from 'html2canvas';
 import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import InvoicePdfReport from './invoice-pdf-report';
+import { useRouter } from 'next/navigation';
 
 const initialItem: InvoiceItem = {
   id: crypto.randomUUID(),
@@ -85,6 +86,7 @@ export default function InvoiceForm() {
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
   
   useEffect(() => {
     // This effect runs once on component mount to set the invoice ref and load from quotation if available.
@@ -449,3 +451,5 @@ export default function InvoiceForm() {
     </div>
   );
 }
+
+    
