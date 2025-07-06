@@ -5,8 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { PlusCircle, Trash2, Wrench } from 'lucide-react';
+import { PlusCircle, Trash2, Wrench, HelpCircle } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface ProcessingStepsCardProps {
   steps: ProcessingStep[];
@@ -55,7 +61,21 @@ export default function ProcessingStepsCard({
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`step-cost-${index}`}>Expense ({currency})</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor={`step-cost-${index}`}>Expense ({currency})</Label>
+                    <TooltipProvider>
+                      <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
+                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                           </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Total fixed cost for this step (materials, labor, etc.).<br/>This is NOT a per-unit cost.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id={`step-cost-${index}`}
                     type="number"
@@ -66,7 +86,21 @@ export default function ProcessingStepsCard({
                   />
                 </div>
                 <div>
-                  <Label htmlFor={`step-wastage-${index}`}>Wastage (units)</Label>
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor={`step-wastage-${index}`}>Wastage (units)</Label>
+                     <TooltipProvider>
+                      <Tooltip delayDuration={100}>
+                        <TooltipTrigger asChild>
+                           <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
+                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                           </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Number of hair units lost or discarded during this step.<br/>This is subtracted from your initial purchase quantity.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
                   <Input
                     id={`step-wastage-${index}`}
                     type="number"
