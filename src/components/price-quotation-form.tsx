@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw, Eye } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw, Eye, FilePlus2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,6 +101,7 @@ export default function PriceQuotationForm() {
   const logoFileInputRef = useRef<HTMLInputElement>(null);
   const jsonFileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     const lastRef = localStorage.getItem('lastQuotationRef');
@@ -255,6 +257,24 @@ export default function PriceQuotationForm() {
     }
   };
 
+  const handleCreateInvoice = () => {
+    try {
+        const jsonString = JSON.stringify(data);
+        localStorage.setItem('quotationForInvoice', jsonString);
+        toast({
+            title: 'Quotation Data Saved',
+            description: 'Redirecting to the invoice builder...',
+        });
+        router.push('/invoice');
+    } catch (e) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not prepare data for invoice.',
+        });
+    }
+  };
+
   const handleExportJson = () => {
     const exportData = { ...data, logo: undefined };
     const jsonString = JSON.stringify(exportData, null, 2);
@@ -351,6 +371,9 @@ export default function PriceQuotationForm() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setIsPreviewOpen(true)}>
                   <Eye className="mr-2 h-4 w-4" /> Preview
+                </Button>
+                <Button size="sm" onClick={handleCreateInvoice}>
+                    <FilePlus2 className="mr-2 h-4 w-4" /> Create Invoice
                 </Button>
                 <Button size="sm" onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
                     {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />}

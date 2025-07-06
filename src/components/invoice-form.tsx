@@ -30,7 +30,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import type { InvoiceItem, InvoiceData } from '@/types';
+import type { InvoiceItem, InvoiceData, QuotationData } from '@/types';
 import { invoiceDataSchema } from '@/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -87,6 +87,7 @@ export default function InvoiceForm() {
   const { toast } = useToast();
   
   useEffect(() => {
+    // This effect runs once on component mount to set the invoice ref and load from quotation if available.
     const lastRef = localStorage.getItem('lastInvoiceRef');
     let nextRef = '';
     const currentYear = new Date().getFullYear().toString();
@@ -105,8 +106,42 @@ export default function InvoiceForm() {
     if (!nextRef) {
       nextRef = `${currentYear}-0001`;
     }
-    
-    setData(prev => ({ ...prev, invoiceRef: nextRef }));
+
+    const quotationJSON = localStorage.getItem('quotationForInvoice');
+    if (quotationJSON) {
+        try {
+            localStorage.removeItem('quotationForInvoice'); // Clear it after use
+            const quotationData: QuotationData = JSON.parse(quotationJSON);
+
+            const newInvoiceData: Partial<InvoiceData> = {
+                logo: quotationData.logo,
+                clientInfo: quotationData.clientInfo,
+                myInfo: quotationData.myInfo,
+                items: quotationData.items.map(item => ({
+                    id: crypto.randomUUID(),
+                    description: `${item.length} ${quotationData.productOrigin} Hair - ${quotationData.productFormat}`,
+                    quantity: item.quantity,
+                    price: item.price,
+                })),
+                currency: quotationData.currency,
+                shippingCost: Number(quotationData.shippingCost) || 0,
+            };
+            
+            setData(prev => ({ ...prev, ...newInvoiceData, invoiceRef: nextRef }));
+            
+            toast({
+                title: 'Invoice Created from Quotation',
+                description: 'Review the details and set a due date.',
+            });
+        } catch(e) {
+            console.error("Failed to parse quotation data", e);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load data from quotation.' });
+            setData(prev => ({ ...prev, invoiceRef: nextRef }));
+        }
+    } else {
+        setData(prev => ({ ...prev, invoiceRef: nextRef }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
