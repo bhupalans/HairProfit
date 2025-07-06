@@ -139,10 +139,10 @@ export default function InvoiceForm() {
                     id: crypto.randomUUID(),
                     description: item.length,
                     quantity: item.quantity,
-                    price: getConvertedValue(item.price),
+                    price: Number(getConvertedValue(item.price).toFixed(2)),
                 })),
                 currency: quotationData.displayCurrency,
-                shippingCost: getConvertedValue(quotationData.shippingCost),
+                shippingCost: Number(getConvertedValue(quotationData.shippingCost).toFixed(2)),
                 notes: `Based on Quotation #${quotationData.quotationRef}.\nProduct Details: ${productInfo}`,
                 terms: `${quotationData.termsAndConditions}\n\nPayment Details:\n${quotationData.paymentDetails}`,
             };
@@ -215,9 +215,9 @@ export default function InvoiceForm() {
     const discount = sub * ((Number(data.discount) || 0) / 100);
     const taxableAmount = sub - discount;
     const tax = taxableAmount * ((Number(data.tax) || 0) / 100);
-    const total = taxableAmount + tax + (Number(data.shippingCost) || 0);
-    const balance = total - (Number(data.amountPaid) || 0);
-    return { subtotal: sub, discountAmount: discount, taxAmount: tax, total, balanceDue: balance };
+    const totalAmount = taxableAmount + tax + (Number(data.shippingCost) || 0);
+    const balance = totalAmount - (Number(data.amountPaid) || 0);
+    return { subtotal: sub, discountAmount: discount, taxAmount: tax, total: totalAmount, balanceDue: balance };
   }, [data.items, data.discount, data.tax, data.shippingCost, data.amountPaid]);
 
   const formatCurrency = (value: number, curr: string) => {
@@ -463,3 +463,5 @@ export default function InvoiceForm() {
     </div>
   );
 }
+
+    
