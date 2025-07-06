@@ -98,15 +98,22 @@ export default function InvoiceForm() {
     if (lastRef) {
       const parts = lastRef.split('-');
       if (parts.length === 2) {
+        const lastYear = parts[0];
         const num = parseInt(parts[1], 10);
-        if (!isNaN(num)) {
+
+        if (lastYear === currentYear && !isNaN(num)) {
+          // Same year, increment number
           const nextNum = (num + 1).toString().padStart(4, '0');
           nextRef = `${currentYear}-${nextNum}`;
+        } else {
+          // New year or invalid format, reset for the current year
+          nextRef = `${currentYear}-0001`;
         }
       }
     }
     
     if (!nextRef) {
+      // No lastRef found, start from 1 for the current year
       nextRef = `${currentYear}-0001`;
     }
 
@@ -463,5 +470,3 @@ export default function InvoiceForm() {
     </div>
   );
 }
-
-    
