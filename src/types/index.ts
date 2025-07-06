@@ -112,3 +112,30 @@ export const ExchangeRateOutputSchema = z.object({
   rate: z.number().describe('The numerical exchange rate.'),
 });
 export type ExchangeRateOutput = z.infer<typeof ExchangeRateOutputSchema>;
+
+
+export const invoiceItemSchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  quantity: z.union([z.string(), z.number()]),
+  price: z.union([z.string(), z.number()]),
+});
+export type InvoiceItem = z.infer<typeof invoiceItemSchema>;
+
+export const invoiceDataSchema = z.object({
+  logo: z.string().nullable().optional(),
+  invoiceRef: z.string(),
+  invoiceDate: z.string(),
+  dueDate: z.string(),
+  clientInfo: z.object({ toName: z.string(), toAddress: z.string() }),
+  myInfo: z.object({ fromName: z.string(), fromAddress: z.string() }),
+  items: z.array(invoiceItemSchema),
+  currency: z.string(),
+  tax: z.union([z.string(), z.number()]),
+  discount: z.union([z.string(), z.number()]),
+  shippingCost: z.union([z.string(), z.number()]),
+  amountPaid: z.union([z.string(), z.number()]),
+  notes: z.string(),
+  terms: z.string(),
+});
+export type InvoiceData = z.infer<typeof invoiceDataSchema>;
