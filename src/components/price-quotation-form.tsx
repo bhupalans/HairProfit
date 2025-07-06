@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw, Eye, FilePlus2 } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Trash2, Upload, FileDown, Loader2, FileUp, RefreshCw, Eye, FilePlus2, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,6 +31,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import type { QuotationItem, QuotationData } from '@/types';
 import { quotationDataSchema } from '@/types';
@@ -447,47 +454,73 @@ export default function PriceQuotationForm() {
 
             <section className="mt-8">
                 <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Currency & Exchange Rate</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-3 rounded-lg items-end">
-                    <div>
-                        <Label htmlFor="pricingCurrency" className="text-sm font-medium">Pricing Currency</Label>
-                        <Select value={data.currency} onValueChange={(value) => handleFieldChange('currency', value)}>
-                            <SelectTrigger id="pricingCurrency" className="bg-white focus:ring-primary focus-visible:ring-1 focus-visible:ring-offset-0">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="INR">INR</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label htmlFor="displayCurrency" className="text-sm font-medium">Display Currency</Label>
-                        <Select value={data.displayCurrency} onValueChange={(value) => handleFieldChange('displayCurrency', value)}>
-                            <SelectTrigger id="displayCurrency" className="bg-white focus:ring-primary focus-visible:ring-1 focus-visible:ring-offset-0">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="USD">USD</SelectItem>
-                                <SelectItem value="INR">INR</SelectItem>
-                                <SelectItem value="EUR">EUR</SelectItem>
-                                <SelectItem value="GBP">GBP</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    {isConversionActive && (
-                        <div>
-                            <Label htmlFor="exchangeRate" className="text-sm font-medium">Rate (1 {data.displayCurrency} = ? {data.currency})</Label>
-                            <div className="flex items-center gap-2">
-                                <QuotationInput id="exchangeRate" type="number" value={data.exchangeRate} onChange={e => handleFieldChange('exchangeRate', e.target.value === '' ? '' : Number(e.target.value))} className="bg-white text-right" />
-                                <Button size="icon" variant="ghost" onClick={handleFetchRate} disabled={isFetchingRate} className="h-9 w-9 flex-shrink-0">
-                                    {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                </Button>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                <TooltipProvider>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-muted/30 p-3 rounded-lg items-end">
+                      <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                              <Label htmlFor="pricingCurrency" className="text-sm font-medium">Pricing Currency</Label>
+                              <Tooltip delayDuration={100}>
+                                  <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button"><HelpCircle className="h-4 w-4 text-muted-foreground" /></Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>This is your internal currency for cost calculation.</p></TooltipContent>
+                              </Tooltip>
+                          </div>
+                          <Select value={data.currency} onValueChange={(value) => handleFieldChange('currency', value)}>
+                              <SelectTrigger id="pricingCurrency" className="bg-white focus:ring-primary focus-visible:ring-1 focus-visible:ring-offset-0">
+                                  <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="USD">USD</SelectItem>
+                                  <SelectItem value="INR">INR</SelectItem>
+                                  <SelectItem value="EUR">EUR</SelectItem>
+                                  <SelectItem value="GBP">GBP</SelectItem>
+                              </SelectContent>
+                          </Select>
+                      </div>
+                      <div>
+                          <div className="flex items-center gap-1.5 mb-1">
+                              <Label htmlFor="displayCurrency" className="text-sm font-medium">Display Currency</Label>
+                              <Tooltip delayDuration={100}>
+                                  <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button"><HelpCircle className="h-4 w-4 text-muted-foreground" /></Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>This is the currency your customer will see on the final quote.</p></TooltipContent>
+                              </Tooltip>
+                          </div>
+                          <Select value={data.displayCurrency} onValueChange={(value) => handleFieldChange('displayCurrency', value)}>
+                              <SelectTrigger id="displayCurrency" className="bg-white focus:ring-primary focus-visible:ring-1 focus-visible:ring-offset-0">
+                                  <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                  <SelectItem value="USD">USD</SelectItem>
+                                  <SelectItem value="INR">INR</SelectItem>
+                                  <SelectItem value="EUR">EUR</SelectItem>
+                                  <SelectItem value="GBP">GBP</SelectItem>
+                              </SelectContent>
+                          </Select>
+                      </div>
+                      {isConversionActive && (
+                          <div>
+                              <div className="flex items-center gap-1.5 mb-1">
+                                  <Label htmlFor="exchangeRate" className="text-sm font-medium">Rate (1 {data.displayCurrency} = ? {data.currency})</Label>
+                                  <Tooltip delayDuration={100}>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button"><HelpCircle className="h-4 w-4 text-muted-foreground" /></Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent><p>The rate to convert from Display to Pricing currency.<br/>Example: if 1 USD = 83 INR, and INR is your pricing currency,<br/>the rate is 83.</p></TooltipContent>
+                                  </Tooltip>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                  <QuotationInput id="exchangeRate" type="number" value={data.exchangeRate} onChange={e => handleFieldChange('exchangeRate', e.target.value === '' ? '' : Number(e.target.value))} className="bg-white text-right" />
+                                  <Button size="icon" variant="ghost" onClick={handleFetchRate} disabled={isFetchingRate} className="h-9 w-9 flex-shrink-0">
+                                      {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                  </Button>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+                </TooltipProvider>
             </section>
 
             <section className="mt-6">
