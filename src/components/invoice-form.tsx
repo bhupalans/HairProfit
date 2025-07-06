@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
@@ -140,6 +141,7 @@ export default function InvoiceForm() {
                 })),
                 currency: quotationData.displayCurrency,
                 shippingCost: getConvertedValue(quotationData.shippingCost),
+                notes: `Based on Quotation #${quotationData.quotationRef}`,
             };
             
             setData(prev => ({ ...prev, ...newInvoiceData, invoiceRef: nextRef }));
@@ -382,17 +384,11 @@ export default function InvoiceForm() {
             <section className="grid grid-cols-1 md:grid-cols-2 mt-8 gap-8">
                 <div className="flex flex-col gap-2">
                     <Label className="font-bold uppercase text-xs tracking-wider text-muted-foreground">Currency</Label>
-                    <Select value={data.currency} onValueChange={(value) => handleFieldChange('currency', value)}>
-                        <SelectTrigger className="bg-muted/50 border-none h-auto py-2 px-2 focus:ring-1 focus:ring-primary focus-visible:ring-offset-0">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="USD">USD - United States Dollar</SelectItem>
-                            <SelectItem value="INR">INR - Indian Rupee</SelectItem>
-                            <SelectItem value="EUR">EUR - Euro</SelectItem>
-                            <SelectItem value="GBP">GBP - British Pound</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Input
+                        value={data.currency}
+                        readOnly
+                        className="bg-muted/50 border-none h-auto py-2 px-2 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 font-medium"
+                    />
                 </div>
                 <div className="w-full space-y-2 text-sm">
                      <div className="grid grid-cols-[1fr_auto] items-baseline">
@@ -464,3 +460,5 @@ export default function InvoiceForm() {
     </div>
   );
 }
+
+    
