@@ -129,19 +129,22 @@ export default function InvoiceForm() {
                 return numericValue / rate;
             };
 
+            const productInfo = `${quotationData.productOrigin} Hair - ${quotationData.productFormat}`;
+
             const newInvoiceData: Partial<InvoiceData> = {
                 logo: quotationData.logo,
                 clientInfo: quotationData.clientInfo,
                 myInfo: quotationData.myInfo,
                 items: quotationData.items.map(item => ({
                     id: crypto.randomUUID(),
-                    description: `${item.length} ${quotationData.productOrigin} Hair - ${quotationData.productFormat}`,
+                    description: item.length,
                     quantity: item.quantity,
                     price: getConvertedValue(item.price),
                 })),
                 currency: quotationData.displayCurrency,
                 shippingCost: getConvertedValue(quotationData.shippingCost),
-                notes: `Based on Quotation #${quotationData.quotationRef}`,
+                notes: `Based on Quotation #${quotationData.quotationRef}.\nProduct Details: ${productInfo}`,
+                terms: `${quotationData.termsAndConditions}\n\nPayment Details:\n${quotationData.paymentDetails}`,
             };
             
             setData(prev => ({ ...prev, ...newInvoiceData, invoiceRef: nextRef }));
@@ -460,5 +463,3 @@ export default function InvoiceForm() {
     </div>
   );
 }
-
-    
