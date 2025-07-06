@@ -113,18 +113,20 @@ export default function PriceQuotationForm() {
       if (parts.length === 3) {
         const year = parts[1];
         const num = parseInt(parts[2], 10);
-        if (!isNaN(num)) {
-          if (year === currentYear) {
-            const nextNum = (num + 1).toString().padStart(3, '0');
-            nextRef = `Q-${currentYear}-${nextNum}`;
-          } else {
-            nextRef = `Q-${currentYear}-001`;
-          }
+
+        if (year === currentYear && !isNaN(num)) {
+          // Same year, increment number
+          const nextNum = (num + 1).toString().padStart(3, '0');
+          nextRef = `Q-${currentYear}-${nextNum}`;
+        } else {
+          // New year or invalid format, reset for the current year
+           nextRef = `Q-${currentYear}-001`;
         }
       }
     }
     
     if (!nextRef) {
+      // No lastRef found, start from 1 for the current year
       nextRef = `Q-${currentYear}-001`;
     }
     
