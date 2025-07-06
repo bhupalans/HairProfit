@@ -119,12 +119,13 @@ export default function InvoiceForm() {
             const rate = Number(quotationData.exchangeRate) || 1;
 
             const getConvertedValue = (value: string | number) => {
+                const numericValue = Number(value) || 0;
                 if (!performConversion || rate === 0) {
-                    return Number(value) || 0;
+                    return numericValue;
                 }
                 // The rate is defined as "1 Display Currency = X Pricing Currency".
                 // To convert from Pricing Currency to Display Currency, we divide.
-                return (Number(value) || 0) / rate;
+                return numericValue / rate;
             };
 
             const newInvoiceData: Partial<InvoiceData> = {
@@ -323,7 +324,7 @@ export default function InvoiceForm() {
                 </div>
 
                 <div className="w-full sm:w-auto text-left sm:text-right space-y-2">
-                    <h2 className="text-4xl font-bold uppercase text-primary flex gap-2 items-center justify-end"><Receipt /> INVOICE</h2>
+                    <h2 className="text-4xl font-bold uppercase text-primary flex gap-2 items-center justify-start sm:justify-end"><Receipt /> INVOICE</h2>
                     <div className="inline-grid grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 text-left">
                         <Label htmlFor="invoiceRef" className="font-bold">Invoice #</Label>
                         <FormInput id="invoiceRef" value={data.invoiceRef} onChange={e => handleFieldChange('invoiceRef', e.target.value)} className="w-40 font-normal" />
@@ -356,7 +357,7 @@ export default function InvoiceForm() {
                 <div className="rounded-lg overflow-x-auto border">
                     <Table>
                         <TableHeader><TableRow className="bg-muted/50">
-                            <TableHead className="p-2 font-bold text-gray-700">Description</TableHead>
+                            <TableHead className="p-2 font-bold text-gray-700 min-w-[200px]">Description</TableHead>
                             <TableHead className="p-2 w-24 text-right font-bold text-gray-700">Qty</TableHead>
                             <TableHead className="p-2 w-28 text-right font-bold text-gray-700">Price</TableHead>
                             <TableHead className="hidden sm:table-cell w-32 text-right p-2 font-bold text-gray-700">Total</TableHead>
