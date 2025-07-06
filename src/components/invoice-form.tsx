@@ -115,6 +115,18 @@ export default function InvoiceForm() {
             localStorage.removeItem('quotationForInvoice'); // Clear it after use
             const quotationData: QuotationData = JSON.parse(quotationJSON);
 
+            const performConversion = quotationData.currency !== quotationData.displayCurrency;
+            const rate = Number(quotationData.exchangeRate) || 1;
+
+            const getConvertedValue = (value: string | number) => {
+                if (!performConversion || rate === 0) {
+                    return Number(value) || 0;
+                }
+                // The rate is defined as "1 Display Currency = X Pricing Currency".
+                // To convert from Pricing Currency to Display Currency, we divide.
+                return (Number(value) || 0) / rate;
+            };
+
             const newInvoiceData: Partial<InvoiceData> = {
                 logo: quotationData.logo,
                 clientInfo: quotationData.clientInfo,
@@ -123,17 +135,17 @@ export default function InvoiceForm() {
                     id: crypto.randomUUID(),
                     description: `${item.length} ${quotationData.productOrigin} Hair - ${quotationData.productFormat}`,
                     quantity: item.quantity,
-                    price: item.price,
+                    price: getConvertedValue(item.price),
                 })),
-                currency: quotationData.currency,
-                shippingCost: Number(quotationData.shippingCost) || 0,
+                currency: quotationData.displayCurrency,
+                shippingCost: getConvertedValue(quotationData.shippingCost),
             };
             
             setData(prev => ({ ...prev, ...newInvoiceData, invoiceRef: nextRef }));
             
             toast({
                 title: 'Invoice Created from Quotation',
-                description: 'Review the details and set a due date.',
+                description: `All prices converted to ${quotationData.displayCurrency}. Review and set due date.`,
             });
         } catch(e) {
             console.error("Failed to parse quotation data", e);
@@ -451,5 +463,3 @@ export default function InvoiceForm() {
     </div>
   );
 }
-
-    
