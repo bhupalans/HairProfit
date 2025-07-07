@@ -1,28 +1,33 @@
 import * as z from 'zod';
 
+const emptyOrNumber = z.preprocess(
+  (val) => (val === null ? '' : val), // convert null to empty string
+  z.union([z.string(), z.number()]).optional().default('')
+);
+
 export const processingStepSchema = z.object({
   id: z.string().optional(),
   name: z.string().optional().default(''),
-  cost: z.union([z.string(), z.number()]).optional().default(''),
-  wastage: z.union([z.string(), z.number()]).optional().default(''),
+  cost: emptyOrNumber,
+  wastage: emptyOrNumber,
 });
 
 export const nonRemyHairProductSchema = z.object({
   id: z.string().optional(),
   size: z.string().optional().default(''),
-  quantity: z.union([z.string(), z.number()]).optional().default(''),
-  price: z.union([z.string(), z.number()]).optional().default(''),
+  quantity: emptyOrNumber,
+  price: emptyOrNumber,
 });
 
 export const hairProfitDataSchema = z.object({
   hairType: z.string().optional().default(''),
-  purchaseQuantity: z.union([z.string(), z.number()]).optional().default(''),
-  purchasePrice: z.union([z.string(), z.number()]).optional().default(''),
+  purchaseQuantity: emptyOrNumber,
+  purchasePrice: emptyOrNumber,
   currency: z.string().min(2, 'A currency must be selected.').optional().default('USD'),
   processingSteps: z.array(processingStepSchema).optional().default([]),
-  sellingPricePerUnit: z.union([z.string(), z.number()]).optional().default(''),
+  sellingPricePerUnit: emptyOrNumber,
   enableByproductProcessing: z.boolean().optional().default(false),
-  byproductProcessingCost: z.union([z.string(), z.number()]).optional().default(''),
+  byproductProcessingCost: emptyOrNumber,
   nonRemyHairProducts: z.array(nonRemyHairProductSchema).optional().default([]),
 });
 
