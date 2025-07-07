@@ -1,4 +1,9 @@
 import type {NextConfig} from 'next';
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from src/.env
+dotenv.config({ path: path.resolve(process.cwd(), 'src/.env') });
 
 const nextConfig: NextConfig = {
   /* config options here */
