@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, PlusCircle, ShoppingCart, Search, Handshake, Loader2, Mail, Phone, MessageSquare } from 'lucide-react';
+import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -40,29 +40,6 @@ const ListingSkeleton = () => (
         </CardFooter>
     </Card>
 );
-
-const ContactInfo = ({ contact }: { contact: string }) => {
-    const isEmail = contact.includes('@');
-    const isPhone = /^\+?[0-9\s-()]+$/.test(contact);
-    
-    let Icon = MessageSquare;
-    let href = '#';
-    if (isEmail) {
-        Icon = Mail;
-        href = `mailto:${contact}`;
-    } else if (isPhone) {
-        Icon = Phone;
-        href = `tel:${contact}`;
-    }
-
-    return (
-        <Button asChild className="w-full">
-            <a href={href} target="_blank" rel="noopener noreferrer">
-                <Icon className="mr-2" /> Contact
-            </a>
-        </Button>
-    )
-};
 
 export default function HairMarketplace() {
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
@@ -121,6 +98,37 @@ export default function HairMarketplace() {
 
   const forSaleListings = listings.filter(l => l.type === 'For Sale');
   const lookingForListings = listings.filter(l => l.type === 'Looking to Buy');
+
+  const renderListings = (list: MarketplaceListing[]) => (
+    <AnimatePresence>
+      {list.map(listing => (
+        <motion.div layout key={listing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <Link href={`/marketplace/${listing.id}`} className="group block h-full">
+            <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
+              <CardHeader>
+                  <Image
+                  src={listing.imageUrl}
+                  data-ai-hint={listing.imageHint}
+                  alt={listing.title}
+                  width={600}
+                  height={400}
+                  className="w-full rounded-lg aspect-[3/2] object-cover"
+                  />
+                  <CardTitle className="pt-4">{listing.title}</CardTitle>
+                  <CardDescription className="text-primary font-semibold">{listing.price}</CardDescription>
+              </CardHeader>
+              <CardContent className="flex-grow">
+                  <p className="text-muted-foreground line-clamp-3">{listing.description}</p>
+              </CardContent>
+               <CardFooter>
+                  <Button variant="secondary" className="w-full">View Details</Button>
+               </CardFooter>
+            </Card>
+          </Link>
+        </motion.div>
+      ))}
+    </AnimatePresence>
+  );
 
   return (
     <div className="bg-muted/30 min-h-screen">
@@ -255,65 +263,15 @@ export default function HairMarketplace() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
             {loading ? (
-                Array.from({ length: 3 }).map((_, i) => <ListingSkeleton key={i} />)
+                Array.from({ length: 6 }).map((_, i) => <ListingSkeleton key={i} />)
             ) : (
                 <>
                     <TabsContent value="for-sale" className="contents">
-                        <AnimatePresence>
-                        {forSaleListings.map(listing => (
-                            <motion.div layout key={listing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                            <Card className="flex flex-col h-full">
-                            <CardHeader>
-                                <Image
-                                src={listing.imageUrl}
-                                data-ai-hint={listing.imageHint}
-                                alt={listing.title}
-                                width={600}
-                                height={400}
-                                className="w-full rounded-lg aspect-[3/2] object-cover"
-                                />
-                                <CardTitle className="pt-4">{listing.title}</CardTitle>
-                                <CardDescription className="text-primary font-semibold">{listing.price}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                                <p className="text-muted-foreground">{listing.description}</p>
-                            </CardContent>
-                            <CardFooter>
-                                <ContactInfo contact={listing.contact} />
-                            </CardFooter>
-                            </Card>
-                            </motion.div>
-                        ))}
-                        </AnimatePresence>
+                        {renderListings(forSaleListings)}
                     </TabsContent>
 
                     <TabsContent value="looking-to-buy" className="contents">
-                        <AnimatePresence>
-                        {lookingForListings.map(listing => (
-                            <motion.div layout key={listing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                            <Card key={listing.id} className="flex flex-col h-full">
-                            <CardHeader>
-                                <Image
-                                src={listing.imageUrl}
-                                data-ai-hint={listing.imageHint}
-                                alt={listing.title}
-                                width={600}
-                                height={400}
-                                className="w-full rounded-lg aspect-[3/2] object-cover"
-                                />
-                                <CardTitle className="pt-4">{listing.title}</CardTitle>
-                                <CardDescription className="text-primary font-semibold">{listing.price}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                                <p className="text-muted-foreground">{listing.description}</p>
-                            </CardContent>
-                            <CardFooter>
-                                <ContactInfo contact={listing.contact} />
-                            </CardFooter>
-                            </Card>
-                            </motion.div>
-                        ))}
-                        </AnimatePresence>
+                       {renderListings(lookingForListings)}
                     </TabsContent>
                 </>
             )}

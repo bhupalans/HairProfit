@@ -8,7 +8,7 @@ import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, ExchangeRateInput, ExchangeRateOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -76,6 +76,35 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
     return { success: false, error: e.message || 'Failed to fetch listings.' };
   }
 }
+
+export async function getListing(id: string): Promise<{ success: boolean; data?: MarketplaceListing; error?: string }> {
+  try {
+    const docRef = doc(db, 'listings', id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const listing: MarketplaceListing = {
+        id: docSnap.id,
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        imageUrl: data.imageUrl,
+        imageHint: data.imageHint,
+        contact: data.contact,
+        createdAt: data.createdAt.toDate().toISOString(),
+      };
+      return { success: true, data: listing };
+    } else {
+      return { success: false, error: 'Listing not found.' };
+    }
+  } catch (e: any) {
+    console.error(`Failed to fetch listing ${id}`, e);
+    return { success: false, error: e.message || 'Failed to fetch listing.' };
+  }
+}
+
 
 export async function createListing(listingData: MarketplaceListingFormData): Promise<{ success: boolean; error?: string }> {
   try {
