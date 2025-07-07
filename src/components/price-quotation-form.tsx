@@ -48,7 +48,6 @@ import { cn } from '@/lib/utils';
 import QuotationPdfReport from './quotation-pdf-report';
 import { fetchExchangeRate } from '@/app/actions';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { sendNotification } from '@/services/email';
 
 const initialItem: QuotationItem = {
   id: crypto.randomUUID(),
@@ -233,20 +232,6 @@ export default function PriceQuotationForm() {
     }
 
     localStorage.setItem('lastQuotationRef', data.quotationRef);
-    
-    // Fire-and-forget email notification
-    sendNotification({
-        subject: `New Quotation Created: #${data.quotationRef}`,
-        html: `
-            <h1>New Quotation: ${data.quotationRef}</h1>
-            <p>A new price quotation has been generated.</p>
-            <ul>
-                <li><strong>Client:</strong> ${data.clientInfo.toName}</li>
-                <li><strong>Date:</strong> ${data.date}</li>
-                <li><strong>Total Amount:</strong> ${formatCurrency(convertedGrandTotal, data.displayCurrency)}</li>
-            </ul>
-        `
-    });
 
     setIsGeneratingPdf(true);
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
