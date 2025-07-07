@@ -312,7 +312,7 @@ export default function InvoiceForm() {
     <div className="bg-muted min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 font-body">
       <div className="max-w-4xl mx-auto">
         <div className="mb-6">
-          <Button asChild variant="ghost" className="pl-0"><Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Calculator</Link></Button>
+          <Button asChild variant="ghost" className="pl-0"><Link href="/"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Link></Button>
         </div>
 
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">

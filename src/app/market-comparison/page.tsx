@@ -129,7 +129,7 @@ export default function MarketComparisonPage() {
           <Button asChild variant="ghost" className="pl-0">
             <Link href="/">
               <ArrowLeft className="mr-2" />
-              Back to Calculator
+              Back to Dashboard
             </Link>
           </Button>
         </div>

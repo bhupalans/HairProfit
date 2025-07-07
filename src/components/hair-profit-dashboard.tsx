@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { Sparkles, FileDown, FileUp, Loader2, BarChart2, Users, FileText, Receipt, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Sparkles, FileDown, FileUp, Loader2 } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -334,13 +334,21 @@ export default function HairProfitDashboard() {
   return (
     <div className="bg-background min-h-screen text-foreground font-body">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
+        <div className="mb-8">
+          <Button asChild variant="ghost" className="pl-0">
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Link>
+          </Button>
+        </div>
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div className="flex items-center gap-4">
             <div className="bg-primary/20 p-2 rounded-lg">
               <Sparkles className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl font-headline font-bold text-foreground tracking-tight">
-              HairProfit
+              Profit Calculator
             </h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -363,31 +371,6 @@ export default function HairProfitDashboard() {
               ) : (
                   <><FileDown className="mr-2 h-4 w-4" /> Download PDF</>
               )}
-            </Button>
-            <Button asChild>
-              <Link href="/market-comparison">
-                <BarChart2 className="mr-2 h-4 w-4" /> Market Comparison
-              </Link>
-            </Button>
-             <Button asChild>
-              <Link href="/buyer-analysis">
-                <Users className="mr-2 h-4 w-4" /> Buyer Analysis
-              </Link>
-            </Button>
-            <Button asChild>
-              <Link href="/price-quotation">
-                <FileText className="mr-2 h-4 w-4" /> Price Quotation
-              </Link>
-            </Button>
-             <Button asChild>
-              <Link href="/invoice">
-                <Receipt className="mr-2 h-4 w-4" /> Invoice
-              </Link>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/help">
-                <HelpCircle className="mr-2 h-4 w-4" /> Help & Support
-              </Link>
             </Button>
           </div>
         </header>
