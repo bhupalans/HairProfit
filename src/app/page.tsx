@@ -60,15 +60,15 @@ export default function Home() {
     <main className="bg-background min-h-screen">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <header className="text-center mb-12">
-          <div className="inline-flex items-center gap-4 mb-4">
-            <div className="bg-primary/20 p-3 rounded-lg">
-              <Sparkles className="h-10 w-10 text-primary" />
+          <div className="inline-flex items-center gap-2 sm:gap-4 mb-4">
+            <div className="bg-primary/20 p-2 sm:p-3 rounded-lg">
+              <Sparkles className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
             </div>
-            <h1 className="text-5xl font-bold tracking-tight">
+            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
               HairProfit
             </h1>
           </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
             Your all-in-one toolkit for the hair industry. Manage costs, analyze
             markets, and streamline sales.
           </p>
