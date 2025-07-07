@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import {
   Calculator,
@@ -9,6 +10,7 @@ import {
   Sparkles,
   Beaker,
   Bot,
+  Store,
 } from 'lucide-react';
 import {
   Card,
@@ -25,6 +27,12 @@ const tools = [
       'Combine cost calculation with AI-powered market price suggestions.',
     href: '/ai-profit-calculator',
     icon: <Bot className="h-8 w-8" />,
+  },
+  {
+    title: 'Hair Marketplace',
+    description: 'Find buyers and sellers. Post listings to attract opportunities.',
+    href: '/marketplace',
+    icon: <Store className="h-8 w-8" />,
   },
   {
     title: 'Profit Calculator',

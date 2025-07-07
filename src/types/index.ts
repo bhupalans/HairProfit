@@ -1,3 +1,4 @@
+
 import * as z from 'zod';
 
 const emptyOrNumber = z.preprocess(
@@ -160,3 +161,14 @@ export const invoiceDataSchema = z.object({
   terms: z.string(),
 });
 export type InvoiceData = z.infer<typeof invoiceDataSchema>;
+
+export const marketplaceListingSchema = z.object({
+  id: z.string(),
+  type: z.enum(['For Sale', 'Looking to Buy']),
+  title: z.string(),
+  description: z.string(),
+  price: z.string(),
+  imageUrl: z.string(),
+  imageHint: z.string(),
+});
+export type MarketplaceListing = z.infer<typeof marketplaceListingSchema>;
