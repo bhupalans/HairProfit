@@ -15,7 +15,7 @@ export const nonRemyHairProductSchema = z.object({
 });
 
 export const hairProfitDataSchema = z.object({
-  hairType: z.string(),
+  hairType: z.string().optional().default(''),
   purchaseQuantity: z.union([z.string(), z.number()]),
   purchasePrice: z.union([z.string(), z.number()]),
   currency: z.string().min(2, 'A currency must be selected.'),
