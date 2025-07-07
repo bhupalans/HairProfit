@@ -111,15 +111,21 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
 export async function createListing(listingData: MarketplaceListingFormData): Promise<{ success: boolean; error?: string }> {
   try {
     const listingsRef = collection(db, 'listings');
+    
+    // A simple way to get more relevant keywords for the image hint
+    const titleWords = listingData.title.toLowerCase().replace(/[^a-z\s]/gi, '').split(' ');
+    const commonWords = new Set(['hair', 'for', 'sale', 'and', 'the', 'a', 'in', 'to', 'buy', 'looking']);
+    const keywords = titleWords.filter(word => word && !commonWords.has(word));
+    const imageHint = `${keywords[0] || 'hair'} ${keywords[1] || 'product'}`;
+    
     await addDoc(listingsRef, {
       ...listingData,
       imageUrl: 'https://placehold.co/600x400.png',
-      imageHint: `${listingData.title.split(' ')[1] || 'hair'} ${listingData.title.split(' ')[2] || 'extensions'}`,
+      imageHint: imageHint,
       createdAt: serverTimestamp(),
     });
     return { success: true };
-  } catch (e: any)
-   {
+  } catch (e: any) {
     console.error('Failed to create listing', e);
     return { success: false, error: e.message || 'Failed to create listing.' };
   }
