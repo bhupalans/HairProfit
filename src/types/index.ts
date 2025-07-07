@@ -170,5 +170,16 @@ export const marketplaceListingSchema = z.object({
   price: z.string(),
   imageUrl: z.string(),
   imageHint: z.string(),
+  contact: z.string(),
+  createdAt: z.string(), // ISO string date
 });
 export type MarketplaceListing = z.infer<typeof marketplaceListingSchema>;
+
+export const marketplaceListingFormSchema = z.object({
+  type: z.enum(['For Sale', 'Looking to Buy']),
+  title: z.string().min(5, { message: "Title must be at least 5 characters." }),
+  description: z.string().min(10, { message: "Description must be at least 10 characters." }),
+  price: z.string().min(1, { message: "Price or budget is required." }),
+  contact: z.string().min(5, { message: "Valid contact info (email or phone) is required." }),
+});
+export type MarketplaceListingFormData = z.infer<typeof marketplaceListingFormSchema>;
