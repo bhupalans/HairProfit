@@ -8,7 +8,7 @@ import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
 import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, ExchangeRateInput, ExchangeRateOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -128,18 +128,5 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
   } catch (e: any) {
     console.error('Failed to create listing', e);
     return { success: false, error: e.message || 'Failed to create listing.' };
-  }
-}
-
-export async function deleteListing(id: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    // Note: When image uploads are implemented, we'll need to add code here
-    // to delete the associated image from Firebase Storage.
-    const docRef = doc(db, 'listings', id);
-    await deleteDoc(docRef);
-    return { success: true };
-  } catch (e: any) {
-    console.error(`Failed to delete listing ${id}`, e);
-    return { success: false, error: e.message || 'Failed to delete listing.' };
   }
 }

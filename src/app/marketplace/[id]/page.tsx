@@ -4,27 +4,16 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, notFound, useParams } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MessageSquare, Clock, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 
-import { getListing, deleteListing } from '@/app/actions';
+import { getListing } from '@/app/actions';
 import type { MarketplaceListing } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -85,7 +74,6 @@ export default function ListingDetailPage() {
     const params = useParams<{ id: string }>();
     const [listing, setListing] = useState<MarketplaceListing | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
     const { toast } = useToast();
 
@@ -102,27 +90,6 @@ export default function ListingDetailPage() {
         };
         fetchListingData();
     }, [params.id]);
-
-    const handleDelete = async () => {
-        if (!listing) return;
-        setIsDeleting(true);
-        const response = await deleteListing(listing.id);
-        
-        if (response.success) {
-            toast({
-                title: 'Listing Deleted',
-                description: 'The listing has been permanently removed.',
-            });
-            router.push('/marketplace');
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Error Deleting Listing',
-                description: response.error || 'An unknown error occurred.',
-            });
-            setIsDeleting(false);
-        }
-    };
     
     const listingTypeDisplay = listing?.type === 'For Sale' ? 'For Sale' : 'Looking to Buy';
     const badgeVariant = listing?.type === 'For Sale' ? 'default' : 'secondary';
@@ -134,43 +101,13 @@ export default function ListingDetailPage() {
                 <PageSkeleton />
             ) : listing && (
             <div className="container mx-auto max-w-4xl px-4">
-                <div className="mb-8 flex justify-between items-center">
+                <div className="mb-8">
                     <Button asChild variant="ghost" className="pl-0">
                         <Link href="/marketplace">
                             <ArrowLeft className="mr-2" />
                             Back to Marketplace
                         </Link>
                     </Button>
-                    
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                                <Trash2 className="mr-2" /> Delete Listing
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle className="flex items-center gap-2">
-                                    <AlertTriangle className="text-destructive" />
-                                    Are you sure?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete this listing from the marketplace.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                    onClick={handleDelete}
-                                    disabled={isDeleting}
-                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                                >
-                                    {isDeleting && <Loader2 className="mr-2 animate-spin" />}
-                                    Yes, delete it
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
                 </div>
 
                 <Card className="overflow-hidden">
