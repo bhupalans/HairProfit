@@ -39,6 +39,7 @@ import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import InvoicePdfReport from './invoice-pdf-report';
 import { useRouter } from 'next/navigation';
+import { sendNotification } from '@/services/email';
 
 const initialItem: InvoiceItem = {
   id: crypto.randomUUID(),
@@ -239,6 +240,20 @@ export default function InvoiceForm() {
         return;
     }
     localStorage.setItem('lastInvoiceRef', data.invoiceRef);
+
+    // Fire-and-forget email notification
+    sendNotification({
+        subject: `New Invoice Created: #${data.invoiceRef}`,
+        html: `
+            <h1>New Invoice: ${data.invoiceRef}</h1>
+            <p>A new invoice has been generated.</p>
+            <ul>
+                <li><strong>Client:</strong> ${data.clientInfo.toName}</li>
+                <li><strong>Date:</strong> ${data.invoiceDate}</li>
+                <li><strong>Balance Due:</strong> ${formatCurrency(balanceDue, data.currency)}</li>
+            </ul>
+        `
+    });
 
     setIsGeneratingPdf(true);
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
