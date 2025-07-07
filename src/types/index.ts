@@ -2,14 +2,14 @@ import * as z from 'zod';
 
 export const processingStepSchema = z.object({
   id: z.string(),
-  name: z.string().min(1, 'Step name is required.'),
+  name: z.string(),
   cost: z.union([z.string(), z.number()]),
   wastage: z.union([z.string(), z.number()]),
 });
 
 export const nonRemyHairProductSchema = z.object({
   id: z.string(),
-  size: z.string().min(1, 'Size is required.'),
+  size: z.string(),
   quantity: z.union([z.string(), z.number()]),
   price: z.union([z.string(), z.number()]),
 });
