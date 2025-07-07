@@ -6,7 +6,6 @@ import {
   Users,
   FileText,
   Receipt,
-  HelpCircle,
   Sparkles,
   Beaker,
   Store,
@@ -61,12 +60,6 @@ const tools = [
     description: 'Generate and download PDF invoices from your quotations.',
     href: '/invoice',
     icon: <Receipt className="h-8 w-8" />,
-  },
-  {
-    title: 'Help & Support',
-    description: 'Find answers to common questions and learn best practices.',
-    href: '/help',
-    icon: <HelpCircle className="h-8 w-8" />,
   },
 ];
 
