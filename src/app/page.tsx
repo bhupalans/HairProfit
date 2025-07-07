@@ -9,7 +9,6 @@ import {
   HelpCircle,
   Sparkles,
   Beaker,
-  Bot,
   Store,
 } from 'lucide-react';
 import {
@@ -21,13 +20,6 @@ import {
 } from '@/components/ui/card';
 
 const tools = [
-  {
-    title: 'AI Profit Calculator',
-    description:
-      'Combine cost calculation with AI-powered market price suggestions.',
-    href: '/ai-profit-calculator',
-    icon: <Bot className="h-8 w-8" />,
-  },
   {
     title: 'Hair Marketplace',
     description: 'Find buyers and sellers. Post listings to attract opportunities.',
