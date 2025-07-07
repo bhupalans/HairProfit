@@ -13,6 +13,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 interface ProcessingStepsCardProps {
   steps: ProcessingStep[];
@@ -29,6 +38,41 @@ export default function ProcessingStepsCard({
   onAddStep,
   onRemoveStep,
 }: ProcessingStepsCardProps) {
+  const isMobile = useIsMobile();
+
+  const HelpInfo = ({ title, mobileTitle, children }: { title: string, mobileTitle?: string, children: React.ReactNode }) => {
+    if (isMobile) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{mobileTitle || title}</DialogTitle>
+              <DialogDescription className="pt-2 text-base">{children}</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      )
+    }
+    return (
+      <TooltipProvider>
+        <Tooltip delayDuration={100}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p>{children}</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
+
+
   return (
     <Card>
       <CardHeader>
@@ -63,18 +107,9 @@ export default function ProcessingStepsCard({
                 <div>
                   <div className="flex items-center gap-1.5">
                     <Label htmlFor={`step-cost-${index}`}>Expense ({currency})</Label>
-                    <TooltipProvider>
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
-                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Total fixed cost for this step (materials, labor, etc.).<br/>This is NOT a per-unit cost.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <HelpInfo mobileTitle={`Expense (${currency})`} title="">
+                      Total fixed cost for this step (materials, labor, etc.). This is NOT a per-unit cost.
+                    </HelpInfo>
                   </div>
                   <Input
                     id={`step-cost-${index}`}
@@ -88,18 +123,9 @@ export default function ProcessingStepsCard({
                 <div>
                   <div className="flex items-center gap-1.5">
                     <Label htmlFor={`step-wastage-${index}`}>Wastage (units)</Label>
-                     <TooltipProvider>
-                      <Tooltip delayDuration={100}>
-                        <TooltipTrigger asChild>
-                           <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
-                              <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                           </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Number of hair units lost or discarded during this step.<br/>This is subtracted from your initial purchase quantity.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <HelpInfo mobileTitle="Wastage (units)" title="">
+                      Number of hair units lost or discarded during this step. This is subtracted from your initial purchase quantity.
+                    </HelpInfo>
                   </div>
                   <Input
                     id={`step-wastage-${index}`}
