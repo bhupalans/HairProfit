@@ -97,7 +97,7 @@ export default function AdvancedCalculatorDashboard() {
   
   const handleNonRemyProductChange = useCallback((
     index: number,
-    field: keyof Omit<NonRemyHairProduct, 'id' | 'price'>,
+    field: keyof Omit<NonRemyHairProduct, 'id'>,
     value: string | number
   ) => {
      const newProducts = [...data.nonRemyHairProducts];
@@ -181,60 +181,78 @@ export default function AdvancedCalculatorDashboard() {
     );
     
     const processedNonRemyProducts = (() => {
-      if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
-        return nonRemyHairProducts.map(p => ({...p, calculatedPrice: 0}));
-      }
-      
-      const costOfByproductUnit = costPerUnitBeforeWastage + byproductProcessingCost;
-      const targetMargin = Number(targetByproductMargin) || 0;
-      const priceIncreasePerInch = Number(byproductPriceIncreasePerInch) || 0;
-      const lowStockThreshold = Number(byproductLowStockThreshold) || 0;
-      const scarcityPremium = Number(byproductScarcityPremium) || 0;
+        if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
+            return nonRemyHairProducts.map(p => ({ ...p, calculatedPrice: Number(p.price) || 0 }));
+        }
 
-      const productsWithSize = nonRemyHairProducts.map(p => {
-        const parsedSize = parseInt(String(p.size).split('-')[0].trim(), 10);
-        return {
-          ...p,
-          firstSize: isNaN(parsedSize) ? 0 : parsedSize,
-        };
-      });
+        const productsWithSizeInfo = nonRemyHairProducts.map(p => {
+            const parsedSize = parseInt(String(p.size).split('-')[0].trim(), 10);
+            return { ...p, firstSize: isNaN(parsedSize) ? 0 : parsedSize };
+        });
 
-      const validProducts = productsWithSize.filter(p => p.firstSize > 0);
-      
-      if (!validProducts.length) {
-          return productsWithSize.map(p => ({ ...p, calculatedPrice: 0 }));
-      }
-      
-      validProducts.sort((a, b) => a.firstSize - b.firstSize);
-      const shortestLength = validProducts[0].firstSize;
-      
-      const baseSellingPrice = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
-          ? costOfByproductUnit / (1 - (targetMargin / 100))
-          : 0;
-  
-      return productsWithSize.map(product => {
-          if (product.firstSize === 0) {
-            return { ...product, calculatedPrice: 0 };
-          }
+        const validProducts = productsWithSizeInfo.filter(p => p.firstSize > 0);
+        if (!validProducts.length) {
+            return productsWithSizeInfo.map(p => ({ ...p, calculatedPrice: 0 }));
+        }
+        validProducts.sort((a, b) => a.firstSize - b.firstSize);
+        const shortestLength = validProducts[0].firstSize;
 
-          const lengthDifference = product.firstSize - shortestLength;
-          const sizePremiumPercentage = lengthDifference * priceIncreasePerInch;
-          let sizeAdjustedPrice = baseSellingPrice * (1 + (sizePremiumPercentage / 100));
-          if (isNaN(sizeAdjustedPrice)) sizeAdjustedPrice = 0;
-  
-          const quantity = Number(product.quantity) || 0;
-          const isScarce = quantity > 0 && lowStockThreshold > 0 && quantity < lowStockThreshold;
-          
-          let finalPrice = sizeAdjustedPrice;
-          if (isScarce) {
-              finalPrice = sizeAdjustedPrice * (1 + (scarcityPremium / 100));
-          }
-  
-          return {
-              ...product,
-              calculatedPrice: finalPrice,
-          };
-      });
+        let baseSellingPrice;
+        const targetMargin = Number(targetByproductMargin) || 0;
+        const priceIncreasePerInch = Number(byproductPriceIncreasePerInch) || 0;
+        const lowStockThreshold = Number(byproductLowStockThreshold) || 0;
+        const scarcityPremium = Number(byproductScarcityPremium) || 0;
+
+        const productsWithOverrides = validProducts.filter(p => (Number(p.price) || 0) > 0);
+        productsWithOverrides.sort((a, b) => a.firstSize - b.firstSize);
+
+        if (productsWithOverrides.length > 0) {
+            const anchorProduct = productsWithOverrides[0];
+            const anchorOverridePrice = Number(anchorProduct.price);
+            const anchorLengthDifference = anchorProduct.firstSize - shortestLength;
+            const anchorSizePremiumPercentage = anchorLengthDifference * priceIncreasePerInch;
+
+            const anchorQuantity = Number(anchorProduct.quantity) || 0;
+            const anchorIsScarce = anchorQuantity > 0 && lowStockThreshold > 0 && anchorQuantity < lowStockThreshold;
+            const anchorScarcityPremiumPercentage = anchorIsScarce ? scarcityPremium : 0;
+            
+            const denominator = (1 + anchorSizePremiumPercentage / 100) * (1 + anchorScarcityPremiumPercentage / 100);
+            baseSellingPrice = denominator > 0 ? anchorOverridePrice / denominator : 0;
+
+        } else {
+            const costOfByproductUnit = costPerUnitBeforeWastage + byproductProcessingCost;
+            baseSellingPrice = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
+                ? costOfByproductUnit / (1 - (targetMargin / 100))
+                : 0;
+        }
+
+        return productsWithSizeInfo.map(product => {
+            if (product.firstSize === 0) {
+                return { ...product, calculatedPrice: 0 };
+            }
+            
+            const overridePrice = Number(product.price) || 0;
+            if (overridePrice > 0) {
+                return { ...product, calculatedPrice: overridePrice };
+            }
+
+            const lengthDifference = product.firstSize - shortestLength;
+            const sizePremiumPercentage = lengthDifference * priceIncreasePerInch;
+            let sizeAdjustedPrice = baseSellingPrice * (1 + (sizePremiumPercentage / 100));
+
+            const quantity = Number(product.quantity) || 0;
+            const isScarce = quantity > 0 && lowStockThreshold > 0 && quantity < lowStockThreshold;
+            
+            let finalPrice = sizeAdjustedPrice;
+            if (isScarce) {
+                finalPrice = sizeAdjustedPrice * (1 + (scarcityPremium / 100));
+            }
+    
+            return {
+                ...product,
+                calculatedPrice: finalPrice,
+            };
+        });
     })();
     
     const nonRemyRevenue = processedNonRemyProducts.reduce(

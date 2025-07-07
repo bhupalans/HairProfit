@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { HairProfitData, NonRemyHairProduct } from '@/types';
@@ -18,7 +19,7 @@ interface AdvancedByproductCardProps {
   currency: string;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
   onNumericChange: (field: keyof HairProfitData, value: string) => void;
-  onProductChange: (index: number, field: keyof Omit<NonRemyHairProduct, 'id' | 'price'>, value: string | number) => void;
+  onProductChange: (index: number, field: keyof Omit<NonRemyHairProduct, 'id' >, value: string | number) => void;
   onAddProduct: () => void;
   onRemoveProduct: (index: number) => void;
   unitsRemaining: number;
@@ -196,17 +197,17 @@ export default function AdvancedByproductCard({
                         exit={{ opacity: 0 }}
                         className="flex flex-wrap items-end gap-3 rounded-lg border bg-muted/20 p-3"
                       >
-                        <div className="flex-1 min-w-[100px]">
+                        <div className="flex-1 min-w-[80px]">
                           <Label htmlFor={`nr-size-${index}`} className="text-xs">Size (in)</Label>
                           <Input
                             id={`nr-size-${index}`}
-                            placeholder="e.g., 8 or 8-10"
+                            placeholder="e.g., 8"
                             value={product.size}
                             onChange={(e) => onProductChange(index, 'size', e.target.value)}
                           />
                         </div>
-                        <div className="flex-1 min-w-[100px]">
-                          <Label htmlFor={`nr-quantity-${index}`} className="text-xs">Qty (units)</Label>
+                        <div className="flex-1 min-w-[80px]">
+                          <Label htmlFor={`nr-quantity-${index}`} className="text-xs">Qty</Label>
                           <Input
                             id={`nr-quantity-${index}`}
                             type="number"
@@ -215,8 +216,18 @@ export default function AdvancedByproductCard({
                             onChange={(e) => onProductChange(index, 'quantity', e.target.value)}
                           />
                         </div>
-                        <div className="flex-1 min-w-[120px]">
-                           <Label className="text-xs">Suggested Price/unit</Label>
+                        <div className="flex-1 min-w-[100px]">
+                          <Label htmlFor={`nr-price-${index}`} className="text-xs">Manual Price</Label>
+                          <Input
+                            id={`nr-price-${index}`}
+                            type="number"
+                            placeholder="Override"
+                            value={product.price}
+                            onChange={(e) => onProductChange(index, 'price', e.target.value)}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-[110px]">
+                           <Label className="text-xs">Final Price/unit</Label>
                            <Input
                               readOnly
                               value={formatCurrency(product.calculatedPrice)}
