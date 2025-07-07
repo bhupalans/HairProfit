@@ -1,29 +1,29 @@
 import * as z from 'zod';
 
 export const processingStepSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  cost: z.union([z.string(), z.number()]),
-  wastage: z.union([z.string(), z.number()]),
+  id: z.string().optional(),
+  name: z.string().optional().default(''),
+  cost: z.union([z.string(), z.number()]).optional().default(''),
+  wastage: z.union([z.string(), z.number()]).optional().default(''),
 });
 
 export const nonRemyHairProductSchema = z.object({
-  id: z.string(),
-  size: z.string(),
-  quantity: z.union([z.string(), z.number()]),
-  price: z.union([z.string(), z.number()]),
+  id: z.string().optional(),
+  size: z.string().optional().default(''),
+  quantity: z.union([z.string(), z.number()]).optional().default(''),
+  price: z.union([z.string(), z.number()]).optional().default(''),
 });
 
 export const hairProfitDataSchema = z.object({
   hairType: z.string().optional().default(''),
-  purchaseQuantity: z.union([z.string(), z.number()]),
-  purchasePrice: z.union([z.string(), z.number()]),
-  currency: z.string().min(2, 'A currency must be selected.'),
-  processingSteps: z.array(processingStepSchema),
-  sellingPricePerUnit: z.union([z.string(), z.number()]),
-  enableByproductProcessing: z.boolean().default(false),
-  byproductProcessingCost: z.union([z.string(), z.number()]).optional(),
-  nonRemyHairProducts: z.array(nonRemyHairProductSchema).optional(),
+  purchaseQuantity: z.union([z.string(), z.number()]).optional().default(''),
+  purchasePrice: z.union([z.string(), z.number()]).optional().default(''),
+  currency: z.string().min(2, 'A currency must be selected.').optional().default('USD'),
+  processingSteps: z.array(processingStepSchema).optional().default([]),
+  sellingPricePerUnit: z.union([z.string(), z.number()]).optional().default(''),
+  enableByproductProcessing: z.boolean().optional().default(false),
+  byproductProcessingCost: z.union([z.string(), z.number()]).optional().default(''),
+  nonRemyHairProducts: z.array(nonRemyHairProductSchema).optional().default([]),
 });
 
 export type ProcessingStep = z.infer<typeof processingStepSchema>;
