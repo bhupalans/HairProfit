@@ -1,12 +1,30 @@
-import { getListing } from '@/app/actions';
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { notFound } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MessageSquare, Clock } from 'lucide-react';
+import { useRouter, notFound } from 'next/navigation';
+import { ArrowLeft, Mail, Phone, MessageSquare, Clock, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
+
+import { getListing, deleteListing } from '@/app/actions';
+import type { MarketplaceListing } from '@/types';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -34,28 +52,123 @@ const ContactInfo = ({ contact }: { contact: string }) => {
     )
 };
 
-export default async function ListingDetailPage({ params }: { params: { id: string } }) {
-    const { success, data: listing, error } = await getListing(params.id);
+const PageSkeleton = () => (
+    <div className="container mx-auto max-w-4xl px-4">
+        <div className="mb-8">
+            <Skeleton className="h-10 w-48" />
+        </div>
+        <Card className="overflow-hidden">
+            <div className="grid grid-cols-1 md:grid-cols-2">
+                <Skeleton className="w-full aspect-square" />
+                <div className="flex flex-col p-6 sm:p-8 space-y-4">
+                    <div className="flex justify-between items-start gap-2">
+                        <Skeleton className="h-9 w-3/4" />
+                        <Skeleton className="h-6 w-20" />
+                    </div>
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-5 w-1/2" />
+                    <div className="flex-grow space-y-2 pt-6">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                    </div>
+                    <div className="pt-6">
+                        <Skeleton className="h-12 w-40" />
+                    </div>
+                </div>
+            </div>
+        </Card>
+    </div>
+);
 
-    if (!success || !listing) {
-        notFound();
-    }
+export default function ListingDetailPage({ params }: { params: { id: string } }) {
+    const [listing, setListing] = useState<MarketplaceListing | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const router = useRouter();
+    const { toast } = useToast();
+
+    useEffect(() => {
+        const fetchListingData = async () => {
+            const { success, data } = await getListing(params.id);
+            if (success && data) {
+                setListing(data);
+            } else {
+                notFound();
+            }
+            setIsLoading(false);
+        };
+        fetchListingData();
+    }, [params.id]);
+
+    const handleDelete = async () => {
+        if (!listing) return;
+        setIsDeleting(true);
+        const response = await deleteListing(listing.id);
+        
+        if (response.success) {
+            toast({
+                title: 'Listing Deleted',
+                description: 'The listing has been permanently removed.',
+            });
+            router.push('/marketplace');
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error Deleting Listing',
+                description: response.error || 'An unknown error occurred.',
+            });
+            setIsDeleting(false);
+        }
+    };
     
-    const listingTypeDisplay = listing.type === 'For Sale' ? 'For Sale' : 'Looking to Buy';
-    const badgeVariant = listing.type === 'For Sale' ? 'default' : 'secondary';
-    const postedDate = formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true });
-
+    const listingTypeDisplay = listing?.type === 'For Sale' ? 'For Sale' : 'Looking to Buy';
+    const badgeVariant = listing?.type === 'For Sale' ? 'default' : 'secondary';
+    const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
 
     return (
         <main className="bg-muted/30 min-h-screen py-8 sm:py-12">
+            {isLoading ? (
+                <PageSkeleton />
+            ) : listing && (
             <div className="container mx-auto max-w-4xl px-4">
-                <div className="mb-8">
+                <div className="mb-8 flex justify-between items-center">
                     <Button asChild variant="ghost" className="pl-0">
                         <Link href="/marketplace">
                             <ArrowLeft className="mr-2" />
                             Back to Marketplace
                         </Link>
                     </Button>
+                    
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="sm">
+                                <Trash2 className="mr-2" /> Delete Listing
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                    <AlertTriangle className="text-destructive" />
+                                    Are you sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete this listing from the marketplace.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleDelete}
+                                    disabled={isDeleting}
+                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                >
+                                    {isDeleting && <Loader2 className="mr-2 animate-spin" />}
+                                    Yes, delete it
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
 
                 <Card className="overflow-hidden">
@@ -92,6 +205,7 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                     </div>
                 </Card>
             </div>
+            )}
         </main>
     );
 }
