@@ -7,20 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PlusCircle, Recycle, Trash2 } from 'lucide-react';
+import { PlusCircle, Recycle, Trash2, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 interface AdvancedByproductCardProps {
   data: HairProfitData;
   currency: string;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
   onNumericChange: (field: keyof HairProfitData, value: string) => void;
-  onProductChange: (index: number, field: keyof Omit<NonRemyHairProduct, 'id'>, value: string | number) => void;
+  onProductChange: (index: number, field: keyof Omit<NonRemyHairProduct, 'id' | 'price'>, value: string | number) => void;
   onAddProduct: () => void;
   onRemoveProduct: (index: number) => void;
   unitsRemaining: number;
   assignedNonRemyQuantity: number;
-  costPerUnitBeforeWastage: number;
+  processedNonRemyProducts: (NonRemyHairProduct & { calculatedPrice: number })[];
 }
 
 export default function AdvancedByproductCard({
@@ -33,14 +36,17 @@ export default function AdvancedByproductCard({
   onRemoveProduct,
   unitsRemaining,
   assignedNonRemyQuantity,
-  costPerUnitBeforeWastage
+  processedNonRemyProducts,
 }: AdvancedByproductCardProps) {
   const { 
     enableByproductProcessing, 
     byproductProcessingCost, 
-    nonRemyHairProducts = [],
-    targetByproductMargin 
+    targetByproductMargin,
+    byproductPriceIncreasePerInch,
+    byproductLowStockThreshold,
+    byproductScarcityPremium,
   } = data;
+  const isMobile = useIsMobile();
   
   const formatCurrency = (value: number) => {
     if (isNaN(value)) value = 0;
@@ -49,13 +55,38 @@ export default function AdvancedByproductCard({
       currency: currency || 'USD',
     }).format(value);
   };
-  
-  const costOfByproductUnit = costPerUnitBeforeWastage + (Number(byproductProcessingCost) || 0);
-  const numericMargin = Number(targetByproductMargin) || 0;
-  
-  const suggestedPrice = numericMargin < 100 && numericMargin >= 0
-    ? costOfByproductUnit / (1 - (numericMargin / 100)) 
-    : 0;
+
+  const HelpInfo = ({ title, mobileTitle, children }: { title: string, mobileTitle?: string, children: React.ReactNode }) => {
+    if (isMobile) {
+      return (
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{mobileTitle || title}</DialogTitle>
+              <DialogDescription className="pt-2 text-base">{children}</DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      )
+    }
+    return (
+      <TooltipProvider>
+        <Tooltip delayDuration={100}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-5 w-5 cursor-help" type="button">
+              <HelpCircle className="h-4 w-4 text-muted-foreground" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent><p>{children}</p></TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    )
+  }
 
   return (
     <Card>
@@ -65,7 +96,7 @@ export default function AdvancedByproductCard({
           Chowry (Byproduct) Processing
         </CardTitle>
         <CardDescription>
-          Optionally, process remaining units into sellable non-remy hair with automated pricing.
+          Process remaining units into sellable non-remy hair with automated, tiered pricing.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -88,49 +119,75 @@ export default function AdvancedByproductCard({
               exit={{ opacity: 0, height: 0 }}
               className="space-y-6 overflow-hidden"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <div>
-                    <Label htmlFor="byproduct-cost">Byproduct Processing Cost (per unit)</Label>
-                    <Input
-                    id="byproduct-cost"
-                    type="number"
-                    value={byproductProcessingCost}
-                    onChange={(e) => onNumericChange('byproductProcessingCost', e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                    Cost to process each remaining unit into a sellable byproduct.
-                    </p>
-                </div>
-                <div>
-                    <Label htmlFor="target-margin">Target Profit Margin (%)</Label>
-                    <Input
-                        id="target-margin"
+              <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
+                <h3 className="text-lg font-medium text-center">Byproduct Pricing Controls</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="byproduct-cost">Processing Cost (per unit)</Label>
+                        <Input
+                        id="byproduct-cost"
                         type="number"
-                        value={targetByproductMargin}
-                        onChange={(e) => onNumericChange('targetByproductMargin', e.target.value)}
-                        placeholder="e.g. 30"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                        Desired profit margin for all byproduct sales.
-                    </p>
+                        value={byproductProcessingCost}
+                        onChange={(e) => onNumericChange('byproductProcessingCost', e.target.value)}
+                        />
+                    </div>
+                    <div>
+                        <Label htmlFor="target-margin">Target Profit Margin (%)</Label>
+                        <Input
+                            id="target-margin"
+                            type="number"
+                            value={targetByproductMargin}
+                            onChange={(e) => onNumericChange('targetByproductMargin', e.target.value)}
+                            placeholder="e.g. 30"
+                        />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Label htmlFor="increase-per-inch">Price Increase per Inch (%)</Label>
+                          <HelpInfo title="Price Increase per Inch (%)">Additional % to add to the price for every inch longer than the shortest size.</HelpInfo>
+                        </div>
+                        <Input
+                            id="increase-per-inch"
+                            type="number"
+                            value={byproductPriceIncreasePerInch}
+                            onChange={(e) => onNumericChange('byproductPriceIncreasePerInch', e.target.value)}
+                            placeholder="e.g. 3"
+                        />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Label htmlFor="low-stock-threshold">Low Stock Threshold (units)</Label>
+                        <HelpInfo title="Low Stock Threshold">If a size's quantity is below this, the scarcity premium is applied.</HelpInfo>
+                      </div>
+                      <Input
+                          id="low-stock-threshold"
+                          type="number"
+                          value={byproductLowStockThreshold}
+                          onChange={(e) => onNumericChange('byproductLowStockThreshold', e.target.value)}
+                          placeholder="e.g. 10"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Label htmlFor="scarcity-premium">Scarcity Premium (%)</Label>
+                        <HelpInfo title="Scarcity Premium (%)">Additional % to add to the price for items below the low stock threshold.</HelpInfo>
+                      </div>
+                      <Input
+                          id="scarcity-premium"
+                          type="number"
+                          value={byproductScarcityPremium}
+                          onChange={(e) => onNumericChange('byproductScarcityPremium', e.target.value)}
+                          placeholder="e.g. 15"
+                      />
+                    </div>
                 </div>
               </div>
-
-              <div className="p-4 bg-primary/10 rounded-lg text-center">
-                <Label className="text-primary/80">Suggested Selling Price (per unit)</Label>
-                <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(suggestedPrice)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                    Based on your costs and target margin. This price is used for all byproduct units.
-                </p>
-              </div>
-
+              
               <div className="space-y-4">
                 <Label className="font-medium">Non-Remy Hair Products</Label>
                 <div className="space-y-3">
                   <AnimatePresence>
-                    {nonRemyHairProducts.map((product, index) => (
+                    {processedNonRemyProducts.map((product, index) => (
                       <motion.div
                         key={product.id}
                         layout
@@ -143,7 +200,7 @@ export default function AdvancedByproductCard({
                           <Label htmlFor={`nr-size-${index}`} className="text-xs">Size (in)</Label>
                           <Input
                             id={`nr-size-${index}`}
-                            placeholder="5-10"
+                            placeholder="e.g., 8 or 8-10"
                             value={product.size}
                             onChange={(e) => onProductChange(index, 'size', e.target.value)}
                           />
@@ -158,12 +215,12 @@ export default function AdvancedByproductCard({
                             onChange={(e) => onProductChange(index, 'quantity', e.target.value)}
                           />
                         </div>
-                        <div className="flex-1 min-w-[100px]">
-                           <Label className="text-xs">Price/unit</Label>
+                        <div className="flex-1 min-w-[120px]">
+                           <Label className="text-xs">Suggested Price/unit</Label>
                            <Input
                               readOnly
-                              value={formatCurrency(suggestedPrice)}
-                              className="bg-muted/50 border-dashed"
+                              value={formatCurrency(product.calculatedPrice)}
+                              className="bg-primary/10 border-dashed text-primary font-semibold"
                             />
                         </div>
                         <Button

@@ -29,6 +29,9 @@ const initialData: HairProfitData = {
   byproductProcessingCost: '',
   nonRemyHairProducts: [],
   targetByproductMargin: 30,
+  byproductPriceIncreasePerInch: 3,
+  byproductLowStockThreshold: 10,
+  byproductScarcityPremium: 15,
 };
 
 export default function AdvancedCalculatorDashboard() {
@@ -93,7 +96,7 @@ export default function AdvancedCalculatorDashboard() {
   
   const handleNonRemyProductChange = useCallback((
     index: number,
-    field: keyof Omit<NonRemyHairProduct, 'id'>,
+    field: keyof Omit<NonRemyHairProduct, 'id' | 'price'>,
     value: string | number
   ) => {
      const newProducts = [...data.nonRemyHairProducts];
@@ -142,7 +145,7 @@ export default function AdvancedCalculatorDashboard() {
     totalRevenue,
     projectedProfit,
     profitMargin,
-    costPerUnitBeforeWastage,
+    processedNonRemyProducts,
   } = useMemo(() => {
     const purchaseQuantity = Number(data.purchaseQuantity) || 0;
     const purchasePrice = Number(data.purchasePrice) || 0;
@@ -150,6 +153,12 @@ export default function AdvancedCalculatorDashboard() {
     const byproductProcessingCost = Number(data.byproductProcessingCost) || 0;
     const nonRemyHairProducts = data.nonRemyHairProducts || [];
     const sellingPricePerUnit = Number(data.sellingPricePerUnit) || 0;
+    const { 
+      targetByproductMargin,
+      byproductPriceIncreasePerInch,
+      byproductLowStockThreshold,
+      byproductScarcityPremium,
+    } = data;
 
     const totalWastageUnits = processingSteps.reduce(
       (acc, step) => acc + (Number(step.wastage) || 0),
@@ -163,29 +172,69 @@ export default function AdvancedCalculatorDashboard() {
     );
 
     const costPerUnitBeforeWastage = purchaseQuantity > 0 ? (totalPurchaseCost + totalProcessingCost) / purchaseQuantity : 0;
-    
     const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
     
-    const totalByproductProcessingCost = data.enableByproductProcessing
-      ? byproductProcessingCost * unitsRemaining
-      : 0;
-
     const assignedNonRemyQuantity = nonRemyHairProducts.reduce(
       (acc, p) => acc + (Number(p.quantity) || 0),
       0
     );
     
-    const targetMargin = Number(data.targetByproductMargin) || 0;
-    const costOfByproductUnit = costPerUnitBeforeWastage + byproductProcessingCost;
-    const byproductSellingPrice = targetMargin < 100 && targetMargin >= 0
-      ? costOfByproductUnit / (1 - (targetMargin / 100))
-      : 0;
+    const processedNonRemyProducts = (() => {
+      if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
+        return nonRemyHairProducts.map(p => ({...p, calculatedPrice: 0}));
+      }
+      
+      const costOfByproductUnit = costPerUnitBeforeWastage + byproductProcessingCost;
+      const targetMargin = Number(targetByproductMargin) || 0;
+      const priceIncreasePerInch = Number(byproductPriceIncreasePerInch) || 0;
+      const lowStockThreshold = Number(byproductLowStockThreshold) || 0;
+      const scarcityPremium = Number(byproductScarcityPremium) || 0;
+  
+      const parsedProducts = nonRemyHairProducts.map(p => ({
+          ...p,
+          firstSize: parseInt(String(p.size).split('-')[0].trim(), 10) || 0,
+      })).sort((a, b) => a.firstSize - b.firstSize);
+  
+      if (!parsedProducts.length || parsedProducts[0].firstSize === 0) {
+          return parsedProducts.map(p => ({...p, calculatedPrice: 0}));
+      }
+      
+      const shortestLength = parsedProducts[0].firstSize;
+      
+      const baseSellingPrice = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
+          ? costOfByproductUnit / (1 - (targetMargin / 100))
+          : 0;
+  
+      return parsedProducts.map(product => {
+          const lengthDifference = product.firstSize - shortestLength;
+          const sizePremiumPercentage = lengthDifference * priceIncreasePerInch;
+          let sizeAdjustedPrice = baseSellingPrice * (1 + (sizePremiumPercentage / 100));
+          if (isNaN(sizeAdjustedPrice)) sizeAdjustedPrice = 0;
+  
+          const quantity = Number(product.quantity) || 0;
+          const isScarce = quantity > 0 && quantity < lowStockThreshold;
+          
+          let finalPrice = sizeAdjustedPrice;
+          if (isScarce) {
+              finalPrice = sizeAdjustedPrice * (1 + (scarcityPremium / 100));
+          }
+  
+          return {
+              ...product,
+              calculatedPrice: finalPrice,
+          };
+      });
+    })();
     
-    const nonRemyRevenue = nonRemyHairProducts.reduce(
-      (acc, p) => acc + (Number(p.quantity) || 0) * byproductSellingPrice,
+    const nonRemyRevenue = processedNonRemyProducts.reduce(
+      (acc, p) => acc + (Number(p.quantity) || 0) * (p.calculatedPrice || 0),
       0
     );
     
+    const totalByproductProcessingCost = data.enableByproductProcessing
+      ? byproductProcessingCost * assignedNonRemyQuantity
+      : 0;
+
     const grandTotalCost =
       totalPurchaseCost + totalProcessingCost + totalByproductProcessingCost;
 
@@ -214,7 +263,7 @@ export default function AdvancedCalculatorDashboard() {
       totalRevenue,
       projectedProfit,
       profitMargin,
-      costPerUnitBeforeWastage,
+      processedNonRemyProducts,
     };
   }, [data]);
 
@@ -342,7 +391,8 @@ export default function AdvancedCalculatorDashboard() {
     totalRevenue,
     projectedProfit,
     profitMargin,
-    unitsRemaining
+    unitsRemaining,
+    processedNonRemyProducts,
   };
 
 
@@ -415,7 +465,7 @@ export default function AdvancedCalculatorDashboard() {
                 onRemoveProduct={removeNonRemyProduct}
                 unitsRemaining={unitsRemaining}
                 assignedNonRemyQuantity={assignedNonRemyQuantity}
-                costPerUnitBeforeWastage={costPerUnitBeforeWastage}
+                processedNonRemyProducts={processedNonRemyProducts}
               />
             </div>
             <div className="lg:col-span-1 space-y-8">

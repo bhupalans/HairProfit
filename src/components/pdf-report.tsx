@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { HairProfitData } from '@/types';
+import type { HairProfitData, NonRemyHairProduct } from '@/types';
+
+type ProcessedProduct = NonRemyHairProduct & { calculatedPrice?: number };
 
 interface PDFReportProps {
   data: HairProfitData;
@@ -15,6 +17,7 @@ interface PDFReportProps {
     projectedProfit: number;
     profitMargin: number;
     unitsRemaining: number;
+    processedNonRemyProducts?: ProcessedProduct[];
   };
 }
 
@@ -32,6 +35,8 @@ const PDFReport = ({ data, summary }: PDFReportProps) => {
         currency: data.currency || 'USD',
         }).format(value);
     };
+
+    const productsToRender = summary.processedNonRemyProducts || data.nonRemyHairProducts;
 
   return (
     <div className="bg-white text-black p-8 font-sans" style={{ width: '210mm', minHeight: '297mm' }}>
@@ -84,7 +89,7 @@ const PDFReport = ({ data, summary }: PDFReportProps) => {
                 <div>
                     <p className="mb-4"><strong>Strategy:</strong> Byproduct Processing</p>
                     <h3 className="text-xl font-medium mb-2">Non-Remy Hair Products</h3>
-                    {(data.nonRemyHairProducts && data.nonRemyHairProducts.length > 0) ? (
+                    {(productsToRender && productsToRender.length > 0) ? (
                       <table className="w-full text-left">
                           <thead>
                               <tr className="border-b">
@@ -95,14 +100,18 @@ const PDFReport = ({ data, summary }: PDFReportProps) => {
                               </tr>
                           </thead>
                           <tbody>
-                              {data.nonRemyHairProducts?.map(product => (
-                              <tr key={product.id} className="border-b">
-                                  <td className="py-2">{product.size}</td>
-                                  <td className="py-2">{Number(product.quantity) || 0}</td>
-                                  <td className="py-2">{formatCurrency(Number(product.price) || 0)}</td>
-                                  <td className="py-2">{formatCurrency((Number(product.price) || 0) * (Number(product.quantity) || 0))}</td>
-                              </tr>
-                              ))}
+                              {productsToRender?.map(product => {
+                                const price = product.calculatedPrice ?? Number(product.price) ?? 0;
+                                const quantity = Number(product.quantity) || 0;
+                                return (
+                                  <tr key={product.id} className="border-b">
+                                      <td className="py-2">{product.size}</td>
+                                      <td className="py-2">{quantity}</td>
+                                      <td className="py-2">{formatCurrency(price)}</td>
+                                      <td className="py-2">{formatCurrency(price * quantity)}</td>
+                                  </tr>
+                                );
+                              })}
                           </tbody>
                       </table>
                     ) : (

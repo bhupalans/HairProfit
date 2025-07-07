@@ -30,6 +30,9 @@ export const hairProfitDataSchema = z.object({
   byproductProcessingCost: emptyOrNumber,
   nonRemyHairProducts: z.array(nonRemyHairProductSchema).optional().default([]),
   targetByproductMargin: emptyOrNumber,
+  byproductPriceIncreasePerInch: emptyOrNumber,
+  byproductLowStockThreshold: emptyOrNumber,
+  byproductScarcityPremium: emptyOrNumber,
 });
 
 export type ProcessingStep = z.infer<typeof processingStepSchema>;
