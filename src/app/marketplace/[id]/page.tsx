@@ -2,10 +2,11 @@ import { getListing } from '@/app/actions';
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -41,7 +42,8 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
     }
     
     const listingTypeDisplay = listing.type === 'For Sale' ? 'For Sale' : 'Looking to Buy';
-    const listingTypeColor = listing.type === 'For Sale' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800';
+    const badgeVariant = listing.type === 'For Sale' ? 'default' : 'secondary';
+    const postedDate = formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true });
 
 
     return (
@@ -70,11 +72,15 @@ export default async function ListingDetailPage({ params }: { params: { id: stri
                         </div>
                         <div className="flex flex-col p-6 sm:p-8">
                             <CardHeader className="p-0">
-                                <div className="flex justify-between items-start">
+                                <div className="flex justify-between items-start gap-2">
                                     <CardTitle className="text-3xl font-bold tracking-tight">{listing.title}</CardTitle>
-                                    <Badge className={listingTypeColor}>{listingTypeDisplay}</Badge>
+                                    <Badge variant={badgeVariant} className="shrink-0">{listingTypeDisplay}</Badge>
                                 </div>
-                                <CardDescription className="text-2xl text-primary font-bold pt-2">{listing.price}</CardDescription>
+                                <CardDescription className="text-2xl text-primary font-bold pt-4">{listing.price}</CardDescription>
+                                <div className="flex items-center text-sm text-muted-foreground pt-2">
+                                    <Clock className="h-4 w-4 mr-1.5" />
+                                    Posted {postedDate}
+                                </div>
                             </CardHeader>
                             <CardContent className="p-0 pt-6 flex-grow">
                                 <p className="text-muted-foreground leading-relaxed">{listing.description}</p>
