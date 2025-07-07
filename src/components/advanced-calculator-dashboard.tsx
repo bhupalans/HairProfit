@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
@@ -189,30 +190,40 @@ export default function AdvancedCalculatorDashboard() {
       const priceIncreasePerInch = Number(byproductPriceIncreasePerInch) || 0;
       const lowStockThreshold = Number(byproductLowStockThreshold) || 0;
       const scarcityPremium = Number(byproductScarcityPremium) || 0;
-  
-      const parsedProducts = nonRemyHairProducts.map(p => ({
+
+      const productsWithSize = nonRemyHairProducts.map(p => {
+        const parsedSize = parseInt(String(p.size).split('-')[0].trim(), 10);
+        return {
           ...p,
-          firstSize: parseInt(String(p.size).split('-')[0].trim(), 10) || 0,
-      })).sort((a, b) => a.firstSize - b.firstSize);
-  
-      if (!parsedProducts.length || parsedProducts[0].firstSize === 0) {
-          return parsedProducts.map(p => ({...p, calculatedPrice: 0}));
+          firstSize: isNaN(parsedSize) ? 0 : parsedSize,
+        };
+      });
+
+      const validProducts = productsWithSize.filter(p => p.firstSize > 0);
+      
+      if (!validProducts.length) {
+          return productsWithSize.map(p => ({ ...p, calculatedPrice: 0 }));
       }
       
-      const shortestLength = parsedProducts[0].firstSize;
+      validProducts.sort((a, b) => a.firstSize - b.firstSize);
+      const shortestLength = validProducts[0].firstSize;
       
       const baseSellingPrice = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
           ? costOfByproductUnit / (1 - (targetMargin / 100))
           : 0;
   
-      return parsedProducts.map(product => {
+      return productsWithSize.map(product => {
+          if (product.firstSize === 0) {
+            return { ...product, calculatedPrice: 0 };
+          }
+
           const lengthDifference = product.firstSize - shortestLength;
           const sizePremiumPercentage = lengthDifference * priceIncreasePerInch;
           let sizeAdjustedPrice = baseSellingPrice * (1 + (sizePremiumPercentage / 100));
           if (isNaN(sizeAdjustedPrice)) sizeAdjustedPrice = 0;
   
           const quantity = Number(product.quantity) || 0;
-          const isScarce = quantity > 0 && quantity < lowStockThreshold;
+          const isScarce = quantity > 0 && lowStockThreshold > 0 && quantity < lowStockThreshold;
           
           let finalPrice = sizeAdjustedPrice;
           if (isScarce) {
