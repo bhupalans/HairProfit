@@ -28,12 +28,15 @@ export async function sendNotification({ subject, html }: EmailPayload) {
         ].filter(Boolean).join(', ');
         
         console.warn(`Email notification not sent because the following environment variables are not configured: ${missing}.`);
-        return; // Don't throw an error to the client.
+        return;
     }
 
     const msg = {
         to: NOTIFICATION_EMAIL,
-        from: FROM_EMAIL,
+        from: {
+          email: FROM_EMAIL,
+          name: 'HairProfit Notifier'
+        },
         subject,
         html,
         text: html.replace(/<[^>]*>?/gm, ''), // Simple conversion of HTML to text for the text part of the email
