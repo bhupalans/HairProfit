@@ -58,6 +58,7 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
     const listings: MarketplaceListing[] = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
       listings.push({
         id: doc.id,
         type: data.type,
@@ -67,7 +68,7 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
         imageUrl: data.imageUrl,
         imageHint: data.imageHint,
         contact: data.contact,
-        createdAt: data.createdAt.toDate().toISOString(),
+        createdAt: createdAt,
       });
     });
     return { success: true, data: listings };
@@ -84,6 +85,7 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
 
     if (docSnap.exists()) {
       const data = docSnap.data();
+      const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
       const listing: MarketplaceListing = {
         id: docSnap.id,
         type: data.type,
@@ -93,7 +95,7 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
         imageUrl: data.imageUrl,
         imageHint: data.imageHint,
         contact: data.contact,
-        createdAt: data.createdAt.toDate().toISOString(),
+        createdAt: createdAt,
       };
       return { success: true, data: listing };
     } else {
