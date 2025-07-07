@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, notFound } from 'next/navigation';
+import { useRouter, notFound, useParams } from 'next/navigation';
 import { ArrowLeft, Mail, Phone, MessageSquare, Clock, Trash2, Loader2, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -81,7 +81,8 @@ const PageSkeleton = () => (
     </div>
 );
 
-export default function ListingDetailPage({ params }: { params: { id: string } }) {
+export default function ListingDetailPage() {
+    const params = useParams<{ id: string }>();
     const [listing, setListing] = useState<MarketplaceListing | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -90,6 +91,7 @@ export default function ListingDetailPage({ params }: { params: { id: string } }
 
     useEffect(() => {
         const fetchListingData = async () => {
+            if (!params.id) return;
             const { success, data } = await getListing(params.id);
             if (success && data) {
                 setListing(data);
