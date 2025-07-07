@@ -65,7 +65,7 @@ export default function Home() {
               <Sparkles className="h-10 w-10 text-primary" />
             </div>
             <h1 className="text-5xl font-bold tracking-tight">
-              HairProfit Dashboard
+              HairProfit
             </h1>
           </div>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
