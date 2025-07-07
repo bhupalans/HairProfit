@@ -7,6 +7,7 @@ import {
   Receipt,
   HelpCircle,
   Sparkles,
+  Beaker,
 } from 'lucide-react';
 import {
   Card,
@@ -22,6 +23,12 @@ const tools = [
     description: 'Calculate costs, profit, and margin for your hair products.',
     href: '/profit-calculator',
     icon: <Calculator className="h-8 w-8" />,
+  },
+  {
+    title: 'Advanced Calculator',
+    description: 'Auto-price byproducts based on cost and target profit margin.',
+    href: '/advanced-calculator',
+    icon: <Beaker className="h-8 w-8" />,
   },
   {
     title: 'Market Comparison',
