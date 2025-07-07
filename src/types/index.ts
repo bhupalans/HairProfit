@@ -33,6 +33,18 @@ export const hairProfitDataSchema = z.object({
   byproductPriceIncreasePerInch: emptyOrNumber,
   byproductLowStockThreshold: emptyOrNumber,
   byproductScarcityPremium: emptyOrNumber,
+
+  // Fields for AI Price Suggestion
+  format: z.string().optional(),
+  length: z.string().optional(),
+  origin: z.string().optional(),
+  texture: z.string().optional(),
+  quality: z.string().optional(),
+  color: z.string().optional(),
+  targetMarket: z.string().optional(),
+  laceType: z.string().optional(),
+  capConstruction: z.string().optional(),
+  density: z.string().optional(),
 });
 
 export type ProcessingStep = z.infer<typeof processingStepSchema>;

@@ -1,21 +1,34 @@
 'use client';
 
-import type { HairProfitData } from '@/types';
+import type { HairProfitData, MarketComparisonOutput } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DollarSign, Info } from 'lucide-react';
+import { DollarSign, Info, Lightbulb, Loader2, Bot } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Alert, AlertTitle, AlertDescription } from './ui/alert';
 
 interface PricingCardProps {
   data: HairProfitData;
   onDataChange: (field: keyof HairProfitData, value: any) => void;
   onNumericChange: (field: keyof HairProfitData, value: string) => void;
   unitsRemaining: number;
+  onGetAiSuggestion?: () => void;
+  isGeneratingSuggestion?: boolean;
+  suggestionResult?: MarketComparisonOutput | null;
 }
 
-export default function PricingCard({ data, onDataChange, onNumericChange, unitsRemaining }: PricingCardProps) {
+export default function PricingCard({ 
+  data, 
+  onDataChange, 
+  onNumericChange, 
+  unitsRemaining,
+  onGetAiSuggestion,
+  isGeneratingSuggestion,
+  suggestionResult
+}: PricingCardProps) {
   const { sellingPricePerUnit, currency, enableByproductProcessing } = data;
   const numSellingPricePerUnit = Number(sellingPricePerUnit) || 0;
 
@@ -54,7 +67,7 @@ export default function PricingCard({ data, onDataChange, onNumericChange, units
               Pricing
             </CardTitle>
             <CardDescription>
-              Set the selling price for your main product.
+              Set the selling price for your main product, or get an AI suggestion.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -87,6 +100,38 @@ export default function PricingCard({ data, onDataChange, onNumericChange, units
                 Based on {unitsRemaining.toFixed(0)} remaining units.
               </p>
             </div>
+
+            {onGetAiSuggestion && (
+                <div className="pt-4 border-t">
+                    <Button onClick={onGetAiSuggestion} disabled={isGeneratingSuggestion} className="w-full">
+                        {isGeneratingSuggestion ? (
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing Market...</>
+                        ) : (
+                            <><Bot className="mr-2 h-4 w-4" /> Get AI Suggestion</>
+                        )}
+                    </Button>
+                </div>
+            )}
+            
+            {suggestionResult && (
+              <Alert className="border-primary/50 bg-primary/5 mt-4">
+                <Lightbulb className="h-4 w-4 text-primary" />
+                <AlertTitle className="text-primary font-bold">AI Market Analysis</AlertTitle>
+                <AlertDescription className="text-foreground/80 space-y-4 !mt-4">
+                  <p className="font-semibold text-lg">
+                    Suggested Range: {formatCurrency(suggestionResult.lowerBoundPrice)} - {formatCurrency(suggestionResult.upperBoundPrice)}
+                  </p>
+                  
+                  <div>
+                    <h3 className="font-semibold mb-1 text-sm">Reasoning</h3>
+                    <p className="text-xs leading-relaxed">{suggestionResult.reasoning}</p>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground pt-2">Confidence: {(suggestionResult.confidenceScore * 100).toFixed(0)}%</p>
+                </AlertDescription>
+              </Alert>
+            )}
+
           </CardContent>
         </div>
       </fieldset>
