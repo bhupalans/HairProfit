@@ -12,14 +12,6 @@ export const metadata: Metadata = {
     description: 'Manage costs, analyze markets, create quotations, and streamline sales with HairProfit.',
     url: 'https://hairprofit.app',
     siteName: 'HairProfit',
-    images: [
-      {
-        url: 'https://placehold.co/1200x630.png',
-        width: 1200,
-        height: 630,
-        alt: 'HairProfit Dashboard showing profitability charts and tools.',
-      },
-    ],
     locale: 'en_US',
     type: 'website',
   },
@@ -27,7 +19,6 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'HairProfit | All-in-One Toolkit for the Hair Industry',
     description: 'Manage costs, analyze markets, create quotations, and streamline sales with HairProfit.',
-    images: ['https://placehold.co/1200x630.png'],
   },
 };
 
@@ -41,7 +32,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
         {children}
