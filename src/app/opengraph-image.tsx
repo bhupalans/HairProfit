@@ -1,3 +1,4 @@
+
 import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
@@ -7,10 +8,6 @@ export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
 export default async function Image() {
-  const interBold = await fetch(
-    new URL('https://rsms.me/inter/font-files/Inter-Bold.woff2', import.meta.url)
-  ).then((res) => res.arrayBuffer())
-
   return new ImageResponse(
     (
       <div
@@ -23,7 +20,7 @@ export default async function Image() {
           alignItems: 'center',
           justifyContent: 'center',
           gap: '32px',
-          fontFamily: '"Inter"',
+          fontFamily: 'sans-serif',
         }}
       >
         <div style={{
@@ -46,7 +43,7 @@ export default async function Image() {
                 <path d="m12 3-1.91 4.82-4.82 1.91 4.82 1.91L12 16l1.91-4.82 4.82-1.91-4.82-1.91L12 3z"/>
                 <path d="M5 22v-5"/>
                 <path d="m5 3-1.91 4.82-4.82 1.91 4.82 1.91L5 16l1.91-4.82 4.82-1.91-4.82-1.91L5 3z"/>
-                <path d="m19 22-1.91-4.82-4.82-1.91 4.82 1.91L19 8l1.91 4.82 4.82 1.91-4.82 1.91L19 22z"/>
+                <path d="m19 22-1.91-4.82-4.82-1.91 4.82 1.91L19 8l1.91 4.82 4.82 1.91-4.82-1.91L19 22z"/>
              </svg>
         </div>
         <h1
@@ -62,14 +59,6 @@ export default async function Image() {
     ),
     {
       ...size,
-      fonts: [
-        {
-          name: 'Inter',
-          data: interBold,
-          style: 'normal',
-          weight: 700,
-        },
-      ],
     }
   )
 }
