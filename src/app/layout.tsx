@@ -4,13 +4,13 @@ import { Toaster } from "@/components/ui/toaster"
 import Footer from '@/components/footer';
 
 export const metadata: Metadata = {
-  title: 'HairProfit | All-in-One Toolkit for the Hair Industry',
-  description: 'Manage costs, analyze markets, create quotations, and streamline sales with HairProfit. The ultimate profitability and quotation tool for the hair industry.',
-  keywords: ['hair industry', 'profit calculator', 'quotation tool', 'invoice builder', 'market analysis', 'hair business', 'salon management', 'hair extensions', 'wigs'],
+  title: 'HairProfit | Business Software for the Hair Trade',
+  description: 'The business software for the hair trade. Calculate profit, create quotes, and analyze market prices for hair extensions, wigs, and bundles.',
+  keywords: ['hair business software', 'hair extensions pricing', 'wig profit calculator', 'hair bundle quotes', 'hair trade software', 'hair supplier tools', 'salon inventory pricing'],
   authors: [{ name: 'HairProfit Team' }],
   openGraph: {
-    title: 'HairProfit | All-in-One Toolkit for the Hair Industry',
-    description: 'Manage costs, analyze markets, create quotations, and streamline sales with HairProfit.',
+    title: 'HairProfit | Business Software for the Hair Trade',
+    description: 'The business software for the hair trade. Calculate profit, create quotes, and analyze market prices for hair extensions, wigs, and bundles.',
     url: 'https://hairprofit.app',
     siteName: 'HairProfit',
     locale: 'en_US',
@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HairProfit | All-in-One Toolkit for the Hair Industry',
-    description: 'Manage costs, analyze markets, create quotations, and streamline sales with HairProfit.',
+    title: 'HairProfit | Business Software for the Hair Trade',
+    description: 'The business software for the hair trade. Calculate profit, create quotes, and analyze market prices for hair extensions, wigs, and bundles.',
   },
 };
 

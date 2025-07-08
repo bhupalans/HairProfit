@@ -77,8 +77,7 @@ export default function Home() {
             </h1>
           </div>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl">
-            Your all-in-one toolkit for the hair industry. Manage costs, analyze
-            markets, and streamline sales.
+            The business software for the hair trade. Calculate profit, create quotes, and analyze market prices for hair extensions, wigs, and bundles.
           </p>
         </header>
 
