@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
@@ -35,15 +35,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
+  const [redirectPath, setRedirectPath] = useState('/');
   const router = useRouter();
   const { toast } = useToast();
 
-  // Handle dynamic redirect destination
-  let redirect = "/";
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    redirect = params.get("redirect") || "/";
-  }
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      if (redirect) {
+        setRedirectPath(redirect);
+      }
+    }
+  }, []);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +57,7 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Email login success:", userCredential.user.uid);
       toast({ title: 'Welcome back!', description: 'Logged in successfully.' });
-      router.push(redirect);
+      router.push(redirectPath);
     } catch (error: any) {
       console.error("Email login error:", error);
       alert("Login Error: " + error.message);
@@ -75,7 +79,7 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       console.log("Google login success:", result.user.uid);
       toast({ title: 'Welcome!', description: 'Logged in with Google.' });
-      router.push(redirect);
+      router.push(redirectPath);
     } catch (error: any) {
       console.error("Google login error:", error);
       alert("Google Login Error: " + error.message);

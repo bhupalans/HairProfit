@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -38,15 +38,19 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirectPath, setRedirectPath] = useState('/');
   const router = useRouter();
   const { toast } = useToast();
 
-  // Handle dynamic redirect destination
-  let redirect = "/";
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    redirect = params.get("redirect") || "/";
-  }
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get('redirect');
+      if (redirect) {
+        setRedirectPath(redirect);
+      }
+    }
+  }, []);
 
   const passwordStrength = useMemo(() => {
     if (!password) return 0;
@@ -95,7 +99,7 @@ export default function SignupPage() {
       console.log("Firestore profile created successfully");
 
       toast({ title: 'Account created!', description: 'Your profile has been set up.' });
-      router.push(redirect);
+      router.push(redirectPath);
     } catch (error: any) {
       console.error("Signup error:", error);
       alert("Signup Error: " + error.message);
@@ -127,7 +131,7 @@ export default function SignupPage() {
       }, { merge: true });
 
       toast({ title: 'Welcome!', description: 'Signed up with Google.' });
-      router.push(redirect);
+      router.push(redirectPath);
     } catch (error: any) {
       console.error("Google Auth Error:", error);
       alert("Google Auth Error: " + error.message);
