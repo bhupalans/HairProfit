@@ -40,12 +40,16 @@ export default function LoginPage() {
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Email login attempt started for:", email);
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      console.log("Email login success:", userCredential.user.uid);
       toast({ title: 'Welcome back!', description: 'Logged in successfully.' });
       router.push('/');
     } catch (error: any) {
+      console.error("Email login error:", error);
+      alert("Login Error: " + error.message);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
@@ -57,13 +61,17 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
+    console.log("Google login popup started");
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      console.log("Google login success:", result.user.uid);
       toast({ title: 'Welcome!', description: 'Logged in with Google.' });
       router.push('/');
     } catch (error: any) {
+      console.error("Google login error:", error);
+      alert("Google Login Error: " + error.message);
       toast({
         variant: 'destructive',
         title: 'Google Login Failed',
@@ -76,27 +84,22 @@ export default function LoginPage() {
 
   const handleForgotPassword = async () => {
     if (!email) {
-      toast({
-        variant: 'destructive',
-        title: 'Email Required',
-        description: 'Please enter your email address to reset your password.',
-      });
+      alert("Please enter your email first to receive a reset link.");
       return;
     }
 
+    console.log("Password reset requested for:", email);
     setResetLoading(true);
     try {
       await sendPasswordResetEmail(auth, email);
+      console.log("Password reset email sent");
       toast({
         title: 'Reset Email Sent',
         description: 'Check your inbox for password reset instructions.',
       });
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message,
-      });
+      console.error("Password reset error:", error);
+      alert("Error: " + error.message);
     } finally {
       setResetLoading(false);
     }

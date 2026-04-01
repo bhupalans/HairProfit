@@ -13,9 +13,17 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
+// Debug: Check if config is loaded
+if (!firebaseConfig.apiKey) {
+  console.error("Firebase API Key is missing. Check your environment variables.");
+}
+
 // Initialize Firebase
+console.log("Initializing Firebase app...");
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-export { db, auth };
+console.log("Firebase initialized successfully. Project ID:", firebaseConfig.projectId);
+
+export { app, db, auth };

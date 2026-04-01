@@ -62,22 +62,15 @@ export default function SignupPage() {
 
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Email signup attempt started for:", email);
     
     if (password !== confirmPassword) {
-      toast({
-        variant: 'destructive',
-        title: 'Passwords Mismatch',
-        description: 'Please ensure both password fields match.',
-      });
+      alert("Passwords do not match.");
       return;
     }
 
     if (passwordStrength < 50) {
-      toast({
-        variant: 'destructive',
-        title: 'Weak Password',
-        description: 'Please choose a stronger password.',
-      });
+      alert("Password is too weak. Please include numbers and symbols.");
       return;
     }
 
@@ -85,16 +78,20 @@ export default function SignupPage() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log("Auth user created:", user.uid);
 
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         uid: user.uid,
         createdAt: new Date().toISOString(),
       });
+      console.log("Firestore profile created successfully");
 
       toast({ title: 'Account created!', description: 'Your profile has been set up.' });
       router.push('/');
     } catch (error: any) {
+      console.error("Signup error:", error);
+      alert("Signup Error: " + error.message);
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
@@ -106,13 +103,27 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignup = async () => {
+    console.log("Google signup popup started");
     setLoading(true);
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log("Google signup success:", user.uid);
+
+      // Check/Create firestore doc
+      await setDoc(doc(db, 'users', user.uid), {
+        email: user.email,
+        uid: user.uid,
+        displayName: user.displayName,
+        createdAt: new Date().toISOString(),
+      }, { merge: true });
+
       toast({ title: 'Welcome!', description: 'Signed up with Google.' });
       router.push('/');
     } catch (error: any) {
+      console.error("Google Auth Error:", error);
+      alert("Google Auth Error: " + error.message);
       toast({
         variant: 'destructive',
         title: 'Google Auth Failed',
