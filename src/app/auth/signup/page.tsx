@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
@@ -11,7 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Check, X } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
 
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg
@@ -34,18 +36,56 @@ const GoogleIcon = ({ className }: { className?: string }) => (
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
+  const passwordStrength = useMemo(() => {
+    if (!password) return 0;
+    let strength = 0;
+    if (password.length >= 8) strength += 25;
+    if (/[0-9]/.test(password)) strength += 25;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength += 25;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 25;
+    return strength;
+  }, [password]);
+
+  const strengthLabel = useMemo(() => {
+    if (passwordStrength <= 25) return { text: 'Weak', color: 'text-red-500', bar: 'bg-red-500' };
+    if (passwordStrength <= 50) return { text: 'Fair', color: 'text-orange-500', bar: 'bg-orange-500' };
+    if (passwordStrength <= 75) return { text: 'Good', color: 'text-blue-500', bar: 'bg-blue-500' };
+    return { text: 'Strong', color: 'text-green-500', bar: 'bg-green-500' };
+  }, [passwordStrength]);
+
+  const passwordsMatch = password === confirmPassword && confirmPassword !== '';
+
   const handleEmailSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (password !== confirmPassword) {
+      toast({
+        variant: 'destructive',
+        title: 'Passwords Mismatch',
+        description: 'Please ensure both password fields match.',
+      });
+      return;
+    }
+
+    if (passwordStrength < 50) {
+      toast({
+        variant: 'destructive',
+        title: 'Weak Password',
+        description: 'Please choose a stronger password.',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create user document in Firestore
       await setDoc(doc(db, 'users', user.uid), {
         email: user.email,
         uid: user.uid,
@@ -112,6 +152,36 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              {password && (
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs font-medium">
+                    <span>Strength: <span className={strengthLabel.color}>{strengthLabel.text}</span></span>
+                    <span>{passwordStrength}%</span>
+                  </div>
+                  <Progress value={passwordStrength} className="h-1" />
+                </div>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className={cn(
+                    confirmPassword && !passwordsMatch && "border-red-500 focus-visible:ring-red-500",
+                    passwordsMatch && "border-green-500 focus-visible:ring-green-500"
+                  )}
+                />
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  {confirmPassword && (
+                    passwordsMatch ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />
+                  )}
+                </div>
+              </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
