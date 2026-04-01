@@ -1,10 +1,12 @@
-
 import HairMarketplace from '@/components/hair-marketplace';
+import AuthGuard from '@/components/auth-guard';
 
 export default function MarketplacePage() {
   return (
-    <main>
-      <HairMarketplace />
-    </main>
+    <AuthGuard>
+      <main>
+        <HairMarketplace />
+      </main>
+    </AuthGuard>
   );
 }

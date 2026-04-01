@@ -14,6 +14,7 @@ import { getListing } from '@/app/actions';
 import type { MarketplaceListing } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import AuthGuard from '@/components/auth-guard';
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -96,55 +97,57 @@ export default function ListingDetailPage() {
     const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
 
     return (
-        <main className="bg-muted/30 min-h-screen py-8 sm:py-12">
-            {isLoading ? (
-                <PageSkeleton />
-            ) : listing && (
-            <div className="container mx-auto max-w-4xl px-4">
-                <div className="mb-8">
-                    <Button asChild variant="ghost" className="pl-0">
-                        <Link href="/marketplace">
-                            <ArrowLeft className="mr-2" />
-                            Back to Marketplace
-                        </Link>
-                    </Button>
-                </div>
+        <AuthGuard>
+            <main className="bg-muted/30 min-h-screen py-8 sm:py-12">
+                {isLoading ? (
+                    <PageSkeleton />
+                ) : listing && (
+                <div className="container mx-auto max-w-4xl px-4">
+                    <div className="mb-8">
+                        <Button asChild variant="ghost" className="pl-0">
+                            <Link href="/marketplace">
+                                <ArrowLeft className="mr-2" />
+                                Back to Marketplace
+                            </Link>
+                        </Button>
+                    </div>
 
-                <Card className="overflow-hidden">
-                    <div className="grid grid-cols-1 md:grid-cols-2">
-                        <div>
-                            <Image
-                                src={listing.imageUrl}
-                                data-ai-hint={listing.imageHint}
-                                alt={listing.title}
-                                width={800}
-                                height={800}
-                                className="w-full h-full object-cover aspect-square"
-                            />
-                        </div>
-                        <div className="flex flex-col p-6 sm:p-8">
-                            <CardHeader className="p-0">
-                                <div className="flex justify-between items-start gap-2">
-                                    <CardTitle className="text-3xl font-bold tracking-tight">{listing.title}</CardTitle>
-                                    <Badge variant={badgeVariant} className="shrink-0">{listingTypeDisplay}</Badge>
+                    <Card className="overflow-hidden">
+                        <div className="grid grid-cols-1 md:grid-cols-2">
+                            <div>
+                                <Image
+                                    src={listing.imageUrl}
+                                    data-ai-hint={listing.imageHint}
+                                    alt={listing.title}
+                                    width={800}
+                                    height={800}
+                                    className="w-full h-full object-cover aspect-square"
+                                />
+                            </div>
+                            <div className="flex flex-col p-6 sm:p-8">
+                                <CardHeader className="p-0">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <CardTitle className="text-3xl font-bold tracking-tight">{listing.title}</CardTitle>
+                                        <Badge variant={badgeVariant} className="shrink-0">{listingTypeDisplay}</Badge>
+                                    </div>
+                                    <CardDescription className="text-2xl text-primary font-bold pt-4">{listing.price}</CardDescription>
+                                    <div className="flex items-center text-sm text-muted-foreground pt-2">
+                                        <Clock className="h-4 w-4 mr-1.5" />
+                                        Posted {postedDate}
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0 pt-6 flex-grow">
+                                    <p className="text-muted-foreground leading-relaxed">{listing.description}</p>
+                                </CardContent>
+                                <div className="pt-6">
+                                    <ContactInfo contact={listing.contact} />
                                 </div>
-                                <CardDescription className="text-2xl text-primary font-bold pt-4">{listing.price}</CardDescription>
-                                <div className="flex items-center text-sm text-muted-foreground pt-2">
-                                    <Clock className="h-4 w-4 mr-1.5" />
-                                    Posted {postedDate}
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-0 pt-6 flex-grow">
-                                <p className="text-muted-foreground leading-relaxed">{listing.description}</p>
-                            </CardContent>
-                            <div className="pt-6">
-                                <ContactInfo contact={listing.contact} />
                             </div>
                         </div>
-                    </div>
-                </Card>
-            </div>
-            )}
-        </main>
+                    </Card>
+                </div>
+                )}
+            </main>
+        </AuthGuard>
     );
 }
