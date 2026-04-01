@@ -38,12 +38,6 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  let redirect = "/";
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    redirect = params.get("redirect") || "/";
-  }
-
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Email login attempt started for:", email);
@@ -52,7 +46,7 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log("Email login success:", userCredential.user.uid);
       toast({ title: 'Welcome back!', description: 'Logged in successfully.' });
-      router.push(redirect);
+      router.push('/');
     } catch (error: any) {
       console.error("Email login error:", error);
       alert("Login Error: " + error.message);
@@ -74,7 +68,7 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, provider);
       console.log("Google login success:", result.user.uid);
       toast({ title: 'Welcome!', description: 'Logged in with Google.' });
-      router.push(redirect);
+      router.push('/');
     } catch (error: any) {
       console.error("Google login error:", error);
       alert("Google Login Error: " + error.message);
