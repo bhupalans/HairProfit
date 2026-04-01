@@ -41,6 +41,13 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
 
+  // Handle dynamic redirect destination
+  let redirect = "/";
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    redirect = params.get("redirect") || "/";
+  }
+
   const passwordStrength = useMemo(() => {
     if (!password) return 0;
     let strength = 0;
@@ -88,7 +95,7 @@ export default function SignupPage() {
       console.log("Firestore profile created successfully");
 
       toast({ title: 'Account created!', description: 'Your profile has been set up.' });
-      router.push('/');
+      router.push(redirect);
     } catch (error: any) {
       console.error("Signup error:", error);
       alert("Signup Error: " + error.message);
@@ -120,7 +127,7 @@ export default function SignupPage() {
       }, { merge: true });
 
       toast({ title: 'Welcome!', description: 'Signed up with Google.' });
-      router.push('/');
+      router.push(redirect);
     } catch (error: any) {
       console.error("Google Auth Error:", error);
       alert("Google Auth Error: " + error.message);
