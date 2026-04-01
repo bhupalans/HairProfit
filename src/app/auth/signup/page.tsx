@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useSearchParams } from "next/navigation";
+
 
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg
@@ -40,6 +42,8 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get("redirect") || "/";
 
   const passwordStrength = useMemo(() => {
     if (!password) return 0;
@@ -88,7 +92,7 @@ export default function SignupPage() {
       console.log("Firestore profile created successfully");
 
       toast({ title: 'Account created!', description: 'Your profile has been set up.' });
-      router.push('/');
+      router.push(redirect);
     } catch (error: any) {
       console.error("Signup error:", error);
       alert("Signup Error: " + error.message);
@@ -109,6 +113,8 @@ export default function SignupPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
+      const searchParams = useSearchParams();
+      const redirect = searchParams.get("redirect") || "/";
       console.log("Google signup success:", user.uid);
 
       // Check/Create firestore doc
@@ -120,7 +126,7 @@ export default function SignupPage() {
       }, { merge: true });
 
       toast({ title: 'Welcome!', description: 'Signed up with Google.' });
-      router.push('/');
+      router.push(redirect);
     } catch (error: any) {
       console.error("Google Auth Error:", error);
       alert("Google Auth Error: " + error.message);

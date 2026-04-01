@@ -11,7 +11,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/auth/login');
+      const currentPath = window.location.pathname;	
+      router.push(`/auth/login?redirect=${currentPath}`);
     }
   }, [user, loading, router]);
 
