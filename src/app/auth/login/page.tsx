@@ -1,6 +1,5 @@
 'use client';
 
-export const dynamic = "force-dynamic";
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useSearchParams } from "next/navigation";
 
 const GoogleIcon = ({ className }: { className?: string }) => (
   <svg
@@ -40,8 +38,12 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+  const redirect =
+    typeof document !== "undefined" &&
+    document.referrer &&
+    document.referrer !== window.location.href
+    ? new URL(document.referrer).pathname
+    : "/";
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();

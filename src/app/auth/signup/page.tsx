@@ -1,6 +1,5 @@
 'use client';
 
-export const dynamic = "force-dynamic";
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { useSearchParams } from "next/navigation";
 
 
 const GoogleIcon = ({ className }: { className?: string }) => (
@@ -43,8 +41,13 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/";
+
+  const redirect =
+    typeof document !== "undefined" &&
+    document.referrer &&
+    document.referrer !== window.location.href
+    ? new URL(document.referrer).pathname
+    : "/";
 
   const passwordStrength = useMemo(() => {
     if (!password) return 0;
@@ -114,8 +117,6 @@ export default function SignupPage() {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-      const searchParams = useSearchParams();
-      const redirect = searchParams.get("redirect") || "/";
       console.log("Google signup success:", user.uid);
 
       // Check/Create firestore doc
