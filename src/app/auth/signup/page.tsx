@@ -42,12 +42,11 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const redirect =
-    typeof document !== "undefined" &&
-    document.referrer &&
-    document.referrer !== window.location.href
-    ? new URL(document.referrer).pathname
-    : "/";
+  let redirect = "/";
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    redirect = params.get("redirect") || "/";
+  }
 
   const passwordStrength = useMemo(() => {
     if (!password) return 0;
