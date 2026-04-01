@@ -1,6 +1,9 @@
 import type {Metadata} from 'next';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
+import Navbar from '@/components/navbar';
+import Footer from '@/components/footer';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
   title: 'HairProfit | Business Software for the Hair Trade',
@@ -16,7 +19,14 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AuthProvider>
-          {children}
+          <div className="flex min-h-screen flex-col">
+            <Navbar />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </div>
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
