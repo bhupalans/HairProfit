@@ -169,7 +169,7 @@ export default function ByproductProcessingCard({
                   </AnimatePresence>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={onAddProduct}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Non-Remy Hair Size
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Item
                 </Button>
               </div>
 
