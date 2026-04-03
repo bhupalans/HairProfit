@@ -100,7 +100,8 @@ export default function ListingDetailPage() {
     const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
 
     const imageUrls = listing?.imageUrls || [];
-    const mainImage = imageUrls[activeImageIdx] || "/placeholder.png";
+    const hasImages = imageUrls.length > 0;
+    const mainImage = imageUrls[activeImageIdx];
 
     return (
         <AuthGuard>
@@ -119,60 +120,65 @@ export default function ListingDetailPage() {
                     </div>
 
                     <Card className="overflow-hidden">
-                        <div className="grid grid-cols-1 md:grid-cols-2">
-                            <div className="space-y-4 p-4 md:p-0">
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <div className="aspect-square relative rounded-lg overflow-hidden border group cursor-zoom-in">
-                                            <Image
-                                                src={mainImage}
-                                                data-ai-hint={listing.imageHint}
-                                                alt={listing.title}
-                                                fill
-                                                className="object-cover"
-                                            />
-                                            <div className="absolute bottom-3 right-3 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Maximize2 className="h-4 w-4" />
+                        <div className={cn("grid grid-cols-1", hasImages && "md:grid-cols-2")}>
+                            {hasImages && (
+                                <div className="space-y-4 p-4 md:p-0">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <div className="aspect-square relative rounded-lg overflow-hidden border group cursor-zoom-in">
+                                                <Image
+                                                    src={mainImage}
+                                                    data-ai-hint={listing.imageHint}
+                                                    alt={listing.title}
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                                <div className="absolute bottom-3 right-3 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Maximize2 className="h-4 w-4" />
+                                                </div>
                                             </div>
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-[95vw] max-h-[95vh] border-none bg-transparent shadow-none p-0 flex items-center justify-center outline-none">
+                                            <div className="relative w-full h-[90vh]">
+                                                <Image
+                                                    src={mainImage}
+                                                    alt={listing.title}
+                                                    fill
+                                                    className="object-contain"
+                                                    priority
+                                                />
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                    
+                                    {imageUrls.length > 1 && (
+                                        <div className="flex gap-2 px-2 pb-2">
+                                            {imageUrls.map((url, idx) => (
+                                                <button
+                                                    key={idx}
+                                                    onClick={() => setActiveImageIdx(idx)}
+                                                    className={cn(
+                                                        "w-16 h-16 rounded border overflow-hidden relative",
+                                                        activeImageIdx === idx ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
+                                                    )}
+                                                >
+                                                    <Image src={url} alt={`${listing.title} ${idx + 1}`} fill className="object-cover" />
+                                                </button>
+                                            ))}
                                         </div>
-                                    </DialogTrigger>
-                                    <DialogContent className="max-w-[95vw] max-h-[95vh] border-none bg-transparent shadow-none p-0 flex items-center justify-center outline-none">
-                                        <div className="relative w-full h-[90vh]">
-                                            <Image
-                                                src={mainImage}
-                                                alt={listing.title}
-                                                fill
-                                                className="object-contain"
-                                                priority
-                                            />
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
-                                
-                                {imageUrls.length > 1 && (
-                                    <div className="flex gap-2 px-2 pb-2">
-                                        {imageUrls.map((url, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setActiveImageIdx(idx)}
-                                                className={cn(
-                                                    "w-16 h-16 rounded border overflow-hidden relative",
-                                                    activeImageIdx === idx ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
-                                                )}
-                                            >
-                                                <Image src={url} alt={`${listing.title} ${idx + 1}`} fill className="object-cover" />
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
+                                    )}
+                                </div>
+                            )}
                             <div className="flex flex-col p-6 sm:p-8">
                                 <CardHeader className="p-0">
                                     <div className="flex justify-between items-start gap-2">
                                         <CardTitle className="text-3xl font-bold tracking-tight">{listing.title}</CardTitle>
                                         <Badge variant={badgeVariant} className="shrink-0">{listingTypeDisplay}</Badge>
                                     </div>
-                                    <CardDescription className="text-2xl text-primary font-bold pt-4">{listing.price}</CardDescription>
+                                    <CardDescription className="text-2xl text-primary font-bold pt-4">
+                                        {listing.type === 'For Sale' ? 'Price: ' : 'Budget: '}
+                                        {listing.price}
+                                    </CardDescription>
                                     <div className="flex items-center text-sm text-muted-foreground pt-2">
                                         <Clock className="h-4 w-4 mr-1.5" />
                                         Posted {postedDate}

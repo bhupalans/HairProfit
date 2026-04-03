@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -61,6 +60,8 @@ export default function HairMarketplace() {
     },
   });
 
+  const listingType = form.watch('type');
+
   const fetchListings = useCallback(async () => {
     setLoading(true);
     const response = await getListings();
@@ -98,10 +99,20 @@ export default function HairMarketplace() {
   };
 
   const onSubmit = async (values: MarketplaceListingFormData) => {
+    // Required check for Sellers
+    if (values.type === 'For Sale' && imageFiles.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Images Required',
+        description: 'Please upload at least one image for your sale listing.',
+      });
+      return;
+    }
+
     const imageUrls: string[] = [];
 
     try {
-      if (imageFiles.length > 0) {
+      if (values.type === 'For Sale' && imageFiles.length > 0) {
         const storage = getStorage(app);
         const userUid = auth.currentUser?.uid || 'anonymous';
         
@@ -155,16 +166,18 @@ export default function HairMarketplace() {
         <motion.div layout key={listing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
           <Link href={`/marketplace/${listing.id}`} className="group block h-full">
             <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
-              <CardHeader>
-                  <Image
-                  src={listing.imageUrls?.[0] || "/placeholder.png"}
-                  data-ai-hint={listing.imageHint}
-                  alt={listing.title}
-                  width={600}
-                  height={400}
-                  className="w-full rounded-lg aspect-[3/2] object-cover"
-                  />
-                  <CardTitle className="pt-4">{listing.title}</CardTitle>
+              <CardHeader className="pb-4">
+                  {listing.imageUrls && listing.imageUrls.length > 0 && (
+                    <Image
+                      src={listing.imageUrls[0]}
+                      data-ai-hint={listing.imageHint}
+                      alt={listing.title}
+                      width={600}
+                      height={400}
+                      className="w-full rounded-lg aspect-[3/2] object-cover mb-4"
+                    />
+                  )}
+                  <CardTitle>{listing.title}</CardTitle>
                   <CardDescription className="text-primary font-semibold">{listing.price}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
@@ -206,11 +219,11 @@ export default function HairMarketplace() {
                 Create Listing
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md overflow-y-auto max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Create a New Listing</DialogTitle>
                 <DialogDescription>
-                  Share what you're selling or looking to buy. Max 3 images.
+                  Share what you're selling or looking to buy.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -261,45 +274,47 @@ export default function HairMarketplace() {
                     )}
                   />
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="image-upload" className="text-sm font-medium">Listing Images (Max 3)</Label>
-                    <div className="space-y-3">
-                      <Input
-                        id="image-upload"
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleFileChange}
-                        className="cursor-pointer"
-                      />
-                      
-                      {imageFiles.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {imageFiles.map((file, idx) => (
-                            <div key={idx} className="relative group">
-                              <div className="w-16 h-16 rounded border bg-muted flex items-center justify-center text-[10px] text-center p-1 overflow-hidden">
-                                {file.name}
+                  {listingType === 'For Sale' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="image-upload" className="text-sm font-medium">Listing Images (Required, Max 3)</Label>
+                      <div className="space-y-3">
+                        <Input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleFileChange}
+                          className="cursor-pointer"
+                        />
+                        
+                        {imageFiles.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {imageFiles.map((file, idx) => (
+                              <div key={idx} className="relative group">
+                                <div className="w-16 h-16 rounded border bg-muted flex items-center justify-center text-[10px] text-center p-1 overflow-hidden">
+                                  {file.name}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => removeFile(idx)}
+                                  className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => removeFile(idx)}
-                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <FormField
                     control={form.control}
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price / Budget</FormLabel>
+                        <FormLabel>{listingType === 'For Sale' ? 'Selling Price' : 'Your Budget'}</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g., $85 per bundle" {...field} />
                         </FormControl>
