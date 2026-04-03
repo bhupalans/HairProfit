@@ -116,7 +116,7 @@ const PDFReport = ({ data, summary }: PDFReportProps) => {
                           </tbody>
                       </table>
                     ) : (
-                      <p>No non-remy products defined.</p>
+                      <p>No byproduct products defined.</p>
                     )}
                 </div>
             ) : (

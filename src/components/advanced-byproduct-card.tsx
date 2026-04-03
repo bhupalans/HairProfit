@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { HairProfitData, NonRemyHairProduct } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,8 +47,27 @@ export default function AdvancedByproductCard({
     byproductPriceIncreasePerInch,
     byproductLowStockThreshold,
     byproductScarcityPremium,
+    byproductName,
   } = data;
   const isMobile = useIsMobile();
+
+  const [byproductType, setByproductType] = useState(() => {
+    const options = ["Non-Remy Hair", "Remy Hair", "Wigs", "Hair Extensions"];
+    if (!byproductName || options.includes(byproductName)) {
+      return byproductName || "Non-Remy Hair";
+    }
+    return "Other";
+  });
+  const [customName, setCustomName] = useState(() => {
+    const options = ["Non-Remy Hair", "Remy Hair", "Wigs", "Hair Extensions"];
+    return options.includes(byproductName || "") ? "" : (byproductName || "");
+  });
+
+  const finalByproductName = byproductType === "Other" ? customName : byproductType;
+
+  useEffect(() => {
+    onDataChange('byproductName', finalByproductName);
+  }, [finalByproductName, onDataChange]);
   
   const formatCurrency = (value: number) => {
     if (isNaN(value)) value = 0;
@@ -97,7 +117,7 @@ export default function AdvancedByproductCard({
           Chowry (Byproduct) Processing
         </CardTitle>
         <CardDescription>
-          Process remaining units into sellable non-remy hair with automated, tiered pricing.
+          Process remaining units into sellable byproduct hair with automated, tiered pricing.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -121,7 +141,7 @@ export default function AdvancedByproductCard({
               className="space-y-6 overflow-hidden"
             >
               <div className="space-y-4 rounded-lg border bg-muted/30 p-4">
-                <h3 className="text-lg font-medium text-center">Byproduct Pricing Controls</h3>
+                <h3 className="text-lg font-medium text-center">Byproduct Pricing & Category</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label htmlFor="byproduct-cost">Processing Cost (per unit)</Label>
@@ -168,7 +188,7 @@ export default function AdvancedByproductCard({
                           placeholder="e.g. 10"
                       />
                     </div>
-                    <div className="md:col-span-2">
+                    <div>
                       <div className="flex items-center gap-1.5 mb-1">
                         <Label htmlFor="scarcity-premium">Scarcity Premium (%)</Label>
                         <HelpInfo title="Scarcity Premium (%)">Additional % to add to the price for items below the low stock threshold.</HelpInfo>
@@ -181,11 +201,34 @@ export default function AdvancedByproductCard({
                           placeholder="e.g. 15"
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label>Byproduct Category</Label>
+                      <div className="flex flex-col gap-2">
+                        <select
+                          value={byproductType}
+                          onChange={(e) => setByproductType(e.target.value)}
+                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option>Non-Remy Hair</option>
+                          <option>Remy Hair</option>
+                          <option>Wigs</option>
+                          <option>Hair Extensions</option>
+                          <option>Other</option>
+                        </select>
+                        {byproductType === "Other" && (
+                          <Input
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value)}
+                            placeholder="Enter custom product name"
+                          />
+                        )}
+                      </div>
+                    </div>
                 </div>
               </div>
               
               <div className="space-y-4">
-                <Label className="font-medium">Non-Remy Hair Products</Label>
+                <Label className="font-medium">{finalByproductName + " Products"}</Label>
                 <div className="space-y-3">
                   <AnimatePresence>
                     {processedNonRemyProducts.map((product, index) => (
@@ -248,7 +291,7 @@ export default function AdvancedByproductCard({
                   </AnimatePresence>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={onAddProduct}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Add Non-Remy Hair Size
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add {finalByproductName} Size
                 </Button>
               </div>
 
