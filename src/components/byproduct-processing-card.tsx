@@ -49,7 +49,7 @@ export default function ByproductProcessingCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
           <Recycle className="h-6 w-6 text-primary" />
-          Chowry (Byproduct) Processing
+          (Byproduct) Processing
         </CardTitle>
         <CardDescription>
           Optionally, process remaining units into sellable non-remy hair.

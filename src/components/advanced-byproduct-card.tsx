@@ -114,7 +114,7 @@ export default function AdvancedByproductCard({
       <CardHeader>
         <CardTitle className="flex items-center gap-3">
           <Recycle className="h-6 w-6 text-primary" />
-          Chowry (Byproduct) Processing
+          (Byproduct) Processing
         </CardTitle>
         <CardDescription>
           Process remaining units into sellable byproduct hair with automated, tiered pricing.
