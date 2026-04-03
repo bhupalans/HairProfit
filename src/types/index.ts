@@ -182,5 +182,6 @@ export const marketplaceListingFormSchema = z.object({
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
   price: z.string().min(1, { message: "Price or budget is required." }),
   contact: z.string().min(5, { message: "Valid contact info (email or phone) is required." }),
+  imageUrl: z.string().optional(),
 });
 export type MarketplaceListingFormData = z.infer<typeof marketplaceListingFormSchema>;

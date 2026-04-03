@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -120,7 +121,7 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
     
     await addDoc(listingsRef, {
       ...listingData,
-      imageUrl: 'https://placehold.co/600x400.png',
+      imageUrl: listingData.imageUrl || "",
       imageHint: imageHint,
       createdAt: serverTimestamp(),
     });

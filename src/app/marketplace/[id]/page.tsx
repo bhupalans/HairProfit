@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -116,7 +117,7 @@ export default function ListingDetailPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             <div>
                                 <Image
-                                    src={listing.imageUrl}
+                                    src={listing.imageUrl || "/placeholder.png"}
                                     data-ai-hint={listing.imageHint}
                                     alt={listing.title}
                                     width={800}

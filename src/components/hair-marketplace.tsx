@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2 } from 'lucide-react';
+import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -23,6 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import type { MarketplaceListing, MarketplaceListingFormData } from '@/types';
 import { marketplaceListingFormSchema } from '@/types';
 import { getListings, createListing } from '@/app/actions';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { app } from "@/lib/firebase";
 
 const ListingSkeleton = () => (
     <Card className="flex flex-col">
@@ -45,6 +47,7 @@ export default function HairMarketplace() {
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   const form = useForm<MarketplaceListingFormData>({
@@ -78,20 +81,43 @@ export default function HairMarketplace() {
   }, [fetchListings]);
 
   const onSubmit = async (values: MarketplaceListingFormData) => {
-    const response = await createListing(values);
-    if (response.success) {
-      toast({
-        title: 'Listing Created!',
-        description: 'Your new listing is now live on the marketplace.',
+    let imageUrl = "";
+
+    try {
+      if (imageFile) {
+        const storage = getStorage(app);
+        const storageRef = ref(storage, `listing-images/${Date.now()}-${imageFile.name}`);
+        await uploadBytes(storageRef, imageFile);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+
+      const response = await createListing({
+        ...values,
+        imageUrl,
       });
-      setIsDialogOpen(false);
-      form.reset();
-      fetchListings(); // Refetch to show the new listing
-    } else {
-       toast({
+
+      if (response.success) {
+        toast({
+          title: 'Listing Created!',
+          description: 'Your new listing is now live on the marketplace.',
+        });
+        setIsDialogOpen(false);
+        form.reset();
+        setImageFile(null);
+        fetchListings(); // Refetch to show the new listing
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Failed to create listing',
+          description: response.error,
+        });
+      }
+    } catch (error: any) {
+      console.error("Listing creation failed", error);
+      toast({
         variant: 'destructive',
-        title: 'Failed to create listing',
-        description: response.error,
+        title: 'Upload Failed',
+        description: error.message || "Could not upload image or create listing.",
       });
     }
   };
@@ -107,7 +133,7 @@ export default function HairMarketplace() {
             <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
               <CardHeader>
                   <Image
-                  src={listing.imageUrl}
+                  src={listing.imageUrl || "/placeholder.png"}
                   data-ai-hint={listing.imageHint}
                   alt={listing.title}
                   width={600}
@@ -210,6 +236,20 @@ export default function HairMarketplace() {
                       </FormItem>
                     )}
                   />
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="image-upload" className="text-sm font-medium">Listing Image</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        id="image-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                        className="cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="price"
