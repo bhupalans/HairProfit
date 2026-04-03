@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload } from 'lucide-react';
+import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload, X } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -47,7 +47,7 @@ export default function HairMarketplace() {
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const { toast } = useToast();
 
   const form = useForm<MarketplaceListingFormData>({
@@ -80,20 +80,43 @@ export default function HairMarketplace() {
     fetchListings();
   }, [fetchListings]);
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length > 3) {
+      toast({
+        variant: 'destructive',
+        title: 'Too many files',
+        description: 'You can upload a maximum of 3 images.',
+      });
+      return;
+    }
+    setImageFiles(files);
+  };
+
+  const removeFile = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const onSubmit = async (values: MarketplaceListingFormData) => {
-    let imageUrl = "";
+    const imageUrls: string[] = [];
 
     try {
-      if (imageFile) {
+      if (imageFiles.length > 0) {
         const storage = getStorage(app);
-        const storageRef = ref(storage, `listing-images/${Date.now()}-${imageFile.name}`);
-        await uploadBytes(storageRef, imageFile);
-        imageUrl = await getDownloadURL(storageRef);
+        
+        const uploadPromises = imageFiles.map(async (file) => {
+          const storageRef = ref(storage, `listing-images/${Date.now()}-${file.name}`);
+          await uploadBytes(storageRef, file);
+          return getDownloadURL(storageRef);
+        });
+
+        const urls = await Promise.all(uploadPromises);
+        imageUrls.push(...urls);
       }
 
       const response = await createListing({
         ...values,
-        imageUrl,
+        imageUrls,
       });
 
       if (response.success) {
@@ -103,8 +126,8 @@ export default function HairMarketplace() {
         });
         setIsDialogOpen(false);
         form.reset();
-        setImageFile(null);
-        fetchListings(); // Refetch to show the new listing
+        setImageFiles([]);
+        fetchListings();
       } else {
         toast({
           variant: 'destructive',
@@ -117,7 +140,7 @@ export default function HairMarketplace() {
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: error.message || "Could not upload image or create listing.",
+        description: error.message || "Could not upload images or create listing.",
       });
     }
   };
@@ -133,7 +156,7 @@ export default function HairMarketplace() {
             <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
               <CardHeader>
                   <Image
-                  src={listing.imageUrl || "/placeholder.png"}
+                  src={listing.imageUrls?.[0] || "/placeholder.png"}
                   data-ai-hint={listing.imageHint}
                   alt={listing.title}
                   width={600}
@@ -186,7 +209,7 @@ export default function HairMarketplace() {
               <DialogHeader>
                 <DialogTitle>Create a New Listing</DialogTitle>
                 <DialogDescription>
-                  Share what you're selling or looking to buy. Fill out the details below.
+                  Share what you're selling or looking to buy. Max 3 images.
                 </DialogDescription>
               </DialogHeader>
               <Form {...form}>
@@ -238,15 +261,35 @@ export default function HairMarketplace() {
                   />
                   
                   <div className="space-y-2">
-                    <Label htmlFor="image-upload" className="text-sm font-medium">Listing Image</Label>
-                    <div className="flex items-center gap-2">
+                    <Label htmlFor="image-upload" className="text-sm font-medium">Listing Images (Max 3)</Label>
+                    <div className="space-y-3">
                       <Input
                         id="image-upload"
                         type="file"
                         accept="image/*"
-                        onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                        multiple
+                        onChange={handleFileChange}
                         className="cursor-pointer"
                       />
+                      
+                      {imageFiles.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {imageFiles.map((file, idx) => (
+                            <div key={idx} className="relative group">
+                              <div className="w-16 h-16 rounded border bg-muted flex items-center justify-center text-[10px] text-center p-1 overflow-hidden">
+                                {file.name}
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => removeFile(idx)}
+                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 

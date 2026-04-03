@@ -60,13 +60,17 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
     querySnapshot.forEach((doc) => {
       const data = doc.data();
       const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
+      
+      // Backward compatibility for old records with single imageUrl
+      const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
+
       listings.push({
         id: doc.id,
         type: data.type,
         title: data.title,
         description: data.description,
         price: data.price,
-        imageUrl: data.imageUrl,
+        imageUrls: imageUrls,
         imageHint: data.imageHint,
         contact: data.contact,
         createdAt: createdAt,
@@ -87,13 +91,17 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
     if (docSnap.exists()) {
       const data = docSnap.data();
       const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
+      
+      // Backward compatibility for old records with single imageUrl
+      const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
+
       const listing: MarketplaceListing = {
         id: docSnap.id,
         type: data.type,
         title: data.title,
         description: data.description,
         price: data.price,
-        imageUrl: data.imageUrl,
+        imageUrls: imageUrls,
         imageHint: data.imageHint,
         contact: data.contact,
         createdAt: createdAt,
@@ -121,7 +129,7 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
     
     await addDoc(listingsRef, {
       ...listingData,
-      imageUrl: listingData.imageUrl || "",
+      imageUrls: listingData.imageUrls || [],
       imageHint: imageHint,
       createdAt: serverTimestamp(),
     });

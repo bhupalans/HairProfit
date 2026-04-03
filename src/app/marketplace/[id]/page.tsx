@@ -16,6 +16,7 @@ import type { MarketplaceListing } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthGuard from '@/components/auth-guard';
+import { cn } from '@/lib/utils';
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -76,6 +77,7 @@ export default function ListingDetailPage() {
     const params = useParams<{ id: string }>();
     const [listing, setListing] = useState<MarketplaceListing | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeImageIdx, setActiveImageIdx] = useState(0);
     const router = useRouter();
     const { toast } = useToast();
 
@@ -97,6 +99,9 @@ export default function ListingDetailPage() {
     const badgeVariant = listing?.type === 'For Sale' ? 'default' : 'secondary';
     const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
 
+    const imageUrls = listing?.imageUrls || [];
+    const mainImage = imageUrls[activeImageIdx] || "/placeholder.png";
+
     return (
         <AuthGuard>
             <main className="bg-muted/30 min-h-screen py-8 sm:py-12">
@@ -115,15 +120,32 @@ export default function ListingDetailPage() {
 
                     <Card className="overflow-hidden">
                         <div className="grid grid-cols-1 md:grid-cols-2">
-                            <div>
-                                <Image
-                                    src={listing.imageUrl || "/placeholder.png"}
-                                    data-ai-hint={listing.imageHint}
-                                    alt={listing.title}
-                                    width={800}
-                                    height={800}
-                                    className="w-full h-full object-cover aspect-square"
-                                />
+                            <div className="space-y-4 p-4 md:p-0">
+                                <div className="aspect-square relative rounded-lg overflow-hidden border">
+                                    <Image
+                                        src={mainImage}
+                                        data-ai-hint={listing.imageHint}
+                                        alt={listing.title}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                                {imageUrls.length > 1 && (
+                                    <div className="flex gap-2 px-2 pb-2">
+                                        {imageUrls.map((url, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setActiveImageIdx(idx)}
+                                                className={cn(
+                                                    "w-16 h-16 rounded border overflow-hidden relative",
+                                                    activeImageIdx === idx ? "ring-2 ring-primary" : "opacity-70 hover:opacity-100"
+                                                )}
+                                            >
+                                                <Image src={url} alt={`${listing.title} ${idx + 1}`} fill className="object-cover" />
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                             <div className="flex flex-col p-6 sm:p-8">
                                 <CardHeader className="p-0">
@@ -138,7 +160,7 @@ export default function ListingDetailPage() {
                                     </div>
                                 </CardHeader>
                                 <CardContent className="p-0 pt-6 flex-grow">
-                                    <p className="text-muted-foreground leading-relaxed">{listing.description}</p>
+                                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{listing.description}</p>
                                 </CardContent>
                                 <div className="pt-6">
                                     <ContactInfo contact={listing.contact} />
