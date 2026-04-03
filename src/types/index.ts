@@ -29,6 +29,7 @@ export const hairProfitDataSchema = z.object({
   sellingPricePerUnit: emptyOrNumber,
   enableByproductProcessing: z.boolean().optional().default(false),
   byproductProcessingCost: emptyOrNumber,
+  byproductName: z.string().optional().default('Non-Remy Hair'),
   nonRemyHairProducts: z.array(nonRemyHairProductSchema).optional().default([]),
   targetByproductMargin: emptyOrNumber,
   byproductPriceIncreasePerInch: emptyOrNumber,

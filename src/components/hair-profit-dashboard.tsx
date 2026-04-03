@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
@@ -27,6 +28,7 @@ const initialData: HairProfitData = {
   sellingPricePerUnit: '',
   enableByproductProcessing: false,
   byproductProcessingCost: '',
+  byproductName: 'Non-Remy Hair',
   nonRemyHairProducts: [],
 };
 

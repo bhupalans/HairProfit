@@ -1,5 +1,7 @@
+
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { HairProfitData, NonRemyHairProduct } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +33,16 @@ export default function ByproductProcessingCard({
   unitsRemaining,
   assignedNonRemyQuantity
 }: ByproductProcessingCardProps) {
-  const { enableByproductProcessing, byproductProcessingCost, nonRemyHairProducts = [] } = data;
+  const { enableByproductProcessing, byproductProcessingCost, nonRemyHairProducts = [], byproductName } = data;
+
+  const [byproductType, setByproductType] = useState(byproductName || "Non-Remy Hair");
+  const [customName, setCustomName] = useState("");
+
+  const finalByproductName = byproductType === "Other" ? customName : byproductType;
+
+  useEffect(() => {
+    onDataChange('byproductName', finalByproductName);
+  }, [finalByproductName, onDataChange]);
 
   return (
     <Card>
@@ -64,21 +75,46 @@ export default function ByproductProcessingCard({
               exit={{ opacity: 0, height: 0 }}
               className="space-y-6 overflow-hidden"
             >
-              <div>
-                <Label htmlFor="byproduct-cost">Byproduct Processing Cost (per unit)</Label>
-                <Input
-                  id="byproduct-cost"
-                  type="number"
-                  value={byproductProcessingCost}
-                  onChange={(e) => onNumericChange('byproductProcessingCost', e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  This cost is applied to each remaining unit to process it into a different sellable product.
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="byproduct-cost">Byproduct Processing Cost (per unit)</Label>
+                  <Input
+                    id="byproduct-cost"
+                    type="number"
+                    value={byproductProcessingCost}
+                    onChange={(e) => onNumericChange('byproductProcessingCost', e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    This cost is applied to each remaining unit to process it into a different sellable product.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Byproduct Category</Label>
+                  <div className="flex flex-col gap-2">
+                    <select
+                      value={byproductType}
+                      onChange={(e) => setByproductType(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <option>Non-Remy Hair</option>
+                      <option>Remy Hair</option>
+                      <option>Wigs</option>
+                      <option>Hair Extensions</option>
+                      <option>Other</option>
+                    </select>
+                    {byproductType === "Other" && (
+                      <Input
+                        value={customName}
+                        onChange={(e) => setCustomName(e.target.value)}
+                        placeholder="Enter custom product name"
+                      />
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-4">
-                <Label className="font-medium">Non-Remy Hair Products</Label>
+                <Label className="font-medium">{finalByproductName + " Products"}</Label>
                 <div className="space-y-3">
                   <AnimatePresence>
                     {nonRemyHairProducts.map((product, index) => (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -88,7 +89,7 @@ const PDFReport = ({ data, summary }: PDFReportProps) => {
             {data.enableByproductProcessing ? (
                 <div>
                     <p className="mb-4"><strong>Strategy:</strong> Byproduct Processing</p>
-                    <h3 className="text-xl font-medium mb-2">Non-Remy Hair Products</h3>
+                    <h3 className="text-xl font-medium mb-2">{data.byproductName + " Products"}</h3>
                     {(productsToRender && productsToRender.length > 0) ? (
                       <table className="w-full text-left">
                           <thead>

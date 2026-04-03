@@ -69,11 +69,9 @@ export default function Home() {
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <header className="text-left mb-12">
           <div className="flex items-center gap-2 sm:gap-4 mb-4">
-            <div className="bg-primary/20 p-2 sm:p-3 rounded-lg">
-              <Sparkles className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight">
-              HairProfit
+
+            <h1 className="text-4xl sm:text-4xl font-bold tracking-tight">
+              Hair Business Dashboard
             </h1>
           </div>
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl">
