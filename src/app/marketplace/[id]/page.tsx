@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, notFound, useParams } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MessageSquare, Clock } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MessageSquare, Clock, Maximize2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthGuard from '@/components/auth-guard';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -120,15 +121,34 @@ export default function ListingDetailPage() {
                     <Card className="overflow-hidden">
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             <div className="space-y-4 p-4 md:p-0">
-                                <div className="aspect-square relative rounded-lg overflow-hidden border group">
-                                    <Image
-                                        src={mainImage}
-                                        data-ai-hint={listing.imageHint}
-                                        alt={listing.title}
-                                        fill
-                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                                    />
-                                </div>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <div className="aspect-square relative rounded-lg overflow-hidden border group cursor-zoom-in">
+                                            <Image
+                                                src={mainImage}
+                                                data-ai-hint={listing.imageHint}
+                                                alt={listing.title}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                            <div className="absolute bottom-3 right-3 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Maximize2 className="h-4 w-4" />
+                                            </div>
+                                        </div>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-[95vw] max-h-[95vh] border-none bg-transparent shadow-none p-0 flex items-center justify-center outline-none">
+                                        <div className="relative w-full h-[90vh]">
+                                            <Image
+                                                src={mainImage}
+                                                alt={listing.title}
+                                                fill
+                                                className="object-contain"
+                                                priority
+                                            />
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                                
                                 {imageUrls.length > 1 && (
                                     <div className="flex gap-2 px-2 pb-2">
                                         {imageUrls.map((url, idx) => (
