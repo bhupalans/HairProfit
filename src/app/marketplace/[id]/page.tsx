@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -121,13 +120,13 @@ export default function ListingDetailPage() {
                     <Card className="overflow-hidden">
                         <div className="grid grid-cols-1 md:grid-cols-2">
                             <div className="space-y-4 p-4 md:p-0">
-                                <div className="aspect-square relative rounded-lg overflow-hidden border">
+                                <div className="aspect-square relative rounded-lg overflow-hidden border group">
                                     <Image
                                         src={mainImage}
                                         data-ai-hint={listing.imageHint}
                                         alt={listing.title}
                                         fill
-                                        className="object-cover"
+                                        className="object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
                                 </div>
                                 {imageUrls.length > 1 && (
