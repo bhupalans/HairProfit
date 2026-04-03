@@ -24,7 +24,7 @@ import type { MarketplaceListing, MarketplaceListingFormData } from '@/types';
 import { marketplaceListingFormSchema } from '@/types';
 import { getListings, createListing } from '@/app/actions';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { app } from "@/lib/firebase";
+import { app, auth } from "@/lib/firebase";
 
 const ListingSkeleton = () => (
     <Card className="flex flex-col">
@@ -103,9 +103,10 @@ export default function HairMarketplace() {
     try {
       if (imageFiles.length > 0) {
         const storage = getStorage(app);
+        const userUid = auth.currentUser?.uid || 'anonymous';
         
         const uploadPromises = imageFiles.map(async (file) => {
-          const storageRef = ref(storage, `listing-images/${Date.now()}-${file.name}`);
+          const storageRef = ref(storage, `listing-images/${userUid}/${Date.now()}-${file.name}`);
           await uploadBytes(storageRef, file);
           return getDownloadURL(storageRef);
         });
