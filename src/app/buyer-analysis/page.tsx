@@ -26,13 +26,14 @@ import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/auth-guard';
 
 const formats = [
-  { id: 'weave', name: 'Weave', hint: 'hair weave' },
-  { id: 'tape-in', name: 'Tape-in', hint: 'tape hair' },
-  { id: 'clip-in', name: 'Clip-in', hint: 'clip hair' },
-  { id: 'i-tip', name: 'I-Tip', hint: 'i-tip extension' },
-  { id: 'fusion-keratin', name: 'Fusion/Keratin Bond', hint: 'keratin bond' },
-  { id: 'wig', name: 'Wig', hint: 'hair wig' },
-];
+    { id: 'weave', name: 'Weave', hint: 'hair weave', image: '/images/formats/weave.jpg' },
+    { id: 'tape-in', name: 'Tape-in', hint: 'tape hair', image: '/images/formats/tape-in.jpg' },
+    { id: 'clip-in', name: 'Clip-in', hint: 'clip hair', image: '/images/formats/clip-in.jpg' },
+    { id: 'i-tip', name: 'I-Tip', hint: 'i-tip extension', image: '/images/formats/i-tip.jpg' },
+    { id: 'fusion-keratin', name: 'Fusion/Keratin Bond', hint: 'keratin bond', image: '/images/formats/fusion.jpg' },
+    { id: 'wig', name: 'Wig', hint: 'hair wig', image: '/images/formats/wig.jpg' },
+  ];
+  
 
 const lengths = [
   '6 inches', '8 inches', '10 inches', '12 inches', '14 inches', '16 inches', '18 inches', '20 inches',
@@ -150,7 +151,7 @@ export default function BuyerAnalysisPage() {
                               >
                                   <RadioGroupItem value={format.id} id={format.id} className="sr-only" />
                                   <Image
-                                  src={`https://placehold.co/200x200.png`}
+                                  src={format.image}
                                   data-ai-hint={format.hint}
                                   alt={format.name}
                                   width={200}
