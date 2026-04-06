@@ -162,7 +162,17 @@ export default function HairProfitDashboard() {
       (acc, step) => acc + (Number(step.cost) || 0),
       0
     );
-    const totalWastageCost = totalWastageUnits * purchasePrice;
+    //const totalWastageCost = totalWastageUnits * purchasePrice;
+
+    const costPerUnitBeforeWastage = purchaseQuantity > 0 ? (totalPurchaseCost + totalProcessingCost) / purchaseQuantity : 0;
+
+    const totalCost = totalPurchaseCost + totalProcessingCost;
+
+const effectiveCostPerUnit =
+  unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
+
+const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
+
     const totalByproductProcessingCost = data.enableByproductProcessing
       ? byproductProcessingCost * unitsRemaining
       : 0;

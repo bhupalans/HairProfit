@@ -161,10 +161,14 @@ export default function AdvancedCalculatorDashboard() {
       byproductScarcityPremium,
     } = data;
 
-    const totalWastageUnits = processingSteps.reduce(
-      (acc, step) => acc + (Number(step.wastage) || 0),
-      0
-    );
+const totalWastageUnits = Math.min(
+  purchaseQuantity,
+  processingSteps.reduce(
+    (acc, step) => acc + (Number(step.wastage) || 0),
+    0
+  )
+);
+
     const unitsRemaining = Math.max(0, purchaseQuantity - totalWastageUnits);
     const totalPurchaseCost = purchaseQuantity * purchasePrice;
     const totalProcessingCost = processingSteps.reduce(
@@ -179,6 +183,16 @@ export default function AdvancedCalculatorDashboard() {
       (acc, p) => acc + (Number(p.quantity) || 0),
       0
     );
+
+const totalByproductProcessingCost =
+  byproductProcessingCost * unitsRemaining;
+
+const totalCost =
+  totalPurchaseCost + totalProcessingCost + totalByproductProcessingCost;
+
+const effectiveCostPerUnit =
+  unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
+
     
     const processedNonRemyProducts = (() => {
         if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
@@ -220,7 +234,7 @@ export default function AdvancedCalculatorDashboard() {
             baseSellingPrice = denominator > 0 ? anchorOverridePrice / denominator : 0;
 
         } else {
-            const costOfByproductUnit = costPerUnitBeforeWastage + byproductProcessingCost;
+            const costOfByproductUnit = effectiveCostPerUnit;
             baseSellingPrice = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
                 ? costOfByproductUnit / (1 - (targetMargin / 100))
                 : 0;
@@ -260,12 +274,8 @@ export default function AdvancedCalculatorDashboard() {
       0
     );
     
-    const totalByproductProcessingCost = data.enableByproductProcessing
-      ? byproductProcessingCost * assignedNonRemyQuantity
-      : 0;
+const grandTotalCost = totalCost;
 
-    const grandTotalCost =
-      totalPurchaseCost + totalProcessingCost + totalByproductProcessingCost;
 
     const totalRevenue = data.enableByproductProcessing
       ? nonRemyRevenue
