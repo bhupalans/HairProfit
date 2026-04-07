@@ -165,7 +165,7 @@ export default function AdvancedAICalculatorDashboard() {
             }
         }
 
-        // Feature 5: Only one anchor is active at a time. Last edited becomes anchor.
+        // Only one anchor is active at a time. Last edited becomes anchor.
         if (field === 'price' && Number(value) > 0) {
             newProducts.forEach((p, i) => {
                 if (i !== index) p.price = '';
@@ -248,7 +248,7 @@ export default function AdvancedAICalculatorDashboard() {
     const totalCost = totalPurchaseCost + totalProcessingCost + totalByproductProcessingCost;
     const effectiveCostPerUnit = unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
 
-    const processedNonRemyProducts = (() => {
+    const processedNonRemyProductsResult = (() => {
         if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
             return nonRemyHairProducts.map(p => ({ ...p, calculatedPrice: Number(p.price) || 0 }));
         }
@@ -273,7 +273,6 @@ export default function AdvancedAICalculatorDashboard() {
         let basePrice: number;
 
         if (productsWithOverrides.length > 0) {
-            // Anchor-Based Weight Logic
             const anchorProduct = productsWithOverrides[0];
             const anchorOverridePrice = Number(anchorProduct.price);
             const anchorWeight = getSizeWeight(anchorProduct.firstSize, category);
@@ -281,12 +280,10 @@ export default function AdvancedAICalculatorDashboard() {
             const anchorQuantity = Number(anchorProduct.quantity) || 0;
             const anchorIsScarce = anchorQuantity > 0 && lowStockThreshold > 0 && anchorQuantity < lowStockThreshold;
             
-            // basePrice = anchorPrice / (anchorWeight * scarcityMultiplier)
             const anchorScarcityMultiplier = anchorIsScarce ? (1 + scarcityPremium / 100) : 1;
             basePrice = anchorWeight > 0 ? anchorOverridePrice / (anchorWeight * anchorScarcityMultiplier) : 0;
 
         } else {
-            // Fallback: Margin-based
             const costOfByproductUnit = effectiveCostPerUnit;
             const marginMultiplier = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
                 ? 1 / (1 - (targetMargin / 100))
@@ -321,22 +318,22 @@ export default function AdvancedAICalculatorDashboard() {
         });
     })();
     
-    const nonRemyRevenue = processedNonRemyProducts.reduce(
+    const nonRemyRevenue = processedNonRemyProductsResult.reduce(
       (acc, p) => acc + (Number(p.quantity) || 0) * (p.calculatedPrice || 0),
       0
     );
     
-    const grandTotalCost = totalCost;
+    const grandTotalCostResult = totalCost;
 
-    const totalRevenue = data.enableByproductProcessing
+    const totalRevenueResult = data.enableByproductProcessing
       ? nonRemyRevenue
       : sellingPricePerUnit * unitsRemaining;
       
-    const projectedProfit = totalRevenue - grandTotalCost;
-    const profitMargin =
-      grandTotalCost > 0
-        ? (projectedProfit / grandTotalCost) * 100
-        : totalRevenue > 0
+    const projectedProfitResult = totalRevenueResult - grandTotalCostResult;
+    const profitMarginResult =
+      grandTotalCostResult > 0
+        ? (projectedProfitResult / grandTotalCostResult) * 100
+        : totalRevenueResult > 0
           ? 100
           : 0;
 
@@ -350,11 +347,11 @@ export default function AdvancedAICalculatorDashboard() {
       assignedNonRemyQuantity,
       effectiveCostPerUnit,
       nonRemyRevenue,
-      grandTotalCost,
-      totalRevenue,
-      projectedProfit,
-      profitMargin,
-      processedNonRemyProducts,
+      grandTotalCost: grandTotalCostResult,
+      totalRevenue: totalRevenueResult,
+      projectedProfit: projectedProfitResult,
+      profitMargin: profitMarginResult,
+      processedNonRemyProducts: processedNonRemyProductsResult,
     };
   }, [data]);
 
@@ -627,6 +624,9 @@ export default function AdvancedAICalculatorDashboard() {
                 purchasePrice={Number(data.purchasePrice) || 0}
                 unitsRemaining={unitsRemaining}
                 currency={data.currency}
+                processedNonRemyProducts={processedNonRemyProducts}
+                targetByproductMargin={Number(data.targetByproductMargin)}
+                lowStockThreshold={Number(data.byproductLowStockThreshold)}
               />
             </div>
           </div>

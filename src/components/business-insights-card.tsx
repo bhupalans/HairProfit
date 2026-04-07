@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingDown, Lightbulb, Zap, AlertTriangle, ArrowRight, Activity, BarChart3 } from 'lucide-react';
+import { TrendingDown, Lightbulb, Zap, AlertTriangle, ArrowRight, Activity, BarChart3, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type BusinessInsightsCardProps = {
@@ -12,6 +12,9 @@ type BusinessInsightsCardProps = {
   purchasePrice: number;
   unitsRemaining: number;
   currency: string;
+  processedNonRemyProducts?: any[];
+  targetByproductMargin?: number;
+  lowStockThreshold?: number;
 };
 
 export default function BusinessInsightsCard({
@@ -22,46 +25,85 @@ export default function BusinessInsightsCard({
   purchasePrice,
   unitsRemaining,
   currency,
+  processedNonRemyProducts = [],
+  targetByproductMargin,
+  lowStockThreshold = 10,
 }: BusinessInsightsCardProps) {
   const isLoss = projectedProfit < 0;
   
-  // 1. Correct break-even based procurement logic
-  const breakEvenPurchasePrice = unitsRemaining > 0 ? totalRevenue / unitsRemaining : 0;
-  
-  // 2. Break-even selling price
+  // 1. Break-even points
   const breakEvenPrice = unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
+  const maxSafePurchasePrice = unitsRemaining > 0 ? totalRevenue / unitsRemaining : 0;
+  
+  // 2. Target procurement
+  const currentMarginDecimal = profitMargin / 100;
+  const targetMarginDecimal = targetByproductMargin 
+    ? (targetByproductMargin / 100) 
+    : Math.min(currentMarginDecimal + 0.05, 0.5);
+    
+  const targetPurchasePrice = unitsRemaining > 0 
+    ? (totalRevenue * (1 - targetMarginDecimal)) / unitsRemaining 
+    : 0;
 
-  // 3. Profit Quality Indicator
-  let profitQuality = "";
-  let healthColor = "";
-  if (profitMargin < 0) {
-    profitQuality = "Loss";
-    healthColor = "text-red-600 bg-red-50 border-red-200";
-  } else if (profitMargin < 10) {
-    profitQuality = "Low Margin";
-    healthColor = "text-amber-600 bg-amber-50 border-amber-200";
-  } else if (profitMargin < 25) {
-    profitQuality = "Healthy";
-    healthColor = "text-blue-600 bg-blue-50 border-blue-200";
-  } else {
-    profitQuality = "High Profit";
-    healthColor = "text-emerald-600 bg-emerald-50 border-emerald-200";
-  }
+  // 3. Size and Stock Analysis
+  const sizeAnalysis = (() => {
+    if (processedNonRemyProducts.length === 0) return { avgSize: 0, hasLowStock: false };
+    
+    let totalSize = 0;
+    let count = 0;
+    let hasLowStock = false;
+
+    processedNonRemyProducts.forEach(p => {
+      const parsedSize = parseInt(String(p.size).split('-')[0].trim(), 10);
+      if (!isNaN(parsedSize)) {
+        totalSize += parsedSize;
+        count++;
+      }
+      if (Number(p.quantity) > 0 && Number(p.quantity) < lowStockThreshold) {
+        hasLowStock = true;
+      }
+    });
+
+    return {
+      avgSize: count > 0 ? totalSize / count : 0,
+      hasLowStock
+    };
+  })();
 
   // 4. Dynamic Strategy Engine
-  let strategyTitle = "";
-  let strategyText = "";
-  if (isLoss) {
-    strategyTitle = "Loss Reduction Strategy";
-    strategyText = "Your current pricing shows losses driven by low-value sizes. Short lengths (6–10 inches) typically have weak market demand and lower prices. Consider shifting your strategy: convert longer hair (14+ inches) into premium Remy or extension products while minimizing bulk sales.";
-  } else {
-    strategyTitle = "Profit Optimization Strategy";
-    strategyText = "Your business is profitable. To improve margins further, focus on increasing output of high-value lengths (16+ inches) and optimize pricing for premium categories like Remy and extensions.";
-  }
+  const getStrategies = () => {
+    const strategies = [];
+    
+    if (sizeAnalysis.avgSize > 0 && sizeAnalysis.avgSize < 12) {
+      strategies.push({
+        title: "Inventory Mix Warning",
+        text: "Your average size is under 12 inches. Short hair is often low-margin. Aim to source longer lengths (14\"+) to improve total revenue."
+      });
+    } else if (sizeAnalysis.avgSize >= 14) {
+      strategies.push({
+        title: "Premium Opportunity",
+        text: "You have a healthy average size (14\"+). Consider converting this inventory into premium Remy or HD-lace wig products for significantly higher margins."
+      });
+    }
 
-  // 5. Cost vs Market Reality
-  const avgRevenuePerUnit = unitsRemaining > 0 ? totalRevenue / unitsRemaining : 0;
-  const isMarketMismatch = breakEvenPrice > avgRevenuePerUnit;
+    if (sizeAnalysis.hasLowStock) {
+      strategies.push({
+        title: "Scarcity Pricing",
+        text: "Low stock detected on popular sizes. You can likely apply a 10-15% premium to these items without impacting demand."
+      });
+    }
+
+    if (isLoss) {
+      strategies.push({
+        title: "Cost Correction",
+        text: "Your current procurement cost exceeds market returns. You must either reduce buying price or shift your inventory to higher-value categories."
+      });
+    }
+
+    return strategies;
+  };
+
+  const strategies = getStrategies();
 
   const formatCurrency = (value: number) => {
     if (isNaN(value)) value = 0;
@@ -71,7 +113,6 @@ export default function BusinessInsightsCard({
     }).format(value);
   };
 
-  // Skip rendering if no data is entered yet
   if (totalCost === 0 && totalRevenue === 0) return null;
 
   return (
@@ -82,28 +123,19 @@ export default function BusinessInsightsCard({
           Business Advisor
         </CardTitle>
         <CardDescription>
-          Intelligent decision engine for your hair trade.
+          Intelligent guidance based on your current data.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         
-        {/* Business Health Badge */}
-        <div className={cn("flex items-center justify-between p-3 rounded-lg border font-bold text-sm", healthColor)}>
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4" />
-            Business Health
-          </div>
-          <span>{profitQuality}</span>
-        </div>
-
         {/* Profitability Warning */}
         {isLoss && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 flex gap-3 items-start">
             <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-red-700">Financial Warning</p>
+              <p className="text-sm font-bold text-red-700">Profitability Warning</p>
               <p className="text-xs text-red-600/80">
-                Current strategy results in a loss of {formatCurrency(Math.abs(projectedProfit))}. Immediate adjustment recommended.
+                Your current strategy results in a loss of <span className="font-bold">{formatCurrency(Math.abs(projectedProfit))}</span>.
               </p>
             </div>
           </div>
@@ -113,47 +145,47 @@ export default function BusinessInsightsCard({
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 flex gap-3 items-start">
           <TrendingDown className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-bold text-blue-700">Break-even Point</p>
+            <p className="text-sm font-bold text-blue-700">Revenue Threshold</p>
             <p className="text-xs text-blue-600/80">
-              You must sell at least <span className="font-bold">{formatCurrency(breakEvenPrice)}</span> per unit to cover your total cost.
+              You must sell at least <span className="font-bold">{formatCurrency(breakEvenPrice)}</span> per unit to cover all overhead and material costs.
             </p>
           </div>
         </div>
 
-        {/* Procurement Target */}
+        {/* Procurement Guidance */}
         <div className="rounded-lg border border-purple-200 bg-purple-50 p-3 flex gap-3 items-start">
           <Zap className="h-5 w-5 text-purple-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-purple-700">Procurement Guidance</p>
-            <p className="text-xs text-purple-600/80 leading-snug">
-              To be profitable at your current selling prices, you should procure raw hair below <span className="font-bold">{formatCurrency(breakEvenPurchasePrice)}</span> per unit.
-            </p>
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-purple-700">Procurement Strategy</p>
+            {isLoss ? (
+              <p className="text-xs text-purple-600/80 leading-snug">
+                To reach break-even at current sales prices, you must procure raw hair below <span className="font-bold">{formatCurrency(maxSafePurchasePrice)}</span>.
+              </p>
+            ) : (
+              <>
+                <p className="text-xs text-purple-600/80 leading-snug">
+                  Maximum safe purchase price: <span className="font-bold">{formatCurrency(maxSafePurchasePrice)}</span>
+                </p>
+                <p className="text-xs text-purple-600/80 leading-snug">
+                  Target for optimal margin: <span className="font-bold">{formatCurrency(targetPurchasePrice)}</span>
+                </p>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Market Mismatch */}
-        {isMarketMismatch && (
-          <div className="rounded-lg border border-orange-200 bg-orange-50 p-3 flex gap-3 items-start">
-            <BarChart3 className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+        {/* Dynamic Strategies */}
+        {strategies.map((s, idx) => (
+          <div key={idx} className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 flex gap-3 items-start">
+            <ArrowRight className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-bold text-orange-700">Cost vs Market Reality</p>
-              <p className="text-xs text-orange-600/80">
-                Your cost structure is higher than current average returns. This indicates a sourcing or pricing imbalance.
+              <p className="text-sm font-bold text-emerald-700">{s.title}</p>
+              <p className="text-xs text-emerald-600/80 leading-relaxed">
+                {s.text}
               </p>
             </div>
           </div>
-        )}
-
-        {/* Dynamic Strategy */}
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 flex gap-3 items-start">
-          <ArrowRight className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-bold text-emerald-700">{strategyTitle}</p>
-            <p className="text-xs text-emerald-600/80 leading-relaxed">
-              {strategyText}
-            </p>
-          </div>
-        </div>
+        ))}
 
       </CardContent>
     </Card>
