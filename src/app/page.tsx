@@ -33,6 +33,12 @@ const tools = [
     icon: <Calculator className="h-8 w-8" />,
   },
   {
+    title: 'Advanced Calculator',
+    description: 'Auto-price byproducts based on cost and target profit margin.',
+    href: '/advanced-calculator',
+    icon: <Bot className="h-8 w-8" />,
+  },
+  {
     title: 'Advanced AI Calculator',
     description: 'Auto-price byproducts with anchor logic and AI market suggestions.',
     href: '/advanced-AI-calculator',
