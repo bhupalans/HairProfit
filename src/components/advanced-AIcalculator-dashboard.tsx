@@ -10,6 +10,7 @@ import ProcessingStepsCard from '@/components/processing-steps-card';
 import AdvancedAIByproductCard from '@/components/advanced-AI-byproduct-card';
 import PricingCard from '@/components/pricing-card';
 import SummaryCard from '@/components/summary-card';
+import BusinessInsightsCard from '@/components/business-insights-card';
 import { useToast } from '@/hooks/use-toast';
 import { z } from 'zod';
 import jsPDF from 'jspdf';
@@ -617,6 +618,15 @@ export default function AdvancedAICalculatorDashboard() {
                 totalRevenue={totalRevenue}
                 projectedProfit={projectedProfit}
                 profitMargin={profitMargin}
+              />
+              <BusinessInsightsCard
+                totalCost={grandTotalCost}
+                totalRevenue={totalRevenue}
+                projectedProfit={projectedProfit}
+                profitMargin={profitMargin}
+                purchasePrice={Number(data.purchasePrice) || 0}
+                unitsRemaining={unitsRemaining}
+                currency={data.currency}
               />
             </div>
           </div>
