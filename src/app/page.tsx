@@ -9,6 +9,7 @@ import {
   Sparkles,
   Beaker,
   Store,
+  Bot,
 } from 'lucide-react';
 import {
   Card,
@@ -32,10 +33,10 @@ const tools = [
     icon: <Calculator className="h-8 w-8" />,
   },
   {
-    title: 'Advanced Calculator',
-    description: 'Auto-price byproducts based on cost and target profit margin.',
-    href: '/advanced-calculator',
-    icon: <Beaker className="h-8 w-8" />,
+    title: 'Advanced AI Calculator',
+    description: 'Auto-price byproducts with anchor logic and AI market suggestions.',
+    href: '/advanced-AI-calculator',
+    icon: <Bot className="h-8 w-8" />,
   },
   {
     title: 'Market Comparison',
@@ -69,7 +70,6 @@ export default function Home() {
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
         <header className="text-left mb-12">
           <div className="flex items-center gap-2 sm:gap-4 mb-4">
-
             <h1 className="text-4xl sm:text-4xl font-bold tracking-tight">
               Hair Business Dashboard
             </h1>
