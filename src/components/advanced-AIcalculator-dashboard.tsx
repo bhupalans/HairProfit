@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
@@ -18,6 +17,54 @@ import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
 import Link from 'next/link';
 
+// Helper for category weights
+const getSizeWeight = (size: number, category: string) => {
+  const cat = category.toLowerCase();
+  if (cat.includes('non-remy')) {
+    if (size <= 6) return 0.5;
+    if (size <= 8) return 0.6;
+    if (size <= 10) return 0.75;
+    if (size <= 12) return 0.85;
+    if (size <= 14) return 1.0;
+    if (size <= 16) return 1.1;
+    if (size <= 18) return 1.25;
+    if (size <= 20) return 1.4;
+    if (size <= 22) return 1.6;
+    if (size <= 24) return 1.8;
+    if (size <= 26) return 2.0;
+    return 2.2;
+  }
+  if (cat.includes('remy')) {
+    if (size <= 6) return 0.7;
+    if (size <= 8) return 0.8;
+    if (size <= 10) return 0.95;
+    if (size <= 12) return 1.05;
+    if (size <= 14) return 1.2;
+    if (size <= 16) return 1.4;
+    if (size <= 18) return 1.6;
+    if (size <= 20) return 1.9;
+    if (size <= 22) return 2.2;
+    if (size <= 24) return 2.5;
+    if (size <= 26) return 2.8;
+    return 3.2;
+  }
+  if (cat.includes('wig')) {
+    if (size <= 10) return 0.9;
+    if (size <= 14) return 1.0;
+    if (size <= 18) return 1.1;
+    if (size <= 22) return 1.2;
+    return 1.3;
+  }
+  if (cat.includes('extension')) {
+    if (size <= 8) return 0.7;
+    if (size <= 12) return 1.0;
+    if (size <= 16) return 1.4;
+    if (size <= 20) return 1.9;
+    if (size <= 24) return 2.5;
+    return 3.0;
+  }
+  return 1.0;
+};
 
 const initialData: HairProfitData = {
   hairType: '',
@@ -28,6 +75,7 @@ const initialData: HairProfitData = {
   sellingPricePerUnit: '',
   enableByproductProcessing: false,
   byproductProcessingCost: '',
+  byproductName: 'Non-Remy Hair',
   nonRemyHairProducts: [],
   targetByproductMargin: 30,
   byproductPriceIncreasePerInch: 3,
@@ -167,9 +215,9 @@ export default function AdvancedAICalculatorDashboard() {
     const sellingPricePerUnit = Number(data.sellingPricePerUnit) || 0;
     const { 
       targetByproductMargin,
-      byproductPriceIncreasePerInch,
       byproductLowStockThreshold,
       byproductScarcityPremium,
+      byproductName
     } = data;
 
     const totalWastageUnits = Math.min(
@@ -195,12 +243,10 @@ export default function AdvancedAICalculatorDashboard() {
       0
     );
 
-    // Feature 2: Correct Cost Model
     const totalByproductProcessingCost = byproductProcessingCost * unitsRemaining;
     const totalCost = totalPurchaseCost + totalProcessingCost + totalByproductProcessingCost;
     const effectiveCostPerUnit = unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
 
-    // Feature 1: Anchor-Based Pricing
     const processedNonRemyProducts = (() => {
         if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
             return nonRemyHairProducts.map(p => ({ ...p, calculatedPrice: Number(p.price) || 0 }));
@@ -215,38 +261,36 @@ export default function AdvancedAICalculatorDashboard() {
         if (!validProducts.length) {
             return productsWithSizeInfo.map(p => ({ ...p, calculatedPrice: 0 }));
         }
-        validProducts.sort((a, b) => a.firstSize - b.firstSize);
-        const shortestLength = validProducts[0].firstSize;
 
-        let baseSellingPrice;
         const targetMargin = Number(targetByproductMargin) || 0;
-        const priceIncreasePerInch = Number(byproductPriceIncreasePerInch) || 0;
         const lowStockThreshold = Number(byproductLowStockThreshold) || 0;
         const scarcityPremium = Number(byproductScarcityPremium) || 0;
+        const category = byproductName || 'Non-Remy Hair';
 
         const productsWithOverrides = validProducts.filter(p => (Number(p.price) || 0) > 0);
         
+        let basePrice: number;
+
         if (productsWithOverrides.length > 0) {
-            // Anchor Logic
+            // Anchor-Based Weight Logic
             const anchorProduct = productsWithOverrides[0];
             const anchorOverridePrice = Number(anchorProduct.price);
-            const anchorLengthDifference = anchorProduct.firstSize - shortestLength;
-            const anchorSizePremiumPercentage = anchorLengthDifference * priceIncreasePerInch;
-
+            const anchorWeight = getSizeWeight(anchorProduct.firstSize, category);
+            
             const anchorQuantity = Number(anchorProduct.quantity) || 0;
             const anchorIsScarce = anchorQuantity > 0 && lowStockThreshold > 0 && anchorQuantity < lowStockThreshold;
-            const anchorScarcityPremiumPercentage = anchorIsScarce ? scarcityPremium : 0;
             
-            // basePrice = anchorPrice / (1 + sizePremium%) / (1 + scarcityPremium%)
-            const denominator = (1 + anchorSizePremiumPercentage / 100) * (1 + anchorScarcityPremiumPercentage / 100);
-            baseSellingPrice = denominator > 0 ? anchorOverridePrice / denominator : 0;
+            // basePrice = anchorPrice / (anchorWeight * scarcityMultiplier)
+            const anchorScarcityMultiplier = anchorIsScarce ? (1 + scarcityPremium / 100) : 1;
+            basePrice = anchorWeight > 0 ? anchorOverridePrice / (anchorWeight * anchorScarcityMultiplier) : 0;
 
         } else {
             // Fallback: Margin-based
             const costOfByproductUnit = effectiveCostPerUnit;
-            baseSellingPrice = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
-                ? costOfByproductUnit / (1 - (targetMargin / 100))
-                : 0;
+            const marginMultiplier = targetMargin < 100 && targetMargin >= 0 && costOfByproductUnit > 0
+                ? 1 / (1 - (targetMargin / 100))
+                : 1;
+            basePrice = costOfByproductUnit * marginMultiplier;
         }
 
         return productsWithSizeInfo.map(product => {
@@ -256,24 +300,22 @@ export default function AdvancedAICalculatorDashboard() {
             
             const overridePrice = Number(product.price) || 0;
             if (overridePrice > 0) {
-                return { ...product, calculatedPrice: overridePrice };
+                return { ...product, calculatedPrice: Number(overridePrice.toFixed(2)) };
             }
 
-            const lengthDifference = product.firstSize - shortestLength;
-            const sizePremiumPercentage = lengthDifference * priceIncreasePerInch;
-            let sizeAdjustedPrice = baseSellingPrice * (1 + (sizePremiumPercentage / 100));
+            const weight = getSizeWeight(product.firstSize, category);
+            let finalPrice = basePrice * weight;
 
             const quantity = Number(product.quantity) || 0;
             const isScarce = quantity > 0 && lowStockThreshold > 0 && quantity < lowStockThreshold;
             
-            let finalPrice = sizeAdjustedPrice;
             if (isScarce) {
-                finalPrice = sizeAdjustedPrice * (1 + (scarcityPremium / 100));
+                finalPrice *= (1 + scarcityPremium / 100);
             }
     
             return {
                 ...product,
-                calculatedPrice: finalPrice,
+                calculatedPrice: Number(finalPrice.toFixed(2)),
             };
         });
     })();
@@ -315,7 +357,6 @@ export default function AdvancedAICalculatorDashboard() {
     };
   }, [data]);
 
-  // Feature 4: Frontend AI Integration
   const handleAISuggest = async () => {
     if (data.nonRemyHairProducts.length === 0) {
         toast({ variant: 'destructive', title: 'Error', description: 'Please add at least one byproduct size first.' });
@@ -331,7 +372,8 @@ export default function AdvancedAICalculatorDashboard() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 products: data.nonRemyHairProducts.map(p => ({ size: p.size, quantity: p.quantity })),
-                costPerUnit: effectiveCostPerUnit
+                costPerUnit: effectiveCostPerUnit,
+                category: data.byproductName || 'Non-Remy Hair'
             })
         });
 
@@ -339,7 +381,6 @@ export default function AdvancedAICalculatorDashboard() {
 
         const { anchorSize, price } = await response.json();
 
-        // Update state: Set manual price ONLY for anchor size, clear others
         const newProducts = data.nonRemyHairProducts.map(p => {
             const isAnchor = p.size.toString().includes(anchorSize);
             return { ...p, price: isAnchor ? price : '' };

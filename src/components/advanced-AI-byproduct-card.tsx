@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -48,7 +47,6 @@ export default function AdvancedAIByproductCard({
     enableByproductProcessing, 
     byproductProcessingCost, 
     targetByproductMargin,
-    byproductPriceIncreasePerInch,
     byproductLowStockThreshold,
     byproductScarcityPremium,
     byproductName,
@@ -135,7 +133,7 @@ export default function AdvancedAIByproductCard({
           )}
         </div>
         <CardDescription>
-          Automated byproduct pricing using an anchor model and optional AI guidance.
+          Automated byproduct pricing using a market-weight anchor model and AI guidance.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -178,19 +176,6 @@ export default function AdvancedAIByproductCard({
                             value={targetByproductMargin}
                             onChange={(e) => onNumericChange('targetByproductMargin', e.target.value)}
                             placeholder="e.g. 30"
-                        />
-                    </div>
-                    <div>
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Label htmlFor="increase-per-inch">Price Increase per Inch (%)</Label>
-                          <HelpInfo title="Price Increase per Inch (%)">Additional % to add to the price for every inch longer than the shortest size.</HelpInfo>
-                        </div>
-                        <Input
-                            id="increase-per-inch"
-                            type="number"
-                            value={byproductPriceIncreasePerInch}
-                            onChange={(e) => onNumericChange('byproductPriceIncreasePerInch', e.target.value)}
-                            placeholder="e.g. 3"
                         />
                     </div>
                     <div>
