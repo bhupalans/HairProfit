@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,6 @@ import {
   Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { updateBusinessProfile } from '@/app/actions';
 import type { BusinessProfile } from '@/types';
 import { cn } from '@/lib/utils';
 
@@ -96,17 +94,21 @@ export default function ProfilePage() {
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
-    const result = await updateBusinessProfile(user.uid, businessData);
-    setSaving(false);
-
-    if (result.success) {
+    
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      // Perform client-side update to maintain Authentication context
+      await setDoc(userRef, { business: businessData }, { merge: true });
       toast({ title: 'Profile Updated', description: 'Business details saved successfully.' });
-    } else {
+    } catch (error: any) {
+      console.error("Failed to update business profile", error);
       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: result.error || 'Could not save profile details.',
+        description: error.message || 'Could not save profile details.',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
