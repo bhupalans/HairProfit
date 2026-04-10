@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import {
   Calculator,
@@ -10,6 +9,7 @@ import {
   Beaker,
   Store,
   Bot,
+  Settings,
 } from 'lucide-react';
 import {
   Card,
@@ -67,6 +67,12 @@ const tools = [
     description: 'Generate and download PDF invoices from your quotations.',
     href: '/invoice',
     icon: <Receipt className="h-8 w-8" />,
+  },
+  {
+    title: 'Business Settings',
+    description: 'Manage default terms, conditions, and payment details.',
+    href: '/settings/business',
+    icon: <Settings className="h-8 w-8" />,
   },
 ];
 

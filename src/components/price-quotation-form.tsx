@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
@@ -157,7 +156,15 @@ export default function PriceQuotationForm() {
       nextRef = `Q-${currentYear}-001`;
     }
     
-    setData(prev => ({ ...prev, quotationRef: nextRef }));
+    const savedTerms = localStorage.getItem('business_terms');
+    const savedPayment = localStorage.getItem('business_payment');
+
+    setData(prev => ({ 
+      ...prev, 
+      quotationRef: nextRef,
+      termsAndConditions: savedTerms || prev.termsAndConditions,
+      paymentDetails: savedPayment || prev.paymentDetails
+    }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
