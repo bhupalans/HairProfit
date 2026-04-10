@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthGuard from '@/components/auth-guard';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 
 const ContactInfo = ({ contact }: { contact: string }) => {
     const isEmail = contact.includes('@');
@@ -139,6 +139,7 @@ export default function ListingDetailPage() {
                                             </div>
                                         </DialogTrigger>
                                         <DialogContent className="max-w-[95vw] max-h-[95vh] border-none bg-transparent shadow-none p-0 flex items-center justify-center outline-none">
+					 <DialogTitle className="hidden">Image Preview</DialogTitle>
                                             <div className="relative w-full h-[90vh]">
                                                 <Image
                                                     src={mainImage}
