@@ -5,7 +5,7 @@ import {
   runMarketComparison,
 } from '@/ai/flows/market-comparison-flow';
 import { runBuyerAnalysis } from '@/ai/flows/buyer-analysis-flow';
-import { getExchangeRate } from '@/ai/flows/exchange-rate-flow';
+import { getFxRates, lastUpdated } from '@/lib/fx';
 import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, ExchangeRateInput, ExchangeRateOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
 
 import { db } from '@/lib/firebase';
@@ -37,16 +37,48 @@ export async function getBuyerAnalysis(
   }
 }
 
-export async function fetchExchangeRate(
-  input: ExchangeRateInput
-): Promise<{ success: boolean; data?: ExchangeRateOutput; error?: string }> {
+export async function fetchExchangeRate(input: {
+  baseCurrency: string;
+  targetCurrency: string;
+}): Promise<{ success: boolean; data?: { rate: number }; error?: string }> {
   try {
-    const result = await getExchangeRate(input);
-    return { success: true, data: result };
+    const { baseCurrency, targetCurrency } = input;
+
+    const rates = await getFxRates();
+
+    const baseRate = rates[baseCurrency];
+    const targetRate = rates[targetCurrency];
+
+    if (!baseRate) {
+      throw new Error(`Missing rate for ${baseCurrency}`);
+    }
+
+    if (!targetRate) {
+      throw new Error(`Missing rate for ${targetCurrency}`);
+    }
+
+    /**
+     * IMPORTANT:
+     * UI shows: "Rate (1 INR = ?)"
+     * So we calculate:
+     * 1 baseCurrency = ? targetCurrency
+     */
+    const rate = targetRate / baseRate;
+
+    return {
+      success: true,
+      data: {
+        rate,
+	lastUpdated,
+      },
+    };
   } catch (e: any) {
-    console.error('Exchange rate flow failed', e);
-    const errorMessage = e.message || 'An unknown error occurred.';
-    return { success: false, error: errorMessage };
+    console.error("Exchange rate API failed", e);
+
+    return {
+      success: false,
+      error: e.message || "Unknown error",
+    };
   }
 }
 

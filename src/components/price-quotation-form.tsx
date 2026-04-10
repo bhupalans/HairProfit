@@ -77,7 +77,7 @@ const getInitialData = (): QuotationData => ({
   shippingCarrier: 'DHL Express',
   currency: 'USD',
   displayCurrency: 'INR',
-  exchangeRate: 83.5,
+  exchangeRate: 0.0107,
   paymentDetails: 'Bank: [Your Bank Name]\nAccount #: [Your Account #]\nUPI: [your-upi@okbank]',
   termsAndConditions: `• Payment: 50% advance (Bank Transfer / Wise / PayPal)
 • Delivery Time: 3-7 business days after payment confirmation.
@@ -100,11 +100,28 @@ const currencySymbols: { [key: string]: string } = {
   GBP: '£',
 };
 
+
+function getTimeAgo(timestamp: number) {
+  const diff = Date.now() - timestamp;
+
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes} min ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hr ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days} day(s) ago`;
+}
+
 export default function PriceQuotationForm() {
   const [data, setData] = useState<QuotationData>(getInitialData());
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+
+  const [rateUpdatedAt, setRateUpdatedAt] = useState<number | null>(null);
 
   const pdfRef = useRef<HTMLDivElement>(null);
   const logoFileInputRef = useRef<HTMLInputElement>(null);
@@ -351,6 +368,7 @@ export default function PriceQuotationForm() {
     setIsFetchingRate(false);
     if (response.success && response.data) {
         handleFieldChange('exchangeRate', response.data.rate.toFixed(4));
+	setRateUpdatedAt(response.data.lastUpdated || null);
         toast({ title: 'Success', description: `Exchange rate updated to ${response.data.rate.toFixed(4)}`});
     } else {
         toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch the exchange rate.' });
@@ -538,6 +556,13 @@ export default function PriceQuotationForm() {
                                     {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                                 </Button>
                             </div>
+			
+			{/* ✅ ADD EXACTLY HERE */}
+        			{rateUpdatedAt && (
+            				<p className="text-xs text-gray-500 mt-1">
+                			Updated {getTimeAgo(rateUpdatedAt)}
+            				</p>
+        		)}
                         </div>
                     )}
                 </div>
