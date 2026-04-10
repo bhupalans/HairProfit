@@ -158,12 +158,14 @@ export default function PriceQuotationForm() {
     
     const savedTerms = localStorage.getItem('business_terms');
     const savedPayment = localStorage.getItem('business_payment');
+    const savedLogo = localStorage.getItem('business_logo');
 
     setData(prev => ({ 
       ...prev, 
       quotationRef: nextRef,
       termsAndConditions: savedTerms || prev.termsAndConditions,
-      paymentDetails: savedPayment || prev.paymentDetails
+      paymentDetails: savedPayment || prev.paymentDetails,
+      logo: savedLogo || prev.logo
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

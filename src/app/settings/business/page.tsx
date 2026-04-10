@@ -1,35 +1,75 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, ChangeEvent } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Save, Settings } from 'lucide-react';
+import { ArrowLeft, Save, Settings, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/auth-guard';
+import { cn } from '@/lib/utils';
 
 export default function BusinessSettingsPage() {
   const [terms, setTerms] = useState('');
   const [payment, setPayment] = useState('');
+  const [logo, setLogo] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedTerms = localStorage.getItem('business_terms');
       const savedPayment = localStorage.getItem('business_payment');
+      const savedLogo = localStorage.getItem('business_logo');
+      
       if (savedTerms) setTerms(savedTerms);
       if (savedPayment) setPayment(savedPayment);
+      if (savedLogo) setLogo(savedLogo);
     }
   }, []);
+
+  const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File too large',
+          description: 'Please upload a logo smaller than 2MB.',
+        });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64 = event.target?.result as string;
+        setLogo(base64);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeLogo = () => {
+    setLogo(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   const handleSave = () => {
     localStorage.setItem('business_terms', terms);
     localStorage.setItem('business_payment', payment);
+    if (logo) {
+      localStorage.setItem('business_logo', logo);
+    } else {
+      localStorage.removeItem('business_logo');
+    }
+
     toast({
       title: 'Settings Saved',
-      description: 'Your default terms and payment details have been updated.',
+      description: 'Your default business details have been updated.',
     });
   };
 
@@ -58,7 +98,53 @@ export default function BusinessSettingsPage() {
                 Set default values for your quotations and invoices. These will be used to pre-fill new documents when you first open them.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-8">
+              {/* Logo Section */}
+              <div className="space-y-4">
+                <Label className="font-bold uppercase text-xs tracking-wider text-muted-foreground">Default Business Logo</Label>
+                <div className="flex flex-col items-center sm:items-start gap-4">
+                  <div 
+                    className={cn(
+                      "w-48 h-24 rounded-lg border-2 border-dashed flex items-center justify-center relative overflow-hidden bg-background group",
+                      logo ? "border-solid border-primary/20" : "border-muted-foreground/20"
+                    )}
+                  >
+                    {logo ? (
+                      <>
+                        <img src={logo} alt="Business Logo" className="max-h-full max-w-full object-contain p-2" />
+                        <button 
+                          onClick={removeLogo}
+                          className="absolute top-1 right-1 p-1 bg-destructive text-destructive-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </>
+                    ) : (
+                      <div className="text-center p-4">
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">No logo set</p>
+                      </div>
+                    )}
+                  </div>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    onChange={handleLogoUpload} 
+                    accept="image/*" 
+                    className="hidden" 
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {logo ? 'Change Logo' : 'Upload Logo'}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground italic">Recommended: Horizontal logo, max 2MB.</p>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="terms" className="font-bold uppercase text-xs tracking-wider text-muted-foreground">Default Terms & Conditions</Label>
                 <Textarea
@@ -66,7 +152,7 @@ export default function BusinessSettingsPage() {
                   placeholder="e.g. • Payment: 50% advance (Bank Transfer / Wise / PayPal)..."
                   value={terms}
                   onChange={(e) => setTerms(e.target.value)}
-                  className="min-h-[200px] bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary"
+                  className="min-h-[150px] bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
               <div className="space-y-2">
@@ -76,7 +162,7 @@ export default function BusinessSettingsPage() {
                   placeholder="e.g. Bank: [Your Bank Name], Account #: [Your Account #]..."
                   value={payment}
                   onChange={(e) => setPayment(e.target.value)}
-                  className="min-h-[150px] bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary"
+                  className="min-h-[120px] bg-muted/30 border-none focus-visible:ring-1 focus-visible:ring-primary"
                 />
               </div>
               <Button onClick={handleSave} className="w-full">
