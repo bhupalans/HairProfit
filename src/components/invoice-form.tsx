@@ -58,6 +58,8 @@ const getInitialData = (): InvoiceData => ({
   })(),
   clientInfo: { toName: '', toAddress: '' },
   myInfo: { fromName: '', fromAddress: '' },
+  productFormat: '',
+  productOrigin: '',
   items: [initialItem],
   currency: 'USD',
   tax: 0,
@@ -142,6 +144,8 @@ export default function InvoiceForm() {
                 logo: quotationData.logo,
                 clientInfo: quotationData.clientInfo,
                 myInfo: quotationData.myInfo,
+                productFormat: quotationData.productFormat,
+                productOrigin: quotationData.productOrigin,
                 items: quotationData.items.map(item => ({
                     id: crypto.randomUUID(),
                     description: item.length,
@@ -362,6 +366,26 @@ export default function InvoiceForm() {
                         <FormInput name="fromName" placeholder="Your Business Name" value={data.myInfo.fromName} onChange={e => handleInfoChange('myInfo', e)} className="sm:text-right" />
                         <FormTextarea name="fromAddress" placeholder="Your Full Address..." value={data.myInfo.fromAddress} onChange={e => handleInfoChange('myInfo', e)} className="sm:text-right" rows={4} />
                     </div>
+                </div>
+            </section>
+
+            <section className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-8 border-t pt-8">
+                <div>
+                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Format:</h3>
+                    <FormInput 
+                        value={data.productFormat || ''} 
+                        onChange={e => handleFieldChange('productFormat', e.target.value)} 
+                        placeholder="-" 
+                    />
+                </div>
+                <div className="sm:text-right">
+                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Origin:</h3>
+                    <FormInput 
+                        value={data.productOrigin || ''} 
+                        onChange={e => handleFieldChange('productOrigin', e.target.value)} 
+                        placeholder="-" 
+                        className="sm:text-right" 
+                    />
                 </div>
             </section>
             

@@ -152,6 +152,8 @@ export const invoiceDataSchema = z.object({
   dueDate: z.string(),
   clientInfo: z.object({ toName: z.string(), toAddress: z.string() }),
   myInfo: z.object({ fromName: z.string(), fromAddress: z.string() }),
+  productFormat: z.string().optional(),
+  productOrigin: z.string().optional(),
   items: z.array(invoiceItemSchema),
   currency: z.string(),
   tax: z.union([z.string(), z.number()]),

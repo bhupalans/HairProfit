@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { InvoiceData } from '@/types';
@@ -22,6 +23,7 @@ export default function InvoicePdfReport({
   
   const { 
     logo, invoiceRef, invoiceDate, dueDate, clientInfo, myInfo, 
+    productFormat, productOrigin,
     items, currency, shippingCost, amountPaid, notes, terms,
     discount, tax
   } = data;
@@ -60,6 +62,17 @@ export default function InvoicePdfReport({
                     <p className="font-semibold">{myInfo.fromName}</p>
                     <p className="whitespace-pre-wrap">{myInfo.fromAddress}</p>
                 </div>
+            </div>
+        </section>
+
+        <section className="grid grid-cols-2 mt-8 text-sm border-t border-gray-100 pt-4">
+            <div>
+                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Format:</h3>
+                <p className="font-semibold text-gray-700">{productFormat || "-"}</p>
+            </div>
+            <div className="text-right">
+                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Origin:</h3>
+                <p className="font-semibold text-gray-700">{productOrigin || "-"}</p>
             </div>
         </section>
 
