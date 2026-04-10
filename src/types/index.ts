@@ -185,3 +185,29 @@ export const marketplaceListingFormSchema = z.object({
   imageUrls: z.array(z.string()).optional(),
 });
 export type MarketplaceListingFormData = z.infer<typeof marketplaceListingFormSchema>;
+
+export const businessProfileSchema = z.object({
+  name: z.string().optional(),
+  logoUrl: z.string().optional(),
+  description: z.string().optional(),
+  address: z.object({
+    line1: z.string().optional(),
+    line2: z.string().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    postalCode: z.string().optional(),
+  }).optional(),
+  contact: z.object({
+    phone: z.string().optional(),
+    whatsapp: z.string().optional(),
+    altEmail: z.string().optional(),
+  }).optional(),
+  tax: z.object({
+    gst: z.string().optional(),
+    pan: z.string().optional(),
+    iec: z.string().optional(),
+  }).optional(),
+});
+
+export type BusinessProfile = z.infer<typeof businessProfileSchema>;

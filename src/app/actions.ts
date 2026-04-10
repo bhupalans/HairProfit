@@ -6,10 +6,10 @@ import {
 } from '@/ai/flows/market-comparison-flow';
 import { runBuyerAnalysis } from '@/ai/flows/buyer-analysis-flow';
 import { getFxRates, lastUpdated } from '@/lib/fx';
-import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, ExchangeRateInput, ExchangeRateOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
+import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, ExchangeRateInput, ExchangeRateOutput, MarketplaceListing, MarketplaceListingFormData, BusinessProfile } from '@/types';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, setDoc } from 'firebase/firestore';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -169,5 +169,22 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
   } catch (e: any) {
     console.error('Failed to create listing', e);
     return { success: false, error: e.message || 'Failed to create listing.' };
+  }
+}
+
+/**
+ * Updates or creates the business field within a user document.
+ * Performs a recursive merge so nested fields are preserved.
+ */
+export async function updateBusinessProfile(userId: string, data: Partial<BusinessProfile>): Promise<{ success: boolean; error?: string }> {
+  try {
+    const userRef = doc(db, 'users', userId);
+    // Passing the data inside a 'business' key with merge: true 
+    // tells Firestore to merge the contents of 'business' recursively.
+    await setDoc(userRef, { business: data }, { merge: true });
+    return { success: true };
+  } catch (e: any) {
+    console.error('Failed to update business profile', e);
+    return { success: false, error: e.message || 'Failed to update business profile.' };
   }
 }
