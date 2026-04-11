@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
@@ -68,6 +69,7 @@ const getInitialData = (): QuotationData => ({
   myInfo: { fromName: '', fromAddress: '' },
   productFormat: 'Rubber Band',
   productOrigin: 'Indian',
+  productCategory: 'Non-Remy Hair',
   items: [
     initialItem,
     { id: crypto.randomUUID(), length: '18 inches', quantity: 20, price: 60 }
@@ -167,6 +169,26 @@ export default function PriceQuotationForm() {
       paymentDetails: savedPayment || prev.paymentDetails,
       logo: savedLogo || prev.logo
     }));
+
+    // Data flow from Profit Calculator
+    const profitJSON = localStorage.getItem('profitToQuotation');
+    if (profitJSON) {
+      try {
+        localStorage.removeItem('profitToQuotation');
+        const profitData = JSON.parse(profitJSON);
+        setData(prev => ({
+          ...prev,
+          productCategory: profitData.productCategory || prev.productCategory,
+          items: (profitData.items || []).map((item: any) => ({
+            id: crypto.randomUUID(),
+            ...item
+          }))
+        }));
+        toast({ title: 'Imported from Profit Calculator', description: 'Product category and items have been pre-filled.' });
+      } catch (e) {
+        console.error("Failed to parse profit data", e);
+      }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -282,7 +304,7 @@ export default function PriceQuotationForm() {
             finalImgWidth = finalImgHeight * ratio;
         }
 
-        const x = (pdfWidth - finalImgWidth) / 2;
+        const x = (pdfWidth - imgWidth) / 2;
         
         pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
         pdf.save(`Quotation-${data.quotationRef}.pdf`);
@@ -297,7 +319,10 @@ export default function PriceQuotationForm() {
 
   const handleCreateInvoice = () => {
     try {
-        const jsonString = JSON.stringify(data);
+        const jsonString = JSON.stringify({
+          ...data,
+          productCategory: data.productCategory
+        });
         localStorage.setItem('quotationForInvoice', jsonString);
         toast({
             title: 'Quotation Data Saved',
@@ -502,7 +527,11 @@ export default function PriceQuotationForm() {
             
             <section className="mt-8">
                 <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Details</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/30 p-3 rounded-lg">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-muted/30 p-3 rounded-lg">
+                    <div>
+                        <Label htmlFor="productCategory" className="text-sm font-medium">Category</Label>
+                        <QuotationInput id="productCategory" value={data.productCategory || ''} onChange={e => handleFieldChange('productCategory', e.target.value)} placeholder="e.g., Non-Remy" />
+                    </div>
                     <div>
                         <Label htmlFor="productFormat" className="text-sm font-medium">Format</Label>
                         <QuotationInput id="productFormat" value={data.productFormat} onChange={e => handleFieldChange('productFormat', e.target.value)} />

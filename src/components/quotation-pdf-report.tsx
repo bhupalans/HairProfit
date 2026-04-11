@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { QuotationData } from '@/types';
@@ -23,7 +24,7 @@ export default function QuotationPdfReport({
   const { 
     logo, quotationRef, date, validUntil, clientInfo, myInfo, 
     productFormat, productOrigin, items, currency, shippingCost, 
-    shippingCarrier, paymentDetails, termsAndConditions, displayCurrency, exchangeRate 
+    shippingCarrier, paymentDetails, termsAndConditions, displayCurrency, exchangeRate, productCategory 
   } = data;
     
   const finalCurrency = displayCurrency || currency;
@@ -80,9 +81,17 @@ export default function QuotationPdfReport({
         </section>
 
         <section className="mt-8 mb-4">
-            <div className="inline-block bg-gray-50 rounded-md p-2 text-sm">
-                <span className="font-bold text-gray-500">Product: </span>
-                <span className="font-semibold">{productOrigin} Hair - {productFormat}</span>
+            <div className="flex flex-wrap gap-4">
+                {productCategory && (
+                    <div className="inline-block bg-gray-50 rounded-md p-2 text-sm">
+                        <span className="font-bold text-gray-500">Category: </span>
+                        <span className="font-semibold">{productCategory}</span>
+                    </div>
+                )}
+                <div className="inline-block bg-gray-50 rounded-md p-2 text-sm">
+                    <span className="font-bold text-gray-500">Product: </span>
+                    <span className="font-semibold">{productOrigin} Hair - {productFormat}</span>
+                </div>
             </div>
         </section>
 

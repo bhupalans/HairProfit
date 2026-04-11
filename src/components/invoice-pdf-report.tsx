@@ -23,7 +23,7 @@ export default function InvoicePdfReport({
   
   const { 
     logo, invoiceRef, invoiceDate, dueDate, clientInfo, myInfo, 
-    productFormat, productOrigin,
+    productFormat, productOrigin, productCategory,
     items, currency, shippingCost, amountPaid, notes, terms,
     discount, tax
   } = data;
@@ -65,8 +65,12 @@ export default function InvoicePdfReport({
             </div>
         </section>
 
-        <section className="grid grid-cols-2 mt-8 text-sm border-t border-gray-100 pt-4">
+        <section className="grid grid-cols-3 mt-8 text-sm border-t border-gray-100 pt-4">
             <div>
+                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Category:</h3>
+                <p className="font-semibold text-gray-700">{productCategory || "-"}</p>
+            </div>
+            <div className="text-center">
                 <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Format:</h3>
                 <p className="font-semibold text-gray-700">{productFormat || "-"}</p>
             </div>

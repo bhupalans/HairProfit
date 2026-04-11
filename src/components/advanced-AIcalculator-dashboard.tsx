@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { ArrowLeft, Bot, FileDown, FileUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bot, FileDown, FileUp, Loader2, FilePlus2 } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Helper for category weights
 const getSizeWeight = (size: number, category: string) => {
@@ -91,6 +93,7 @@ export default function AdvancedAICalculatorDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfReportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleDataChange = useCallback((field: keyof HairProfitData, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -394,6 +397,26 @@ export default function AdvancedAICalculatorDashboard() {
     }
   };
 
+  const handleCreateQuotation = () => {
+    if (!processedNonRemyProducts.length) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please add byproduct items before creating a quotation.' });
+      return;
+    }
+
+    const quotationData = {
+      productCategory: data.byproductName,
+      items: processedNonRemyProducts.map(p => ({
+        length: p.size.toString().includes('inches') ? p.size : `${p.size} inches`,
+        quantity: Number(p.quantity) || 0,
+        price: p.calculatedPrice
+      }))
+    };
+
+    localStorage.setItem("profitToQuotation", JSON.stringify(quotationData));
+    toast({ title: 'Transferring to Quotation...', description: 'Taking you to the builder.' });
+    router.push("/price-quotation");
+  };
+
   const handleExportJson = () => {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -556,6 +579,9 @@ export default function AdvancedAICalculatorDashboard() {
             />
             <Button variant="outline" onClick={handleExportJson}>
               <FileDown className="mr-2 h-4 w-4" /> Export JSON
+            </Button>
+            <Button variant="secondary" onClick={handleCreateQuotation}>
+              <FilePlus2 className="mr-2 h-4 w-4" /> Create Quotation
             </Button>
             <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
               {isGeneratingPdf ? (

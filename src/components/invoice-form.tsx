@@ -60,6 +60,7 @@ const getInitialData = (): InvoiceData => ({
   myInfo: { fromName: '', fromAddress: '' },
   productFormat: '',
   productOrigin: '',
+  productCategory: '',
   items: [initialItem],
   currency: 'USD',
   tax: 0,
@@ -146,6 +147,7 @@ export default function InvoiceForm() {
                 myInfo: quotationData.myInfo,
                 productFormat: quotationData.productFormat,
                 productOrigin: quotationData.productOrigin,
+                productCategory: quotationData.productCategory,
                 items: quotationData.items.map(item => ({
                     id: crypto.randomUUID(),
                     description: item.length,
@@ -369,13 +371,22 @@ export default function InvoiceForm() {
                 </div>
             </section>
 
-            <section className="grid grid-cols-1 sm:grid-cols-2 gap-8 mt-8 border-t pt-8">
+            <section className="grid grid-cols-1 sm:grid-cols-3 gap-8 mt-8 border-t pt-8">
                 <div>
-                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Format:</h3>
+                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2">Product Category:</h3>
+                    <FormInput 
+                        value={data.productCategory || ''} 
+                        onChange={e => handleFieldChange('productCategory', e.target.value)} 
+                        placeholder="-" 
+                    />
+                </div>
+                <div className="sm:text-center">
+                    <h3 className="font-bold uppercase text-xs tracking-wider text-muted-foreground mb-2 text-center">Product Format:</h3>
                     <FormInput 
                         value={data.productFormat || ''} 
                         onChange={e => handleFieldChange('productFormat', e.target.value)} 
                         placeholder="-" 
+                        className="sm:text-center"
                     />
                 </div>
                 <div className="sm:text-right">
