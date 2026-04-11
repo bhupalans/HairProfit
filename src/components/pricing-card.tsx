@@ -18,6 +18,7 @@ interface PricingCardProps {
   onGetAiSuggestion?: () => void;
   isGeneratingSuggestion?: boolean;
   suggestionResult?: MarketComparisonOutput | null;
+  description?: string;
 }
 
 export default function PricingCard({ 
@@ -27,7 +28,8 @@ export default function PricingCard({
   unitsRemaining,
   onGetAiSuggestion,
   isGeneratingSuggestion,
-  suggestionResult
+  suggestionResult,
+  description
 }: PricingCardProps) {
   const { sellingPricePerUnit, currency, enableByproductProcessing } = data;
   const numSellingPricePerUnit = Number(sellingPricePerUnit) || 0;
@@ -67,7 +69,7 @@ export default function PricingCard({
               Pricing
             </CardTitle>
             <CardDescription>
-              Set the selling price for your main product, or get an AI suggestion.
+              {description || "Set the selling price for your main product."}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">

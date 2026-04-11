@@ -513,6 +513,7 @@ const grandTotalCost = totalCost;
                 onDataChange={handleDataChange}
                 onNumericChange={handleNumericChange}
                 unitsRemaining={unitsRemaining}
+                description="Define your selling price to analyze cost, margin, and break-even."
               />
               <SummaryCard
                 currency={data.currency}

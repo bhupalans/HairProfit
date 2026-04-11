@@ -419,6 +419,7 @@ const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
                 onDataChange={handleDataChange}
                 onNumericChange={handleNumericChange}
                 unitsRemaining={unitsRemaining}
+                description="Set your selling price to calculate profit and margins."
               />
               <SummaryCard
                 currency={data.currency}

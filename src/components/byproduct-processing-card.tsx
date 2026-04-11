@@ -52,7 +52,7 @@ export default function ByproductProcessingCard({
           (Byproduct) Processing
         </CardTitle>
         <CardDescription>
-          Optionally, process remaining units into sellable non-remy hair.
+          Optionally, process remaining units into sellable Byproduct hair.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">

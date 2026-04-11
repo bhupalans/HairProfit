@@ -603,6 +603,7 @@ export default function AdvancedAICalculatorDashboard() {
                 onDataChange={handleDataChange}
                 onNumericChange={handleNumericChange}
                 unitsRemaining={unitsRemaining}
+                description="Set the selling price or use AI to get smart pricing suggestions."
               />
               <SummaryCard
                 currency={data.currency}
