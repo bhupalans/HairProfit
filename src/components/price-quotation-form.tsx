@@ -304,7 +304,7 @@ export default function PriceQuotationForm() {
             finalImgWidth = finalImgHeight * ratio;
         }
 
-        const x = (pdfWidth - imgWidth) / 2;
+        const x = (pdfWidth - finalImgWidth) / 2;
         
         pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
         pdf.save(`Quotation-${data.quotationRef}.pdf`);

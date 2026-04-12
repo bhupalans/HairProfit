@@ -250,23 +250,57 @@ export default function InvoiceForm() {
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
 
     try {
-        const canvas = await html2canvas(content, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
         
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgProps= pdf.getImageProperties(imgData);
-        const ratio = imgProps.width / imgProps.height;
-        let finalImgHeight = pdfHeight;
-        let finalImgWidth = finalImgHeight * ratio;
-         if (finalImgWidth > pdfWidth) {
-            finalImgWidth = pdfWidth;
-            finalImgHeight = finalImgWidth / ratio;
-        }
+const canvas = await html2canvas(content, {
+  scale: 2,
+  useCORS: true,
+  backgroundColor: '#ffffff'
+});
+
+const imgData = canvas.toDataURL('image/png');
+
+const pdf = new jsPDF('p', 'mm', 'a4');
+
+const pdfWidth = pdf.internal.pageSize.getWidth();
+const pdfHeight = pdf.internal.pageSize.getHeight();
+
+const imgWidth = canvas.width;
+const imgHeight = canvas.height;
+
+const ratio = pdfWidth / imgWidth;
+const scaledHeight = imgHeight * ratio;
+
+let position = 0;
+
+if (scaledHeight <= pdfHeight) {
+  // Single page
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
+} else {
+  // Multi-page (IMPORTANT FIX)
+  let remainingHeight = scaledHeight;
+
+  while (remainingHeight > 0) {
+    pdf.addImage(
+      imgData,
+      'PNG',
+      0,
+      position,
+      pdfWidth,
+      scaledHeight
+    );
+
+    remainingHeight -= pdfHeight;
+    position -= pdfHeight;
+
+    if (remainingHeight > 0) {
+      pdf.addPage();
+    }
+  }
+}
+
+pdf.save(`Invoice-${data.invoiceRef}.pdf`);
+
         
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, finalImgHeight);
-        pdf.save(`Invoice-${data.invoiceRef}.pdf`);
     } catch (error) {
         console.error("Failed to generate PDF", error);
         toast({ variant: "destructive", title: "PDF Generation Failed", description: "An unexpected error occurred." });
