@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { InvoiceData } from '@/types';
@@ -29,7 +28,7 @@ export default function InvoicePdfReport({
   } = data;
     
   return (
-    <div className="bg-white text-black p-12 font-sans" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
+    <div className="bg-white text-black p-12 font-sans overflow-hidden" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
         <header className="flex justify-between items-start pb-8 border-b border-gray-200">
             <div className="w-1/3">
                 {logo && <img src={logo} alt="Business Logo" className="max-h-20 max-w-full object-contain" />}

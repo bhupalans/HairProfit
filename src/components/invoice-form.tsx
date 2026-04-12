@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
@@ -93,7 +92,6 @@ export default function InvoiceForm() {
   const router = useRouter();
   
   useEffect(() => {
-    // This effect runs once on component mount to set the invoice ref and load from quotation if available.
     const lastRef = localStorage.getItem('lastInvoiceRef');
     let nextRef = '';
     const currentYear = new Date().getFullYear().toString();
@@ -105,25 +103,22 @@ export default function InvoiceForm() {
         const num = parseInt(parts[1], 10);
 
         if (lastYear === currentYear && !isNaN(num)) {
-          // Same year, increment number
           const nextNum = (num + 1).toString().padStart(4, '0');
           nextRef = `${currentYear}-${nextNum}`;
         } else {
-          // New year or invalid format, reset for the current year
           nextRef = `${currentYear}-0001`;
         }
       }
     }
     
     if (!nextRef) {
-      // No lastRef found, start from 1 for the current year
       nextRef = `${currentYear}-0001`;
     }
 
     const quotationJSON = localStorage.getItem('quotationForInvoice');
     if (quotationJSON) {
         try {
-            localStorage.removeItem('quotationForInvoice'); // Clear it after use
+            localStorage.removeItem('quotationForInvoice'); 
             const quotationData: QuotationData = JSON.parse(quotationJSON);
 
             const performConversion = quotationData.currency !== quotationData.displayCurrency;
@@ -134,12 +129,8 @@ export default function InvoiceForm() {
                 if (!performConversion || rate === 0) {
                     return numericValue;
                 }
-                // The rate is defined as "1 Display Currency = X Pricing Currency".
-                // To convert from Pricing Currency to Display Currency, we divide.
                 return numericValue / rate;
             };
-
-            const productInfo = `${quotationData.productOrigin} Hair - ${quotationData.productFormat}`;
 
             const newInvoiceData: Partial<InvoiceData> = {
                 logo: quotationData.logo,
@@ -156,7 +147,7 @@ export default function InvoiceForm() {
                 })),
                 currency: quotationData.displayCurrency,
                 shippingCost: Number(getConvertedValue(quotationData.shippingCost).toFixed(2)),
-                notes: `Based on Quotation #${quotationData.quotationRef}.\nProduct Details: ${productInfo}`,
+                notes: `Based on Quotation #${quotationData.quotationRef}.`,
                 terms: `${quotationData.termsAndConditions}\n\nPayment Details:\n${quotationData.paymentDetails}`,
             };
             
@@ -174,8 +165,7 @@ export default function InvoiceForm() {
     } else {
         setData(prev => ({ ...prev, invoiceRef: nextRef }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [toast]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -250,57 +240,29 @@ export default function InvoiceForm() {
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
 
     try {
+        const canvas = await html2canvas(content, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const imgData = canvas.toDataURL('image/png');
         
-const canvas = await html2canvas(content, {
-  scale: 2,
-  useCORS: true,
-  backgroundColor: '#ffffff'
-});
-
-const imgData = canvas.toDataURL('image/png');
-
-const pdf = new jsPDF('p', 'mm', 'a4');
-
-const pdfWidth = pdf.internal.pageSize.getWidth();
-const pdfHeight = pdf.internal.pageSize.getHeight();
-
-const imgWidth = canvas.width;
-const imgHeight = canvas.height;
-
-const ratio = pdfWidth / imgWidth;
-const scaledHeight = imgHeight * ratio;
-
-let position = 0;
-
-if (scaledHeight <= pdfHeight) {
-  // Single page
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, scaledHeight);
-} else {
-  // Multi-page (IMPORTANT FIX)
-  let remainingHeight = scaledHeight;
-
-  while (remainingHeight > 0) {
-    pdf.addImage(
-      imgData,
-      'PNG',
-      0,
-      position,
-      pdfWidth,
-      scaledHeight
-    );
-
-    remainingHeight -= pdfHeight;
-    position -= pdfHeight;
-
-    if (remainingHeight > 0) {
-      pdf.addPage();
-    }
-  }
-}
-
-pdf.save(`Invoice-${data.invoiceRef}.pdf`);
-
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+
+        let finalImgWidth = pdfWidth;
+        let finalImgHeight = pdfWidth / ratio;
+        
+        if (finalImgHeight > pdfHeight) {
+            finalImgHeight = pdfHeight;
+            finalImgWidth = finalImgHeight * ratio;
+        }
+
+        const x = (pdfWidth - finalImgWidth) / 2;
+        
+        pdf.addImage(imgData, 'PNG', x, 0, finalImgWidth, finalImgHeight);
+        pdf.save(`Invoice-${data.invoiceRef}.pdf`);
     } catch (error) {
         console.error("Failed to generate PDF", error);
         toast({ variant: "destructive", title: "PDF Generation Failed", description: "An unexpected error occurred." });
