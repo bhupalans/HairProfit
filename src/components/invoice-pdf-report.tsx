@@ -28,7 +28,7 @@ export default function InvoicePdfReport({
   } = data;
     
   return (
-    <div className="bg-white text-black p-12 font-sans overflow-hidden" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
+    <div className="bg-white text-black p-12 font-sans overflow-hidden flex flex-col" style={{ width: '210mm', minHeight: '297mm', fontFamily: 'Arial, sans-serif' }}>
         <header className="flex justify-between items-start pb-8 border-b border-gray-200">
             <div className="w-1/3">
                 {logo && <img src={logo} alt="Business Logo" className="max-h-20 max-w-full object-contain" />}
@@ -64,43 +64,45 @@ export default function InvoicePdfReport({
             </div>
         </section>
 
-        <section className="grid grid-cols-3 mt-8 text-sm border-t border-gray-100 pt-4">
-            <div>
-                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Category:</h3>
-                <p className="font-semibold text-gray-700">{productCategory || "-"}</p>
-            </div>
-            <div>
-                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Format:</h3>
-                <p className="font-semibold text-gray-700">{productFormat || "-"}</p>
-            </div>
-            <div className="text-right">
-                <h3 className="font-bold uppercase text-xs tracking-wider text-gray-500 mb-1">Product Origin:</h3>
-                <p className="font-semibold text-gray-700">{productOrigin || "-"}</p>
+        <section className="mt-8 text-sm border-t border-gray-100 pt-4">
+            <div className="flex gap-12">
+                <div>
+                    <h3 className="font-bold uppercase text-[10px] tracking-wider text-gray-400 mb-1">Product Category</h3>
+                    <p className="font-semibold text-gray-700">{productCategory || "-"}</p>
+                </div>
+                <div>
+                    <h3 className="font-bold uppercase text-[10px] tracking-wider text-gray-400 mb-1">Product Format</h3>
+                    <p className="font-semibold text-gray-700">{productFormat || "-"}</p>
+                </div>
+                <div>
+                    <h3 className="font-bold uppercase text-[10px] tracking-wider text-gray-400 mb-1">Product Origin</h3>
+                    <p className="font-semibold text-gray-700">{productOrigin || "-"}</p>
+                </div>
             </div>
         </section>
 
         <section className="mt-6">
-            <div className="flex bg-gray-50 rounded-t-md p-2 text-sm font-bold text-gray-700">
-                <div className="flex-1">Description</div>
-                <div className="w-20 text-right">Qty</div>
-                <div className="w-24 text-right">Price</div>
-                <div className="w-28 text-right">Total</div>
+            <div className="flex bg-gray-50 rounded-t-md py-1.5 px-3 text-sm font-bold text-gray-700 border-b border-gray-200">
+                <div style={{ width: '50%' }}>Description</div>
+                <div style={{ width: '15%' }} className="text-right">Qty</div>
+                <div style={{ width: '15%' }} className="text-right">Price</div>
+                <div style={{ width: '20%' }} className="text-right">Total</div>
             </div>
             
             <div className="space-y-0 text-sm border-b border-gray-100">
                 {items.map(item => (
-                    <div key={item.id} className="flex items-center p-3 border-b border-gray-50 last:border-0">
-                        <div className="flex-1">{item.description}</div>
-                        <div className="w-20 text-right">{Number(item.quantity) || 0}</div>
-                        <div className="w-24 text-right">{formatCurrency(Number(item.price) || 0, currency)}</div>
-                        <div className="w-28 text-right font-semibold">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), currency)}</div>
+                    <div key={item.id} className="flex items-center py-1.5 px-3 border-b border-gray-50 last:border-0">
+                        <div style={{ width: '50%' }}>{item.description}</div>
+                        <div style={{ width: '15%' }} className="text-right">{Number(item.quantity) || 0}</div>
+                        <div style={{ width: '15%' }} className="text-right">{formatCurrency(Number(item.price) || 0, currency)}</div>
+                        <div style={{ width: '20%' }} className="text-right font-semibold">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), currency)}</div>
                     </div>
                 ))}
             </div>
         </section>
         
         <section className="flex justify-end mt-6">
-             <div className="w-2/5 space-y-2 text-sm">
+             <div className="w-2/5 space-y-1.5 text-sm">
                     <div className="grid grid-cols-2 items-baseline"><span className="text-gray-600">Subtotal</span><span className="font-semibold text-right">{formatCurrency(subtotal, currency)}</span></div>
                     {Number(discount) > 0 && <div className="grid grid-cols-2 items-baseline"><span className="text-gray-600">Discount ({discount}%)</span><span className="font-semibold text-right">- {formatCurrency(discountAmount, currency)}</span></div>}
                     {Number(tax) > 0 && <div className="grid grid-cols-2 items-baseline"><span className="text-gray-600">Tax ({tax}%)</span><span className="font-semibold text-right">+ {formatCurrency(taxAmount, currency)}</span></div>}
@@ -111,7 +113,7 @@ export default function InvoicePdfReport({
             </div>
         </section>
         
-        <div className="flex-grow" style={{ minHeight: '100px' }}></div>
+        <div className="flex-grow" style={{ minHeight: '50px' }}></div>
 
         <footer className="mt-auto pt-8 text-xs border-t border-gray-200 text-gray-500">
             <div className="grid grid-cols-2 gap-8 items-start">
