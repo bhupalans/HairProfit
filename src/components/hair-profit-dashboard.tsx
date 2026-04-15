@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { ArrowLeft, Sparkles, FileDown, FileUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, FileDown, FileUp, Loader2, FilePlus2 } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 
 const initialData: HairProfitData = {
@@ -38,6 +39,7 @@ export default function HairProfitDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfReportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleDataChange = useCallback((field: keyof HairProfitData, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -144,6 +146,7 @@ export default function HairProfitDashboard() {
     totalRevenue,
     projectedProfit,
     profitMargin,
+    processedNonRemyProducts,
   } = useMemo(() => {
     const purchaseQuantity = Number(data.purchaseQuantity) || 0;
     const purchasePrice = Number(data.purchasePrice) || 0;
@@ -162,16 +165,14 @@ export default function HairProfitDashboard() {
       (acc, step) => acc + (Number(step.cost) || 0),
       0
     );
-    //const totalWastageCost = totalWastageUnits * purchasePrice;
 
     const costPerUnitBeforeWastage = purchaseQuantity > 0 ? (totalPurchaseCost + totalProcessingCost) / purchaseQuantity : 0;
 
     const totalCost = totalPurchaseCost + totalProcessingCost;
 
-const effectiveCostPerUnit =
-  unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
+    const effectiveCostPerUnit = unitsRemaining > 0 ? totalCost / unitsRemaining : 0;
 
-const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
+    const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
 
     const totalByproductProcessingCost = data.enableByproductProcessing
       ? byproductProcessingCost * unitsRemaining
@@ -181,8 +182,14 @@ const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
       (acc, p) => acc + (Number(p.quantity) || 0),
       0
     );
-    const nonRemyRevenue = nonRemyHairProducts.reduce(
-      (acc, p) => acc + (Number(p.quantity) || 0) * (Number(p.price) || 0),
+
+    const processedNonRemyProducts = nonRemyHairProducts.map(p => ({
+      ...p,
+      calculatedPrice: Number(p.price) || 0
+    }));
+
+    const nonRemyRevenue = processedNonRemyProducts.reduce(
+      (acc, p) => acc + (Number(p.quantity) || 0) * (p.calculatedPrice || 0),
       0
     );
 
@@ -212,8 +219,41 @@ const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
       totalRevenue,
       projectedProfit,
       profitMargin,
+      processedNonRemyProducts,
     };
   }, [data]);
+
+   const handleCreateQuotation = () => {
+    if (!processedNonRemyProducts || processedNonRemyProducts.length === 0) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please add byproduct items before creating a quotation.' });
+      return;
+    }
+
+    const validItems = processedNonRemyProducts.filter(p => (Number(p.quantity) || 0) > 0 && (p.calculatedPrice || 0) > 0);
+
+    if (validItems.length === 0) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'No Valid Items', 
+        description: 'Ensure items have both quantity and price set.' 
+      });
+      return;
+    }
+
+    const quotationData = {
+      productCategory: data.byproductName,
+      items: validItems.map(p => ({
+        length: p.size.toString().includes('inches') ? p.size : `${p.size} inches`,
+        quantity: Number(p.quantity) || 0,
+        price: p.calculatedPrice
+      }))
+    };
+
+    console.log("Quotation Data:", quotationData);
+    localStorage.setItem("profitToQuotation", JSON.stringify(quotationData));
+    toast({ title: 'Transferring to Quotation...', description: 'Taking you to the builder.' });
+    router.push("/price-quotation");
+  };
 
   const handleExportJson = () => {
     const jsonString = JSON.stringify(data, null, 2);
@@ -339,7 +379,8 @@ const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
     totalRevenue,
     projectedProfit,
     profitMargin,
-    unitsRemaining
+    unitsRemaining,
+    processedNonRemyProducts,
   };
 
 
@@ -376,6 +417,9 @@ const totalWastageCost = totalWastageUnits * costPerUnitBeforeWastage;
             />
             <Button variant="outline" onClick={handleExportJson}>
               <FileDown className="mr-2 h-4 w-4" /> Export JSON
+            </Button>
+            <Button variant="secondary" onClick={handleCreateQuotation}>
+              <FilePlus2 className="mr-2 h-4 w-4" /> Create Quotation
             </Button>
             <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
               {isGeneratingPdf ? (
