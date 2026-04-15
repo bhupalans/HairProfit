@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, ChangeEvent, useEffect } from 'react';
@@ -48,6 +47,9 @@ import { cn } from '@/lib/utils';
 import QuotationPdfReport from './quotation-pdf-report';
 import { fetchExchangeRate } from '@/app/actions';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAuth } from '@/contexts/auth-context';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const initialItem: QuotationItem = {
   id: crypto.randomUUID(),
@@ -130,6 +132,7 @@ export default function PriceQuotationForm() {
   const { toast } = useToast();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { user } = useAuth();
 
   useEffect(() => {
     const lastRef = localStorage.getItem('lastQuotationRef');
@@ -191,6 +194,57 @@ export default function PriceQuotationForm() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch business profile from Firestore
+  useEffect(() => {
+    if (!user) return;
+
+    const fillFromFirestore = async () => {
+      try {
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const business = docSnap.data().business;
+          if (business) {
+            setData(prev => {
+              const newMyInfo = { ...prev.myInfo };
+              
+              // Fill Business Name if empty
+              if (!newMyInfo.fromName && business.name) {
+                newMyInfo.fromName = business.name;
+              }
+
+              // Fill Address if empty
+              if (!newMyInfo.fromAddress) {
+                const { line1, city, state, country } = business.address || {};
+                const addrParts = [line1, city, state, country].filter(Boolean);
+                let combinedAddress = addrParts.join(', ');
+                
+                // Add phone and GST to the multiline address field
+                if (business.contact?.phone) {
+                  combinedAddress += `\nPhone: ${business.contact.phone}`;
+                }
+                if (business.tax?.gst) {
+                  combinedAddress += `\nGST: ${business.tax.gst}`;
+                }
+                
+                if (combinedAddress) {
+                  newMyInfo.fromAddress = combinedAddress;
+                }
+              }
+
+              return { ...prev, myInfo: newMyInfo };
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching business profile for quotation:", e);
+      }
+    };
+
+    fillFromFirestore();
+  }, [user]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
