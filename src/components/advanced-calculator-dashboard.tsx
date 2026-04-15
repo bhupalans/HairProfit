@@ -198,7 +198,7 @@ const effectiveCostPerUnit =
     
     const processedNonRemyProducts = (() => {
         if (!data.enableByproductProcessing || !nonRemyHairProducts.length) {
-            return nonRemyHairProducts.map(p => ({ ...p, calculatedPrice: Number(p.price) || 0 }));
+            return nonRemyHairProducts.map(p => ({ ...p, calculatedPrice: Number(Number(p.price).toFixed(2)) || 0 }));
         }
 
         const productsWithSizeInfo = nonRemyHairProducts.map(p => {
@@ -249,7 +249,7 @@ const effectiveCostPerUnit =
             
             const overridePrice = Number(product.price) || 0;
             if (overridePrice > 0) {
-                return { ...product, calculatedPrice: overridePrice };
+                return { ...product, calculatedPrice: Number(overridePrice.toFixed(2))};
             }
 
             const lengthDifference = product.firstSize - shortestLength;
@@ -266,7 +266,7 @@ const effectiveCostPerUnit =
     
             return {
                 ...product,
-                calculatedPrice: finalPrice,
+                calculatedPrice: Number(finalPrice.toFixed(2)),
             };
         });
     })();
