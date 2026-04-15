@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
-import { ArrowLeft, Sparkles, FileDown, FileUp, Loader2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, FileDown, FileUp, Loader2, FilePlus2 } from 'lucide-react';
 import type { HairProfitData, ProcessingStep, NonRemyHairProduct } from '@/types';
 import { hairProfitDataSchema } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 
 const initialData: HairProfitData = {
@@ -28,6 +28,7 @@ const initialData: HairProfitData = {
   sellingPricePerUnit: '',
   enableByproductProcessing: false,
   byproductProcessingCost: '',
+  byproductName: 'Non-Remy Hair',
   nonRemyHairProducts: [],
   targetByproductMargin: 30,
   byproductPriceIncreasePerInch: 3,
@@ -41,6 +42,7 @@ export default function AdvancedCalculatorDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfReportRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const router = useRouter();
 
   const handleDataChange = useCallback((field: keyof HairProfitData, value: any) => {
     setData((prev) => ({ ...prev, [field]: value }));
@@ -306,6 +308,38 @@ const grandTotalCost = totalCost;
     };
   }, [data]);
 
+  const handleCreateQuotation = () => {
+    if (!processedNonRemyProducts || processedNonRemyProducts.length === 0) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please add byproduct items before creating a quotation.' });
+      return;
+    }
+
+    const validItems = processedNonRemyProducts.filter(p => (Number(p.quantity) || 0) > 0 && (p.calculatedPrice || 0) > 0);
+
+    if (validItems.length === 0) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'No Valid Items', 
+        description: 'Ensure items have both quantity and price set.' 
+      });
+      return;
+    }
+
+    const quotationData = {
+      productCategory: data.byproductName || "Non-Remy Hair",
+      items: validItems.map(p => ({
+        length: p.size.toString().includes('inches') ? p.size : `${p.size} inches`,
+        quantity: Number(p.quantity) || 0,
+        price: p.calculatedPrice
+      }))
+    };
+
+    console.log("Quotation Data:", quotationData);
+    localStorage.setItem("profitToQuotation", JSON.stringify(quotationData));
+    toast({ title: 'Transferring to Quotation...', description: 'Taking you to the builder.' });
+    router.push("/price-quotation");
+  };
+
   const handleExportJson = () => {
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: 'application/json' });
@@ -468,6 +502,9 @@ const grandTotalCost = totalCost;
             />
             <Button variant="outline" onClick={handleExportJson}>
               <FileDown className="mr-2 h-4 w-4" /> Export JSON
+            </Button>
+            <Button variant="secondary" onClick={handleCreateQuotation}>
+              <FilePlus2 className="mr-2 h-4 w-4" /> Create Quotation
             </Button>
             <Button onClick={handleDownloadPdf} disabled={isGeneratingPdf}>
               {isGeneratingPdf ? (
