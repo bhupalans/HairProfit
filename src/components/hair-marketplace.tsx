@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload, X, Heart } from 'lucide-react';
+import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload, X, Heart, User } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -321,200 +321,210 @@ export default function HairMarketplace() {
               Discover opportunities. Connect with buyers and sellers in the hair industry.
             </p>
           </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button size="lg">
-                <PlusCircle className="mr-2" />
-                Create Listing
+          <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+            {user && (
+              <Button asChild variant="outline" size="lg" className="flex-1 sm:flex-initial">
+                <Link href="/my-listings">
+                  <User className="mr-2 h-4 w-4" />
+                  My Listings
+                </Link>
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md overflow-y-auto max-h-[90vh]">
-              <DialogHeader>
-                <DialogTitle>Create a New Listing</DialogTitle>
-                <DialogDescription>
-                  Share what you're selling or looking to buy.
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>I am...</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+            )}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="lg" className="flex-1 sm:flex-initial">
+                  <PlusCircle className="mr-2" />
+                  Create Listing
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md overflow-y-auto max-h-[90vh]">
+                <DialogHeader>
+                  <DialogTitle>Create a New Listing</DialogTitle>
+                  <DialogDescription>
+                    Share what you're selling or looking to buy.
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="type"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>I am...</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="sell">Selling Hair</SelectItem>
+                              <SelectItem value="buy">Looking for Hair</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title</FormLabel>
                           <FormControl>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <Input placeholder="e.g., Premium Vietnamese Bone Straight" {...field} />
                           </FormControl>
-                          <SelectContent>
-                            <SelectItem value="sell">Selling Hair</SelectItem>
-                            <SelectItem value="buy">Looking for Hair</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="title"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Title</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., Premium Vietnamese Bone Straight" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="description"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Description</FormLabel>
-                        <FormControl>
-                          <Textarea placeholder="Include details like length, texture, quantity, etc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="Include details like length, texture, quantity, etc." {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <FormField
-                        control={form.control}
-                        name="price"
-                        render={({ field }) => (
-                        <FormItem className="sm:col-span-1">
-                            <FormLabel>{listingType === 'sell' ? 'Price' : 'Budget'}</FormLabel>
-                            <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="currency"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Currency</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="USD">USD ($)</SelectItem>
-                                <SelectItem value="INR">INR (₹)</SelectItem>
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="unit"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Unit</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="bundle">per Bundle</SelectItem>
-                                <SelectItem value="kg">per Kg</SelectItem>
-                            </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                  </div>
-                  
-                  <div className="space-y-4 border-t pt-4">
-                    <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Contact Details</Label>
-                    <FormField
-                        control={form.control}
-                        name="contactEmail"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Email Address</FormLabel>
-                            <FormControl>
-                            <Input type="email" placeholder="name@example.com" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="contactPhone"
-                        render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Phone / WhatsApp (Optional)</FormLabel>
-                            <FormControl>
-                            <Input placeholder="+1234567890" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                        )}
-                    />
-                  </div>
-                  
-                  {listingType === 'sell' && (
-                    <div className="space-y-2 border-t pt-4">
-                      <Label htmlFor="image-upload" className="text-sm font-medium">Listing Images (Required, Max 3)</Label>
-                      <div className="space-y-3">
-                        <Input
-                          id="image-upload"
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={handleFileChange}
-                          className="cursor-pointer"
-                        />
-                        
-                        {imageFiles.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {imageFiles.map((file, idx) => (
-                              <div key={idx} className="relative group">
-                                <div className="w-16 h-16 rounded border bg-muted flex items-center justify-center text-[10px] text-center p-1 overflow-hidden">
-                                  {file.name}
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => removeFile(idx)}
-                                  className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <FormField
+                          control={form.control}
+                          name="price"
+                          render={({ field }) => (
+                          <FormItem className="sm:col-span-1">
+                              <FormLabel>{listingType === 'sell' ? 'Price' : 'Budget'}</FormLabel>
+                              <FormControl>
+                              <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="currency"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Currency</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  <SelectItem value="USD">USD ($)</SelectItem>
+                                  <SelectItem value="INR">INR (₹)</SelectItem>
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="unit"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Unit</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  <SelectItem value="bundle">per Bundle</SelectItem>
+                                  <SelectItem value="kg">per Kg</SelectItem>
+                              </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
                     </div>
-                  )}
+                    
+                    <div className="space-y-4 border-t pt-4">
+                      <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Contact Details</Label>
+                      <FormField
+                          control={form.control}
+                          name="contactEmail"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Email Address</FormLabel>
+                              <FormControl>
+                              <Input type="email" placeholder="name@example.com" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="contactPhone"
+                          render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Phone / WhatsApp (Optional)</FormLabel>
+                              <FormControl>
+                              <Input placeholder="+1234567890" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                          </FormItem>
+                          )}
+                      />
+                    </div>
+                    
+                    {listingType === 'sell' && (
+                      <div className="space-y-2 border-t pt-4">
+                        <Label htmlFor="image-upload" className="text-sm font-medium">Listing Images (Required, Max 3)</Label>
+                        <div className="space-y-3">
+                          <Input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={handleFileChange}
+                            className="cursor-pointer"
+                          />
+                          
+                          {imageFiles.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {imageFiles.map((file, idx) => (
+                                <div key={idx} className="relative group">
+                                  <div className="w-16 h-16 rounded border bg-muted flex items-center justify-center text-[10px] text-center p-1 overflow-hidden">
+                                    {file.name}
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeFile(idx)}
+                                    className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 shadow-sm"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
-                   <DialogFooter className="pt-4">
-                        <DialogClose asChild>
-                            <Button type="button" variant="secondary">Cancel</Button>
-                        </DialogClose>
-                        <Button type="submit" disabled={form.formState.isSubmitting}>
-                            {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Listing
-                        </Button>
-                    </DialogFooter>
-                </form>
-              </Form>
-            </DialogContent>
-          </Dialog>
+                     <DialogFooter className="pt-4">
+                          <DialogClose asChild>
+                              <Button type="button" variant="secondary">Cancel</Button>
+                          </DialogClose>
+                          <Button type="submit" disabled={form.formState.isSubmitting}>
+                              {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Create Listing
+                          </Button>
+                      </DialogFooter>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </header>
 
         <Tabs defaultValue="sell">

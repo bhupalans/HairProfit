@@ -167,6 +167,45 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
   }
 }
 
+export async function getMyListings(userId: string): Promise<{ success: boolean; data?: MarketplaceListing[]; error?: string }> {
+  try {
+    const listingsRef = collection(db, 'listings');
+    const q = query(listingsRef, where('userId', '==', userId), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const listings: MarketplaceListing[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
+      const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
+      
+      let listingType = data.type;
+      if (listingType === 'For Sale') listingType = 'sell';
+      if (listingType === 'Looking to Buy') listingType = 'buy';
+
+      listings.push({
+        id: doc.id,
+        type: listingType,
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        currency: data.currency,
+        unit: data.unit,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
+        imageUrls: imageUrls,
+        imageHint: data.imageHint,
+        userId: data.userId,
+        status: data.status || 'active',
+        createdAt: createdAt,
+      });
+    });
+    return { success: true, data: listings };
+  } catch (e: any) {
+    console.error('Failed to fetch user listings', e);
+    return { success: false, error: e.message || 'Failed to fetch your listings.' };
+  }
+}
+
 
 export async function createListing(listingData: MarketplaceListingFormData): Promise<{ success: boolean; error?: string }> {
   try {
