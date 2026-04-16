@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,29 +19,35 @@ import AuthGuard from '@/components/auth-guard';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
 
-const ContactInfo = ({ contact }: { contact: string }) => {
-    const isEmail = contact.includes('@');
-    const isPhone = /^\+?[0-9\s-()]+$/.test(contact);
-    
-    let Icon = MessageSquare;
-    let href = '#';
-    let text = "Contact Seller";
-    if (isEmail) {
-        Icon = Mail;
-        href = `mailto:${contact}`;
-        text = `Email: ${contact}`;
-    } else if (isPhone) {
-        Icon = Phone;
-        href = `tel:${contact}`;
-        text = `Call: ${contact}`;
-    }
+const ContactInfo = ({ listing }: { listing: MarketplaceListing }) => {
+    // Check for new structured fields or fallback to legacy 'contact' field
+    const email = listing.contactEmail || (listing.contact?.includes('@') ? listing.contact : null);
+    const phone = listing.contactPhone || (listing.contact && /^\+?[0-9\s-()]+$/.test(listing.contact) ? listing.contact : null);
 
     return (
-        <Button asChild size="lg" className="mt-6 w-full sm:w-auto">
-            <a href={href} target="_blank" rel="noopener noreferrer">
-                <Icon className="mr-2" /> {text}
-            </a>
-        </Button>
+        <div className="flex flex-col gap-3 mt-6">
+            {email && (
+                <Button asChild size="lg" className="w-full sm:w-auto">
+                    <a href={`mailto:${email}`} target="_blank" rel="noopener noreferrer">
+                        <Mail className="mr-2" /> Email: {email}
+                    </a>
+                </Button>
+            )}
+            {phone && (
+                <Button asChild variant="secondary" size="lg" className="w-full sm:w-auto">
+                    <a href={`tel:${phone}`} target="_blank" rel="noopener noreferrer">
+                        <Phone className="mr-2" /> Call: {phone}
+                    </a>
+                </Button>
+            )}
+            {!email && !phone && listing.contact && (
+                 <Button asChild size="lg" className="w-full sm:w-auto">
+                    <a href="#" onClick={(e) => e.preventDefault()}>
+                        <MessageSquare className="mr-2" /> Contact: {listing.contact}
+                    </a>
+                </Button>
+            )}
+        </div>
     )
 };
 
@@ -95,13 +102,19 @@ export default function ListingDetailPage() {
         fetchListingData();
     }, [params.id]);
     
-    const listingTypeDisplay = listing?.type === 'For Sale' ? 'For Sale' : 'Looking to Buy';
-    const badgeVariant = listing?.type === 'For Sale' ? 'default' : 'secondary';
+    const listingTypeDisplay = listing?.type === 'sell' ? 'For Sale' : 'Looking to Buy';
+    const badgeVariant = listing?.type === 'sell' ? 'default' : 'secondary';
     const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
 
     const imageUrls = listing?.imageUrls || [];
     const hasImages = imageUrls.length > 0;
     const mainImage = imageUrls[activeImageIdx];
+
+    const renderFullPrice = (listing: MarketplaceListing) => {
+        if (typeof listing.price === 'string') return listing.price;
+        const symbol = listing.currency === 'USD' ? '$' : '₹';
+        return `${symbol}${listing.price} per ${listing.unit}`;
+    };
 
     return (
         <AuthGuard>
@@ -177,8 +190,8 @@ export default function ListingDetailPage() {
                                         <Badge variant={badgeVariant} className="shrink-0">{listingTypeDisplay}</Badge>
                                     </div>
                                     <CardDescription className="text-2xl text-primary font-bold pt-4">
-                                        {listing.type === 'For Sale' ? 'Price: ' : 'Budget: '}
-                                        {listing.price}
+                                        {listing.type === 'sell' ? 'Price: ' : 'Budget: '}
+                                        {renderFullPrice(listing)}
                                     </CardDescription>
                                     <div className="flex items-center text-sm text-muted-foreground pt-2">
                                         <Clock className="h-4 w-4 mr-1.5" />
@@ -189,7 +202,7 @@ export default function ListingDetailPage() {
                                     <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">{listing.description}</p>
                                 </CardContent>
                                 <div className="pt-6">
-                                    <ContactInfo contact={listing.contact} />
+                                    <ContactInfo listing={listing} />
                                 </div>
                             </div>
                         </div>

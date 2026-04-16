@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -7,8 +8,8 @@ import { runBuyerAnalysis } from '@/ai/flows/buyer-analysis-flow';
 import { getFxRates, lastUpdated } from '@/lib/fx';
 import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
 
-import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '@/lib/firebase';
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -95,16 +96,27 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
       // Backward compatibility for old records with single imageUrl
       const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
 
+      // Mapping normalized fields for backward compatibility
+      let listingType = data.type;
+      if (listingType === 'For Sale') listingType = 'sell';
+      if (listingType === 'Looking to Buy') listingType = 'buy';
+
       listings.push({
         id: doc.id,
-        type: data.type,
+        type: listingType,
         title: data.title,
         description: data.description,
-        price: data.price,
+        price: data.price, // Might be number or string
+        currency: data.currency,
+        unit: data.unit,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
         imageUrls: imageUrls,
         imageHint: data.imageHint,
-        contact: data.contact,
+        userId: data.userId,
+        status: data.status || 'active',
         createdAt: createdAt,
+        contact: data.contact, // Fallback
       });
     });
     return { success: true, data: listings };
@@ -126,16 +138,27 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
       // Backward compatibility for old records with single imageUrl
       const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
 
+      // Mapping normalized fields
+      let listingType = data.type;
+      if (listingType === 'For Sale') listingType = 'sell';
+      if (listingType === 'Looking to Buy') listingType = 'buy';
+
       const listing: MarketplaceListing = {
         id: docSnap.id,
-        type: data.type,
+        type: listingType,
         title: data.title,
         description: data.description,
         price: data.price,
+        currency: data.currency,
+        unit: data.unit,
+        contactEmail: data.contactEmail,
+        contactPhone: data.contactPhone,
         imageUrls: imageUrls,
         imageHint: data.imageHint,
-        contact: data.contact,
+        userId: data.userId,
+        status: data.status || 'active',
         createdAt: createdAt,
+        contact: data.contact,
       };
       return { success: true, data: listing };
     } else {
@@ -158,11 +181,23 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
     const keywords = titleWords.filter(word => word && !commonWords.has(word));
     const imageHint = `${keywords[0] || 'hair'} ${keywords[1] || 'product'}`;
     
+    const userId = listingData.userId || auth.currentUser?.uid || 'anonymous';
+
     await addDoc(listingsRef, {
-      ...listingData,
+      title: listingData.title,
+      description: listingData.description,
+      type: listingData.type,
+      price: listingData.price,
+      currency: listingData.currency,
+      unit: listingData.unit,
+      contactEmail: listingData.contactEmail,
+      contactPhone: listingData.contactPhone || null,
       imageUrls: listingData.imageUrls || [],
       imageHint: imageHint,
+      userId: userId,
+      status: 'active',
       createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     });
     return { success: true };
   } catch (e: any) {

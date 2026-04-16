@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -52,11 +53,14 @@ export default function HairMarketplace() {
   const form = useForm<MarketplaceListingFormData>({
     resolver: zodResolver(marketplaceListingFormSchema),
     defaultValues: {
-      type: 'For Sale',
+      type: 'sell',
       title: '',
       description: '',
-      price: '',
-      contact: '',
+      price: 0,
+      currency: 'USD',
+      unit: 'bundle',
+      contactEmail: '',
+      contactPhone: '',
     },
   });
 
@@ -100,7 +104,7 @@ export default function HairMarketplace() {
 
   const onSubmit = async (values: MarketplaceListingFormData) => {
     // Required check for Sellers
-    if (values.type === 'For Sale' && imageFiles.length === 0) {
+    if (values.type === 'sell' && imageFiles.length === 0) {
       toast({
         variant: 'destructive',
         title: 'Images Required',
@@ -112,7 +116,7 @@ export default function HairMarketplace() {
     const imageUrls: string[] = [];
 
     try {
-      if (values.type === 'For Sale' && imageFiles.length > 0) {
+      if (values.type === 'sell' && imageFiles.length > 0) {
         const storage = getStorage(app);
         const userUid = auth.currentUser?.uid || 'anonymous';
         
@@ -126,9 +130,12 @@ export default function HairMarketplace() {
         imageUrls.push(...urls);
       }
 
+      const userUid = auth.currentUser?.uid || 'anonymous';
+
       const response = await createListing({
         ...values,
         imageUrls,
+        userId: userUid,
       });
 
       if (response.success) {
@@ -157,8 +164,16 @@ export default function HairMarketplace() {
     }
   };
 
-  const forSaleListings = listings.filter(l => l.type === 'For Sale');
-  const lookingForListings = listings.filter(l => l.type === 'Looking to Buy');
+  const forSaleListings = listings.filter(l => l.type === 'sell');
+  const lookingForListings = listings.filter(l => l.type === 'buy');
+
+  const renderPrice = (listing: MarketplaceListing) => {
+    if (typeof listing.price === 'string') {
+        return listing.price;
+    }
+    const symbol = listing.currency === 'USD' ? '$' : '₹';
+    return `${symbol}${listing.price} per ${listing.unit}`;
+  };
 
   const renderListings = (list: MarketplaceListing[]) => (
     <AnimatePresence>
@@ -178,7 +193,9 @@ export default function HairMarketplace() {
                     />
                   )}
                   <CardTitle>{listing.title}</CardTitle>
-                  <CardDescription className="text-primary font-semibold">{listing.price}</CardDescription>
+                  <CardDescription className="text-primary font-semibold">
+                      {renderPrice(listing)}
+                  </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
                   <p className="text-muted-foreground line-clamp-3">{listing.description}</p>
@@ -239,8 +256,8 @@ export default function HairMarketplace() {
                             <SelectTrigger><SelectValue /></SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="For Sale">Selling Hair</SelectItem>
-                            <SelectItem value="Looking to Buy">Looking for Hair</SelectItem>
+                            <SelectItem value="sell">Selling Hair</SelectItem>
+                            <SelectItem value="buy">Looking for Hair</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -273,9 +290,93 @@ export default function HairMarketplace() {
                       </FormItem>
                     )}
                   />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <FormField
+                        control={form.control}
+                        name="price"
+                        render={({ field }) => (
+                        <FormItem className="sm:col-span-1">
+                            <FormLabel>{listingType === 'sell' ? 'Price' : 'Budget'}</FormLabel>
+                            <FormControl>
+                            <Input type="number" {...field} onChange={e => field.onChange(Number(e.target.value))} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="currency"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Currency</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="USD">USD ($)</SelectItem>
+                                <SelectItem value="INR">INR (₹)</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="unit"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Unit</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectItem value="bundle">per Bundle</SelectItem>
+                                <SelectItem value="kg">per Kg</SelectItem>
+                            </SelectContent>
+                            </Select>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                  </div>
                   
-                  {listingType === 'For Sale' && (
-                    <div className="space-y-2">
+                  <div className="space-y-4 border-t pt-4">
+                    <Label className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Contact Details</Label>
+                    <FormField
+                        control={form.control}
+                        name="contactEmail"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Email Address</FormLabel>
+                            <FormControl>
+                            <Input type="email" placeholder="name@example.com" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="contactPhone"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Phone / WhatsApp (Optional)</FormLabel>
+                            <FormControl>
+                            <Input placeholder="+1234567890" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                  </div>
+                  
+                  {listingType === 'sell' && (
+                    <div className="space-y-2 border-t pt-4">
                       <Label htmlFor="image-upload" className="text-sm font-medium">Listing Images (Required, Max 3)</Label>
                       <div className="space-y-3">
                         <Input
@@ -309,32 +410,6 @@ export default function HairMarketplace() {
                     </div>
                   )}
 
-                  <FormField
-                    control={form.control}
-                    name="price"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{listingType === 'For Sale' ? 'Selling Price' : 'Your Budget'}</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g., $85 per bundle" {...field} />
-                        </FormControl>
-                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="contact"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Contact Info</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your email or phone number" {...field} />
-                        </FormControl>
-                         <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                    <DialogFooter className="pt-4">
                         <DialogClose asChild>
                             <Button type="button" variant="secondary">Cancel</Button>
@@ -350,12 +425,12 @@ export default function HairMarketplace() {
           </Dialog>
         </header>
 
-        <Tabs defaultValue="for-sale">
+        <Tabs defaultValue="sell">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="for-sale">
+            <TabsTrigger value="sell">
               <ShoppingCart className="mr-2" /> For Sale
             </TabsTrigger>
-            <TabsTrigger value="looking-to-buy">
+            <TabsTrigger value="buy">
               <Search className="mr-2" /> Looking to Buy
             </TabsTrigger>
           </TabsList>
@@ -365,25 +440,25 @@ export default function HairMarketplace() {
                 Array.from({ length: 6 }).map((_, i) => <ListingSkeleton key={i} />)
             ) : (
                 <>
-                    <TabsContent value="for-sale" className="contents">
+                    <TabsContent value="sell" className="contents">
                         {renderListings(forSaleListings)}
                     </TabsContent>
 
-                    <TabsContent value="looking-to-buy" className="contents">
+                    <TabsContent value="buy" className="contents">
                        {renderListings(lookingForListings)}
                     </TabsContent>
                 </>
             )}
             </div>
             {!loading && forSaleListings.length === 0 && (
-                <TabsContent value="for-sale">
+                <TabsContent value="sell">
                     <div className="text-center col-span-full py-12">
                         <p className="text-muted-foreground">No "For Sale" listings yet. Be the first!</p>
                     </div>
                 </TabsContent>
             )}
             {!loading && lookingForListings.length === 0 && (
-                 <TabsContent value="looking-to-buy">
+                 <TabsContent value="buy">
                     <div className="text-center col-span-full py-12">
                         <p className="text-muted-foreground">No "Looking to Buy" listings yet. Be the first!</p>
                     </div>

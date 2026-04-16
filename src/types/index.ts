@@ -169,24 +169,34 @@ export type InvoiceData = z.infer<typeof invoiceDataSchema>;
 
 export const marketplaceListingSchema = z.object({
   id: z.string(),
-  type: z.enum(['For Sale', 'Looking to Buy']),
+  type: z.union([z.enum(['sell', 'buy']), z.string()]),
   title: z.string(),
   description: z.string(),
-  price: z.string(),
+  price: z.union([z.number(), z.string()]),
+  currency: z.enum(['USD', 'INR']).optional(),
+  unit: z.enum(['bundle', 'kg']).optional(),
+  contactEmail: z.string().optional(),
+  contactPhone: z.string().optional(),
   imageUrls: z.array(z.string()),
   imageHint: z.string(),
-  contact: z.string(),
+  userId: z.string().optional(),
+  status: z.string().optional(),
   createdAt: z.string(), // ISO string date
+  contact: z.string().optional(), // For backward compatibility
 });
 export type MarketplaceListing = z.infer<typeof marketplaceListingSchema>;
 
 export const marketplaceListingFormSchema = z.object({
-  type: z.enum(['For Sale', 'Looking to Buy']),
+  type: z.enum(['sell', 'buy']),
   title: z.string().min(5, { message: "Title must be at least 5 characters." }),
   description: z.string().min(10, { message: "Description must be at least 10 characters." }),
-  price: z.string().min(1, { message: "Price or budget is required." }),
-  contact: z.string().min(5, { message: "Valid contact info (email or phone) is required." }),
+  price: z.number().positive({ message: "Price must be greater than 0." }),
+  currency: z.enum(['USD', 'INR']),
+  unit: z.enum(['bundle', 'kg']),
+  contactEmail: z.string().email({ message: "Invalid email address." }),
+  contactPhone: z.string().optional(),
   imageUrls: z.array(z.string()).optional(),
+  userId: z.string().optional(),
 });
 export type MarketplaceListingFormData = z.infer<typeof marketplaceListingFormSchema>;
 
