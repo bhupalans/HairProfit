@@ -238,11 +238,11 @@ export async function deleteListing(listingId: string): Promise<{ success: boole
 export async function addBookmark(userId: string, listingId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const bookmarksRef = collection(db, 'bookmarks');
-    addDoc(bookmarksRef, {
+    await addDoc(bookmarksRef, {
       userId,
       listingId,
       createdAt: serverTimestamp(),
-    }).catch(error => console.error('Bookmark add failed:', error));
+    });
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
@@ -253,10 +253,10 @@ export async function removeBookmark(userId: string, listingId: string): Promise
   try {
     const bookmarksRef = collection(db, 'bookmarks');
     const q = query(bookmarksRef, where('userId', '==', userId), where('listingId', '==', listingId));
-    getDocs(q).then(querySnapshot => {
-      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-      return Promise.all(deletePromises);
-    }).catch(error => console.error('Bookmark removal failed:', error));
+    const querySnapshot = await getDocs(q);
+
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
     
     return { success: true };
   } catch (e: any) {
