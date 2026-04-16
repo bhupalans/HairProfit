@@ -56,7 +56,11 @@ const ListingCard = ({
 }) => {
   const { user } = useAuth();
   const isOwner = user?.uid === listing.userId;
-  const isSold = listing.status === 'sold';
+  
+  // Status check logic
+  const isSold = listing.type === 'sell' && listing.status === 'sold';
+  const isFulfilled = listing.type === 'buy' && (listing.status === 'fulfilled' || listing.status === 'sold');
+  const isCompleted = isSold || isFulfilled;
 
   const renderPrice = (listing: MarketplaceListing) => {
     if (typeof listing.price === 'string') {
@@ -70,6 +74,9 @@ const ListingCard = ({
     <Card className="flex flex-col h-full transition-all duration-200 hover:border-primary hover:shadow-lg relative group">
       {isSold && (
         <Badge className="absolute top-3 left-3 z-10 bg-red-600 text-white font-bold" variant="destructive">SOLD</Badge>
+      )}
+      {isFulfilled && (
+        <Badge className="absolute top-3 left-3 z-10 bg-green-600 text-white font-bold" variant="default">FULFILLED</Badge>
       )}
       
       {user && !isOwner && (
@@ -101,11 +108,11 @@ const ListingCard = ({
                 height={400}
                 className={cn(
                   "w-full rounded-lg aspect-[3/2] object-cover mb-4",
-                  isSold && "opacity-60 grayscale-[50%]"
+                  isCompleted && "opacity-60 grayscale-[50%]"
                 )}
               />
             )}
-            <CardTitle className={cn(isSold && "text-muted-foreground line-through")}>{listing.title}</CardTitle>
+            <CardTitle className={cn(isCompleted && "text-muted-foreground line-through")}>{listing.title}</CardTitle>
             <CardDescription className="text-primary font-semibold">
                 {renderPrice(listing)}
             </CardDescription>

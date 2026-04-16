@@ -27,14 +27,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const ContactInfo = ({ listing }: { listing: MarketplaceListing }) => {
-    const isSold = listing.status === 'sold';
+    // Check if the listing is completed (sold or fulfilled)
+    const isSold = listing.type === 'sell' && listing.status === 'sold';
+    const isFulfilled = listing.type === 'buy' && (listing.status === 'fulfilled' || listing.status === 'sold');
+    const isCompleted = isSold || isFulfilled;
+
     const email = listing.contactEmail || (listing.contact?.includes('@') ? listing.contact : null);
     const phone = listing.contactPhone || (listing.contact && /^\+?[0-9\s-()]+$/.test(listing.contact) ? listing.contact : null);
 
-    if (isSold) {
+    if (isCompleted) {
         return (
             <div className="bg-muted p-4 rounded-lg text-center text-muted-foreground italic border mt-6">
-                This item has been sold. Contact details are no longer available.
+                This {listing.type === 'sell' ? 'item has been sold' : 'request has been fulfilled'}. Contact details are no longer available.
             </div>
         );
     }
@@ -121,7 +125,12 @@ export default function ListingDetailPage() {
     }, [params.id]);
     
     const isOwner = user?.uid === listing?.userId;
-    const isSold = listing?.status === 'sold';
+    
+    // Logic for sold/fulfilled
+    const isSold = listing?.type === 'sell' && listing?.status === 'sold';
+    const isFulfilled = listing?.type === 'buy' && (listing?.status === 'fulfilled' || listing?.status === 'sold');
+    const isCompleted = isSold || isFulfilled;
+
     const listingTypeDisplay = listing?.type === 'sell' ? 'For Sale' : 'Looking to Buy';
     const badgeVariant = listing?.type === 'sell' ? 'default' : 'secondary';
     const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
@@ -130,11 +139,15 @@ export default function ListingDetailPage() {
     const hasImages = imageUrls.length > 0;
     const mainImage = imageUrls[activeImageIdx];
 
-    const handleMarkAsSold = async () => {
+    const handleMarkAsCompleted = async () => {
         if (!listing) return;
-        const res = await updateListingStatus(listing.id, 'sold');
+        const newStatus = listing.type === 'sell' ? 'sold' : 'fulfilled';
+        const res = await updateListingStatus(listing.id, newStatus);
         if (res.success) {
-            toast({ title: 'Marked as Sold', description: 'Listing status updated successfully.' });
+            toast({ 
+                title: listing.type === 'sell' ? 'Marked as Sold' : 'Marked as Fulfilled', 
+                description: 'Listing status updated successfully.' 
+            });
             fetchListingData();
         }
     };
@@ -189,9 +202,10 @@ export default function ListingDetailPage() {
                                     <DropdownMenuItem onClick={handleShare}>
                                         <Share2 className="mr-2 h-4 w-4" /> Share Listing
                                     </DropdownMenuItem>
-                                    {!isSold && (
-                                        <DropdownMenuItem onClick={handleMarkAsSold}>
-                                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Mark as Sold
+                                    {!isCompleted && (
+                                        <DropdownMenuItem onClick={handleMarkAsCompleted}>
+                                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> 
+                                            {listing.type === 'sell' ? 'Mark as Sold' : 'Mark as Fulfilled'}
                                         </DropdownMenuItem>
                                     )}
                                     <DropdownMenuSeparator />
@@ -215,7 +229,7 @@ export default function ListingDetailPage() {
                                                     data-ai-hint={listing.imageHint}
                                                     alt={listing.title}
                                                     fill
-                                                    className={cn("object-cover", isSold && "opacity-60 grayscale-[50%]")}
+                                                    className={cn("object-cover", isCompleted && "opacity-60 grayscale-[50%]")}
                                                 />
                                                 <div className="absolute bottom-3 right-3 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Maximize2 className="h-4 w-4" />
@@ -259,8 +273,9 @@ export default function ListingDetailPage() {
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="flex flex-col gap-2">
                                             <div className="flex items-center gap-3">
-                                                <CardTitle className={cn("text-3xl font-bold tracking-tight", isSold && "line-through text-muted-foreground")}>{listing.title}</CardTitle>
-                                                {isSold && <Badge variant="destructive" className="font-bold">SOLD</Badge>}
+                                                <CardTitle className={cn("text-3xl font-bold tracking-tight", isCompleted && "line-through text-muted-foreground")}>{listing.title}</CardTitle>
+                                                {isSold && <Badge variant="destructive" className="font-bold bg-red-600">SOLD</Badge>}
+                                                {isFulfilled && <Badge variant="default" className="font-bold bg-green-600">FULFILLED</Badge>}
                                             </div>
                                             <Badge variant={badgeVariant} className="shrink-0 w-fit">{listingTypeDisplay}</Badge>
                                         </div>

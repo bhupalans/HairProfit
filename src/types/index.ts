@@ -179,7 +179,7 @@ export const marketplaceListingSchema = z.object({
   imageUrls: z.array(z.string()),
   imageHint: z.string(),
   userId: z.string().optional(),
-  status: z.enum(['active', 'sold']).optional().default('active'),
+  status: z.enum(['active', 'sold', 'fulfilled']).optional().default('active'),
   createdAt: z.string(), // ISO string date
   contact: z.string().optional(), // For backward compatibility
 });

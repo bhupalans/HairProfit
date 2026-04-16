@@ -209,7 +209,7 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
   }
 }
 
-export async function updateListingStatus(listingId: string, status: 'active' | 'sold'): Promise<{ success: boolean; error?: string }> {
+export async function updateListingStatus(listingId: string, status: 'active' | 'sold' | 'fulfilled'): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, 'listings', listingId);
     updateDoc(docRef, {
