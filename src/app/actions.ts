@@ -1,5 +1,3 @@
-'use server';
-
 import {
   runMarketComparison,
 } from '@/ai/flows/market-comparison-flow';
@@ -174,15 +172,18 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
   try {
     const listingsRef = collection(db, 'listings');
     
+    if (!listingData.userId) {
+      throw new Error('User authentication is required to create a listing.');
+    }
+
     // A simple way to get more relevant keywords for the image hint
     const titleWords = listingData.title.toLowerCase().replace(/[^a-z\s]/gi, '').split(' ');
     const commonWords = new Set(['hair', 'for', 'sale', 'and', 'the', 'a', 'in', 'to', 'buy', 'looking']);
     const keywords = titleWords.filter(word => word && !commonWords.has(word));
     const imageHint = `${keywords[0] || 'hair'} ${keywords[1] || 'product'}`;
     
-    const userId = listingData.userId || auth.currentUser?.uid || 'anonymous';
-
-    await addDoc(listingsRef, {
+    // No await here to leverage instant local cache update for responsive UI
+    addDoc(listingsRef, {
       title: listingData.title,
       description: listingData.description,
       type: listingData.type,
@@ -193,14 +194,17 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
       contactPhone: listingData.contactPhone || null,
       imageUrls: listingData.imageUrls || [],
       imageHint: imageHint,
-      userId: userId,
+      userId: listingData.userId,
       status: 'active',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
+    }).catch(error => {
+      console.error('Firestore write failed in background:', error);
     });
+
     return { success: true };
   } catch (e: any) {
-    console.error('Failed to create listing', e);
+    console.error('Failed to initiate listing creation:', e);
     return { success: false, error: e.message || 'Failed to create listing.' };
   }
 }
@@ -208,10 +212,10 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
 export async function updateListingStatus(listingId: string, status: 'active' | 'sold'): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, 'listings', listingId);
-    await updateDoc(docRef, {
+    updateDoc(docRef, {
       status: status,
       updatedAt: serverTimestamp(),
-    });
+    }).catch(error => console.error('Status update failed:', error));
     return { success: true };
   } catch (e: any) {
     console.error('Failed to update status', e);
@@ -222,7 +226,7 @@ export async function updateListingStatus(listingId: string, status: 'active' | 
 export async function deleteListing(listingId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const docRef = doc(db, 'listings', listingId);
-    await deleteDoc(docRef);
+    deleteDoc(docRef).catch(error => console.error('Delete failed:', error));
     return { success: true };
   } catch (e: any) {
     console.error('Failed to delete listing', e);
@@ -234,12 +238,11 @@ export async function deleteListing(listingId: string): Promise<{ success: boole
 export async function addBookmark(userId: string, listingId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const bookmarksRef = collection(db, 'bookmarks');
-    // Simple duplicate check could be done here, but firestore rules or unique constraints are better
-    await addDoc(bookmarksRef, {
+    addDoc(bookmarksRef, {
       userId,
       listingId,
       createdAt: serverTimestamp(),
-    });
+    }).catch(error => console.error('Bookmark add failed:', error));
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
@@ -250,10 +253,10 @@ export async function removeBookmark(userId: string, listingId: string): Promise
   try {
     const bookmarksRef = collection(db, 'bookmarks');
     const q = query(bookmarksRef, where('userId', '==', userId), where('listingId', '==', listingId));
-    const querySnapshot = await getDocs(q);
-    
-    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
-    await Promise.all(deletePromises);
+    getDocs(q).then(querySnapshot => {
+      const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+      return Promise.all(deletePromises);
+    }).catch(error => console.error('Bookmark removal failed:', error));
     
     return { success: true };
   } catch (e: any) {

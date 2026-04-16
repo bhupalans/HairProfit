@@ -209,6 +209,18 @@ export default function HairMarketplace() {
   };
 
   const onSubmit = async (values: MarketplaceListingFormData) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication Required',
+        description: 'Please login to create a listing.',
+      });
+      return;
+    }
+
+    const userUid = currentUser.uid;
+
     if (values.type === 'sell' && imageFiles.length === 0) {
       toast({
         variant: 'destructive',
@@ -223,7 +235,6 @@ export default function HairMarketplace() {
     try {
       if (values.type === 'sell' && imageFiles.length > 0) {
         const storage = getStorage(app);
-        const userUid = auth.currentUser?.uid || 'anonymous';
         
         const uploadPromises = imageFiles.map(async (file) => {
           const storageRef = ref(storage, `listing-images/${userUid}/${Date.now()}-${file.name}`);
@@ -234,8 +245,6 @@ export default function HairMarketplace() {
         const urls = await Promise.all(uploadPromises);
         imageUrls.push(...urls);
       }
-
-      const userUid = auth.currentUser?.uid || 'anonymous';
 
       const response = await createListing({
         ...values,
