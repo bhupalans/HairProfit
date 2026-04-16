@@ -219,3 +219,25 @@ export const businessProfileSchema = z.object({
 });
 
 export type BusinessProfile = z.infer<typeof businessProfileSchema>;
+
+// Subscription & Payment Types
+export type SubscriptionPlan = 'monthly' | 'quarterly' | 'yearly';
+export type SubscriptionStatus = 'active' | 'expired' | 'none';
+
+export interface UserSubscription {
+  status: SubscriptionStatus;
+  plan?: SubscriptionPlan;
+  startDate?: string;
+  expiryDate?: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  userId: string;
+  email: string;
+  plan: SubscriptionPlan;
+  amount: number;
+  utr: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+}

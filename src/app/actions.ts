@@ -3,10 +3,32 @@ import {
 } from '@/ai/flows/market-comparison-flow';
 import { runBuyerAnalysis } from '@/ai/flows/buyer-analysis-flow';
 import { getFxRates, lastUpdated } from '@/lib/fx';
-import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
+import type { 
+  MarketComparisonInput, 
+  MarketComparisonOutput, 
+  BuyerAnalysisOutput, 
+  MarketplaceListing, 
+  MarketplaceListingFormData,
+  SubscriptionPlan,
+  PaymentRecord
+} from '@/types';
 
 import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, where, deleteDoc } from 'firebase/firestore';
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  orderBy, 
+  serverTimestamp, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  where, 
+  deleteDoc, 
+  setDoc,
+  Timestamp
+} from 'firebase/firestore';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -54,12 +76,6 @@ export async function fetchExchangeRate(input: {
       throw new Error(`Missing rate for ${targetCurrency}`);
     }
 
-    /**
-     * IMPORTANT:
-     * UI shows: "Rate (1 INR = ?)"
-     * So we calculate:
-     * 1 baseCurrency = ? targetCurrency
-     */
     const rate = targetRate / baseRate;
 
     return {
@@ -90,10 +106,8 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
       const data = doc.data();
       const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
       
-      // Backward compatibility for old records with single imageUrl
       const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
 
-      // Mapping normalized fields for backward compatibility
       let listingType = data.type;
       if (listingType === 'For Sale') listingType = 'sell';
       if (listingType === 'Looking to Buy') listingType = 'buy';
@@ -103,7 +117,7 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
         type: listingType,
         title: data.title,
         description: data.description,
-        price: data.price, // Might be number or string
+        price: data.price,
         currency: data.currency,
         unit: data.unit,
         contactEmail: data.contactEmail,
@@ -113,7 +127,7 @@ export async function getListings(): Promise<{ success: boolean; data?: Marketpl
         userId: data.userId,
         status: data.status || 'active',
         createdAt: createdAt,
-        contact: data.contact, // Fallback
+        contact: data.contact,
       });
     });
     return { success: true, data: listings };
@@ -132,10 +146,8 @@ export async function getListing(id: string): Promise<{ success: boolean; data?:
       const data = docSnap.data();
       const createdAt = data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString();
       
-      // Backward compatibility for old records with single imageUrl
       const imageUrls = data.imageUrls || (data.imageUrl ? [data.imageUrl] : []);
 
-      // Mapping normalized fields
       let listingType = data.type;
       if (listingType === 'For Sale') listingType = 'sell';
       if (listingType === 'Looking to Buy') listingType = 'buy';
@@ -215,13 +227,11 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
       throw new Error('User authentication is required to create a listing.');
     }
 
-    // A simple way to get more relevant keywords for the image hint
     const titleWords = listingData.title.toLowerCase().replace(/[^a-z\s]/gi, '').split(' ');
     const commonWords = new Set(['hair', 'for', 'sale', 'and', 'the', 'a', 'in', 'to', 'buy', 'looking']);
     const keywords = titleWords.filter(word => word && !commonWords.has(word));
     const imageHint = `${keywords[0] || 'hair'} ${keywords[1] || 'product'}`;
     
-    // No await here to leverage instant local cache update for responsive UI
     addDoc(listingsRef, {
       title: listingData.title,
       description: listingData.description,
@@ -310,6 +320,87 @@ export async function getUserBookmarks(userId: string): Promise<{ success: boole
     const querySnapshot = await getDocs(q);
     const listingIds = querySnapshot.docs.map(doc => doc.data().listingId as string);
     return { success: true, data: listingIds };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+// Subscription Actions
+export async function submitPayment(paymentData: Omit<PaymentRecord, 'id' | 'status' | 'createdAt'>): Promise<{ success: boolean; error?: string }> {
+  try {
+    const paymentsRef = collection(db, 'payments');
+    await addDoc(paymentsRef, {
+      ...paymentData,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function getPendingPayments(): Promise<{ success: boolean; data?: PaymentRecord[]; error?: string }> {
+  try {
+    const paymentsRef = collection(db, 'payments');
+    const q = query(paymentsRef, where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
+    const querySnapshot = await getDocs(q);
+    const payments: PaymentRecord[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      payments.push({
+        id: doc.id,
+        userId: data.userId,
+        email: data.email,
+        plan: data.plan,
+        amount: data.amount,
+        utr: data.utr,
+        status: data.status,
+        createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
+      });
+    });
+    return { success: true, data: payments };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function approvePayment(paymentId: string, userId: string, plan: SubscriptionPlan): Promise<{ success: boolean; error?: string }> {
+  try {
+    // 1. Update payment status
+    const paymentRef = doc(db, 'payments', paymentId);
+    await updateDoc(paymentRef, { status: 'approved' });
+
+    // 2. Calculate expiry
+    const now = new Date();
+    let days = 30;
+    if (plan === 'quarterly') days = 90;
+    if (plan === 'yearly') days = 365;
+    const expiry = new Date();
+    expiry.setDate(now.getDate() + days);
+
+    // 3. Update user subscription
+    const userRef = doc(db, 'users', userId);
+    await setDoc(userRef, {
+      subscription: {
+        status: 'active',
+        plan,
+        startDate: now.toISOString(),
+        expiryDate: expiry.toISOString(),
+      }
+    }, { merge: true });
+
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function rejectPayment(paymentId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const paymentRef = doc(db, 'payments', paymentId);
+    await updateDoc(paymentRef, { status: 'rejected' });
+    return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };
   }
