@@ -20,7 +20,7 @@ const PLANS = [
   { id: 'yearly', name: 'Yearly', price: 3999, duration: '365 days' },
 ];
 
-const UPI_ID = "hairprofit@upi";
+const UPI_ID = "bhupalans@okaxis";
 
 interface SubscribeClientProps {
   from: string;
@@ -36,7 +36,11 @@ export default function SubscribeClient({ from }: SubscribeClientProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const planDetails = PLANS.find(p => p.id === selectedPlan)!;
+  //const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://pay?pa=${UPI_ID}&pn=HairProfit&am=${planDetails.price}&cu=INR`;
 
+  const qrData = `upi://pay?pa=${UPI_ID}&pn=HairProfit&am=${planDetails.price}.00&cu=INR`;
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(qrData)}`;
   const handleCopyUPI = () => {
     navigator.clipboard.writeText(UPI_ID);
     toast({ title: 'UPI ID Copied', description: 'Paste it in your payment app.' });
@@ -120,7 +124,8 @@ export default function SubscribeClient({ from }: SubscribeClientProps) {
                 <Card>
                   <CardContent className="pt-6 text-center">
                     <div className="bg-muted p-4 rounded-lg flex flex-col items-center gap-4 mb-6">
-                      <QrCode className="h-40 w-40 text-muted-foreground/40" />
+                    <img src={qrUrl} alt="UPI QR Code" className="h-48 w-48"/>
+                    <p className="text-sm font-medium">Pay ₹{planDetails.price} to {UPI_ID}</p>
                       <p className="text-xs text-muted-foreground italic">Scan QR code in any UPI App (GPay, PhonePe, Paytm)</p>
                     </div>
                     <div className="flex items-center justify-between p-3 border rounded-md bg-muted/20">
