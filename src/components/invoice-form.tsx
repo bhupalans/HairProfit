@@ -411,7 +411,11 @@ export default function InvoiceForm() {
                                 <TableRow key={item.id} className="border-b-0">
                                     <TableCell className="p-1"><FormInput value={item.description} onChange={e => handleItemChange(item.id, 'description', e.target.value)} placeholder="Item description" /></TableCell>
                                     <TableCell className="p-1"><FormInput type="number" value={item.quantity} onChange={e => handleItemChange(item.id, 'quantity', e.target.value)} className="text-right" /></TableCell>
-                                    <TableCell className="p-1"><FormInput type="number" value={item.price} onChange={e => handleItemChange(item.id, 'price', e.target.value)} className="text-right" /></TableCell>
+                                    <TableCell className="p-1"><FormInput type="text" value={
+      item.price !== "" && item.price !== undefined
+        ? Number(item.price).toFixed(2)
+        : ""
+    } onChange={e => handleItemChange(item.id, 'price', e.target.value)} className="text-right" /></TableCell>
                                     <TableCell className="hidden sm:table-cell text-right font-medium p-1">{formatCurrency((Number(item.quantity) || 0) * (Number(item.price) || 0), data.currency)}</TableCell>
                                     <TableCell className="p-1"><Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => removeItem(item.id)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button></TableCell>
                                 </TableRow>
