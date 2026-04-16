@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -9,7 +8,7 @@ import { getFxRates, lastUpdated } from '@/lib/fx';
 import type { MarketComparisonInput, MarketComparisonOutput, BuyerAnalysisOutput, MarketplaceListing, MarketplaceListingFormData } from '@/types';
 
 import { db, auth } from '@/lib/firebase';
-import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, orderBy, serverTimestamp, doc, getDoc, updateDoc, where, deleteDoc } from 'firebase/firestore';
 
 export async function getMarketComparison(
   input: MarketComparisonInput
@@ -203,5 +202,73 @@ export async function createListing(listingData: MarketplaceListingFormData): Pr
   } catch (e: any) {
     console.error('Failed to create listing', e);
     return { success: false, error: e.message || 'Failed to create listing.' };
+  }
+}
+
+export async function updateListingStatus(listingId: string, status: 'active' | 'sold'): Promise<{ success: boolean; error?: string }> {
+  try {
+    const docRef = doc(db, 'listings', listingId);
+    await updateDoc(docRef, {
+      status: status,
+      updatedAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (e: any) {
+    console.error('Failed to update status', e);
+    return { success: false, error: e.message };
+  }
+}
+
+export async function deleteListing(listingId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const docRef = doc(db, 'listings', listingId);
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (e: any) {
+    console.error('Failed to delete listing', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// Bookmark Actions
+export async function addBookmark(userId: string, listingId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const bookmarksRef = collection(db, 'bookmarks');
+    // Simple duplicate check could be done here, but firestore rules or unique constraints are better
+    await addDoc(bookmarksRef, {
+      userId,
+      listingId,
+      createdAt: serverTimestamp(),
+    });
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function removeBookmark(userId: string, listingId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const bookmarksRef = collection(db, 'bookmarks');
+    const q = query(bookmarksRef, where('userId', '==', userId), where('listingId', '==', listingId));
+    const querySnapshot = await getDocs(q);
+    
+    const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+    
+    return { success: true };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
+export async function getUserBookmarks(userId: string): Promise<{ success: boolean; data?: string[]; error?: string }> {
+  try {
+    const bookmarksRef = collection(db, 'bookmarks');
+    const q = query(bookmarksRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    const listingIds = querySnapshot.docs.map(doc => doc.data().listingId as string);
+    return { success: true, data: listingIds };
+  } catch (e: any) {
+    return { success: false, error: e.message };
   }
 }

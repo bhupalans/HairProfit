@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload, X } from 'lucide-react';
+import { ArrowLeft, PlusCircle, ShoppingCart, Search, Loader2, Upload, X, Heart } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -22,9 +21,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import type { MarketplaceListing, MarketplaceListingFormData } from '@/types';
 import { marketplaceListingFormSchema } from '@/types';
-import { getListings, createListing } from '@/app/actions';
+import { getListings, createListing, addBookmark, removeBookmark, getUserBookmarks } from '@/app/actions';
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { app, auth } from "@/lib/firebase";
+import { useAuth } from '@/contexts/auth-context';
+import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
 
 const ListingSkeleton = () => (
     <Card className="flex flex-col">
@@ -43,8 +45,86 @@ const ListingSkeleton = () => (
     </Card>
 );
 
+const ListingCard = ({ 
+  listing, 
+  isBookmarked, 
+  onToggleBookmark 
+}: { 
+  listing: MarketplaceListing, 
+  isBookmarked: boolean, 
+  onToggleBookmark: (id: string) => void 
+}) => {
+  const { user } = useAuth();
+  const isOwner = user?.uid === listing.userId;
+  const isSold = listing.status === 'sold';
+
+  const renderPrice = (listing: MarketplaceListing) => {
+    if (typeof listing.price === 'string') {
+        return listing.price;
+    }
+    const symbol = listing.currency === 'USD' ? '$' : '₹';
+    return `${symbol}${listing.price} per ${listing.unit}`;
+  };
+
+  return (
+    <Card className="flex flex-col h-full transition-all duration-200 hover:border-primary hover:shadow-lg relative group">
+      {isSold && (
+        <Badge className="absolute top-3 left-3 z-10 bg-red-600 text-white font-bold" variant="destructive">SOLD</Badge>
+      )}
+      
+      {user && !isOwner && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggleBookmark(listing.id);
+          }}
+          className="absolute top-3 right-3 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm hover:scale-110 transition-transform"
+        >
+          <Heart 
+            className={cn(
+              "h-5 w-5 transition-colors", 
+              isBookmarked ? "fill-red-500 text-red-500" : "text-muted-foreground"
+            )} 
+          />
+        </button>
+      )}
+
+      <Link href={`/marketplace/${listing.id}`} className="flex flex-col h-full">
+        <CardHeader className="pb-4">
+            {listing.imageUrls && listing.imageUrls.length > 0 && (
+              <Image
+                src={listing.imageUrls[0]}
+                data-ai-hint={listing.imageHint}
+                alt={listing.title}
+                width={600}
+                height={400}
+                className={cn(
+                  "w-full rounded-lg aspect-[3/2] object-cover mb-4",
+                  isSold && "opacity-60 grayscale-[50%]"
+                )}
+              />
+            )}
+            <CardTitle className={cn(isSold && "text-muted-foreground line-through")}>{listing.title}</CardTitle>
+            <CardDescription className="text-primary font-semibold">
+                {renderPrice(listing)}
+            </CardDescription>
+        </CardHeader>
+        <CardContent className="flex-grow">
+            <p className="text-muted-foreground line-clamp-3">{listing.description}</p>
+        </CardContent>
+         <CardFooter>
+            <Button variant="secondary" className="w-full">View Details</Button>
+         </CardFooter>
+      </Link>
+    </Card>
+  );
+};
+
 export default function HairMarketplace() {
+  const { user } = useAuth();
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -78,12 +158,38 @@ export default function HairMarketplace() {
         description: response.error,
       });
     }
+
+    if (user) {
+      const bookmarkResponse = await getUserBookmarks(user.uid);
+      if (bookmarkResponse.success && bookmarkResponse.data) {
+        setBookmarkedIds(new Set(bookmarkResponse.data));
+      }
+    }
+
     setLoading(false);
-  }, [toast]);
+  }, [toast, user]);
 
   useEffect(() => {
     fetchListings();
   }, [fetchListings]);
+
+  const handleToggleBookmark = async (id: string) => {
+    if (!user) return;
+    
+    const isCurrentlyBookmarked = bookmarkedIds.has(id);
+    
+    // Optimistic UI update
+    const newBookmarks = new Set(bookmarkedIds);
+    if (isCurrentlyBookmarked) {
+      newBookmarks.delete(id);
+      setBookmarkedIds(newBookmarks);
+      await removeBookmark(user.uid, id);
+    } else {
+      newBookmarks.add(id);
+      setBookmarkedIds(newBookmarks);
+      await addBookmark(user.uid, id);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -103,7 +209,6 @@ export default function HairMarketplace() {
   };
 
   const onSubmit = async (values: MarketplaceListingFormData) => {
-    // Required check for Sellers
     if (values.type === 'sell' && imageFiles.length === 0) {
       toast({
         variant: 'destructive',
@@ -167,44 +272,15 @@ export default function HairMarketplace() {
   const forSaleListings = listings.filter(l => l.type === 'sell');
   const lookingForListings = listings.filter(l => l.type === 'buy');
 
-  const renderPrice = (listing: MarketplaceListing) => {
-    if (typeof listing.price === 'string') {
-        return listing.price;
-    }
-    const symbol = listing.currency === 'USD' ? '$' : '₹';
-    return `${symbol}${listing.price} per ${listing.unit}`;
-  };
-
   const renderListings = (list: MarketplaceListing[]) => (
     <AnimatePresence>
       {list.map(listing => (
         <motion.div layout key={listing.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <Link href={`/marketplace/${listing.id}`} className="group block h-full">
-            <Card className="flex flex-col h-full transition-all duration-200 group-hover:border-primary group-hover:shadow-lg">
-              <CardHeader className="pb-4">
-                  {listing.imageUrls && listing.imageUrls.length > 0 && (
-                    <Image
-                      src={listing.imageUrls[0]}
-                      data-ai-hint={listing.imageHint}
-                      alt={listing.title}
-                      width={600}
-                      height={400}
-                      className="w-full rounded-lg aspect-[3/2] object-cover mb-4"
-                    />
-                  )}
-                  <CardTitle>{listing.title}</CardTitle>
-                  <CardDescription className="text-primary font-semibold">
-                      {renderPrice(listing)}
-                  </CardDescription>
-              </CardHeader>
-              <CardContent className="flex-grow">
-                  <p className="text-muted-foreground line-clamp-3">{listing.description}</p>
-              </CardContent>
-               <CardFooter>
-                  <Button variant="secondary" className="w-full">View Details</Button>
-               </CardFooter>
-            </Card>
-          </Link>
+          <ListingCard 
+            listing={listing} 
+            isBookmarked={bookmarkedIds.has(listing.id)} 
+            onToggleBookmark={handleToggleBookmark} 
+          />
         </motion.div>
       ))}
     </AnimatePresence>

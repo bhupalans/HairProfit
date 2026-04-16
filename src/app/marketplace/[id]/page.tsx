@@ -1,28 +1,43 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, notFound, useParams } from 'next/navigation';
-import { ArrowLeft, Mail, Phone, MessageSquare, Clock, Maximize2 } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MessageSquare, Clock, Maximize2, MoreVertical, Trash2, CheckCircle2, Share2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 
-import { getListing } from '@/app/actions';
+import { getListing, updateListingStatus, deleteListing } from '@/app/actions';
 import type { MarketplaceListing } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 import AuthGuard from '@/components/auth-guard';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from '@/components/ui/dialog';
+import { useAuth } from '@/contexts/auth-context';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const ContactInfo = ({ listing }: { listing: MarketplaceListing }) => {
-    // Check for new structured fields or fallback to legacy 'contact' field
+    const isSold = listing.status === 'sold';
     const email = listing.contactEmail || (listing.contact?.includes('@') ? listing.contact : null);
     const phone = listing.contactPhone || (listing.contact && /^\+?[0-9\s-()]+$/.test(listing.contact) ? listing.contact : null);
+
+    if (isSold) {
+        return (
+            <div className="bg-muted p-4 rounded-lg text-center text-muted-foreground italic border mt-6">
+                This item has been sold. Contact details are no longer available.
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-3 mt-6">
@@ -82,26 +97,31 @@ const PageSkeleton = () => (
 
 export default function ListingDetailPage() {
     const params = useParams<{ id: string }>();
+    const { user } = useAuth();
+    const router = useRouter();
+    const { toast } = useToast();
+    
     const [listing, setListing] = useState<MarketplaceListing | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeImageIdx, setActiveImageIdx] = useState(0);
-    const router = useRouter();
-    const { toast } = useToast();
+
+    const fetchListingData = async () => {
+        if (!params.id) return;
+        const { success, data } = await getListing(params.id);
+        if (success && data) {
+            setListing(data);
+        } else {
+            notFound();
+        }
+        setIsLoading(false);
+    };
 
     useEffect(() => {
-        const fetchListingData = async () => {
-            if (!params.id) return;
-            const { success, data } = await getListing(params.id);
-            if (success && data) {
-                setListing(data);
-            } else {
-                notFound();
-            }
-            setIsLoading(false);
-        };
         fetchListingData();
     }, [params.id]);
     
+    const isOwner = user?.uid === listing?.userId;
+    const isSold = listing?.status === 'sold';
     const listingTypeDisplay = listing?.type === 'sell' ? 'For Sale' : 'Looking to Buy';
     const badgeVariant = listing?.type === 'sell' ? 'default' : 'secondary';
     const postedDate = listing ? formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true }) : '';
@@ -109,6 +129,33 @@ export default function ListingDetailPage() {
     const imageUrls = listing?.imageUrls || [];
     const hasImages = imageUrls.length > 0;
     const mainImage = imageUrls[activeImageIdx];
+
+    const handleMarkAsSold = async () => {
+        if (!listing) return;
+        const res = await updateListingStatus(listing.id, 'sold');
+        if (res.success) {
+            toast({ title: 'Marked as Sold', description: 'Listing status updated successfully.' });
+            fetchListingData();
+        }
+    };
+
+    const handleDeleteListing = async () => {
+        if (!listing) return;
+        if (!confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
+        
+        const res = await deleteListing(listing.id);
+        if (res.success) {
+            toast({ title: 'Listing Deleted' });
+            router.push('/marketplace');
+        }
+    };
+
+    const handleShare = () => {
+        if (typeof window !== 'undefined') {
+            navigator.clipboard.writeText(window.location.href);
+            toast({ title: 'Link Copied', description: 'URL copied to clipboard.' });
+        }
+    };
 
     const renderFullPrice = (listing: MarketplaceListing) => {
         if (typeof listing.price === 'string') return listing.price;
@@ -123,13 +170,37 @@ export default function ListingDetailPage() {
                     <PageSkeleton />
                 ) : listing && (
                 <div className="container mx-auto max-w-4xl px-4">
-                    <div className="mb-8">
+                    <div className="mb-8 flex items-center justify-between">
                         <Button asChild variant="ghost" className="pl-0">
                             <Link href="/marketplace">
                                 <ArrowLeft className="mr-2" />
                                 Back to Marketplace
                             </Link>
                         </Button>
+
+                        {isOwner && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon">
+                                        <MoreVertical className="h-5 w-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                    <DropdownMenuItem onClick={handleShare}>
+                                        <Share2 className="mr-2 h-4 w-4" /> Share Listing
+                                    </DropdownMenuItem>
+                                    {!isSold && (
+                                        <DropdownMenuItem onClick={handleMarkAsSold}>
+                                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" /> Mark as Sold
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={handleDeleteListing} className="text-destructive focus:bg-destructive/10">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Listing
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
                     </div>
 
                     <Card className="overflow-hidden">
@@ -144,7 +215,7 @@ export default function ListingDetailPage() {
                                                     data-ai-hint={listing.imageHint}
                                                     alt={listing.title}
                                                     fill
-                                                    className="object-cover"
+                                                    className={cn("object-cover", isSold && "opacity-60 grayscale-[50%]")}
                                                 />
                                                 <div className="absolute bottom-3 right-3 bg-black/50 text-white p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                                                     <Maximize2 className="h-4 w-4" />
@@ -186,8 +257,13 @@ export default function ListingDetailPage() {
                             <div className="flex flex-col p-6 sm:p-8">
                                 <CardHeader className="p-0">
                                     <div className="flex justify-between items-start gap-2">
-                                        <CardTitle className="text-3xl font-bold tracking-tight">{listing.title}</CardTitle>
-                                        <Badge variant={badgeVariant} className="shrink-0">{listingTypeDisplay}</Badge>
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-center gap-3">
+                                                <CardTitle className={cn("text-3xl font-bold tracking-tight", isSold && "line-through text-muted-foreground")}>{listing.title}</CardTitle>
+                                                {isSold && <Badge variant="destructive" className="font-bold">SOLD</Badge>}
+                                            </div>
+                                            <Badge variant={badgeVariant} className="shrink-0 w-fit">{listingTypeDisplay}</Badge>
+                                        </div>
                                     </div>
                                     <CardDescription className="text-2xl text-primary font-bold pt-4">
                                         {listing.type === 'sell' ? 'Price: ' : 'Budget: '}
