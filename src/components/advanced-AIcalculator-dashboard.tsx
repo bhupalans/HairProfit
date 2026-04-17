@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
@@ -19,6 +18,7 @@ import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 // Helper for category weights
 const getSizeWeight = (size: number, category: string) => {
@@ -87,6 +87,7 @@ const initialData: HairProfitData = {
 };
 
 export default function AdvancedAICalculatorDashboard() {
+  const { user } = useAuth();
   const [data, setData] = useState<HairProfitData>(initialData);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isAISuggesting, setIsAISuggesting] = useState(false);
@@ -398,6 +399,7 @@ export default function AdvancedAICalculatorDashboard() {
   };
 
   const handleCreateQuotation = () => {
+    if (!user?.uid) return;
     if (!processedNonRemyProducts.length) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please add byproduct items before creating a quotation.' });
       return;
@@ -412,7 +414,7 @@ export default function AdvancedAICalculatorDashboard() {
       }))
     };
 
-    localStorage.setItem("profitToQuotation", JSON.stringify(quotationData));
+    localStorage.setItem(`u_${user.uid}_profitToQuotation`, JSON.stringify(quotationData));
     toast({ title: 'Transferring to Quotation...', description: 'Taking you to the builder.' });
     router.push("/price-quotation");
   };

@@ -8,10 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
 import AuthGuard from '@/components/auth-guard';
 import { cn } from '@/lib/utils';
 
 export default function BusinessSettingsPage() {
+  const { user } = useAuth();
   const [terms, setTerms] = useState('');
   const [payment, setPayment] = useState('');
   const [logo, setLogo] = useState<string | null>(null);
@@ -19,16 +21,29 @@ export default function BusinessSettingsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedTerms = localStorage.getItem('business_terms');
-      const savedPayment = localStorage.getItem('business_payment');
-      const savedLogo = localStorage.getItem('business_logo');
+    if (typeof window !== 'undefined' && user?.uid) {
+      const getScopedKey = (field: string) => `business_${user.uid}_${field}`;
+
+      // Migration Logic
+      ['terms', 'payment', 'logo'].forEach(field => {
+        const oldKey = `business_${field}`;
+        const newKey = getScopedKey(field);
+        const oldValue = localStorage.getItem(oldKey);
+        if (oldValue && !localStorage.getItem(newKey)) {
+          localStorage.setItem(newKey, oldValue);
+          localStorage.removeItem(oldKey);
+        }
+      });
+
+      const savedTerms = localStorage.getItem(getScopedKey('terms'));
+      const savedPayment = localStorage.getItem(getScopedKey('payment'));
+      const savedLogo = localStorage.getItem(getScopedKey('logo'));
       
       if (savedTerms) setTerms(savedTerms);
       if (savedPayment) setPayment(savedPayment);
       if (savedLogo) setLogo(savedLogo);
     }
-  }, []);
+  }, [user]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -59,12 +74,15 @@ export default function BusinessSettingsPage() {
   };
 
   const handleSave = () => {
-    localStorage.setItem('business_terms', terms);
-    localStorage.setItem('business_payment', payment);
+    if (!user?.uid) return;
+    const getScopedKey = (field: string) => `business_${user.uid}_${field}`;
+
+    localStorage.setItem(getScopedKey('terms'), terms);
+    localStorage.setItem(getScopedKey('payment'), payment);
     if (logo) {
-      localStorage.setItem('business_logo', logo);
+      localStorage.setItem(getScopedKey('logo'), logo);
     } else {
-      localStorage.removeItem('business_logo');
+      localStorage.removeItem(getScopedKey('logo'));
     }
 
     toast({

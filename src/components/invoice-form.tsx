@@ -38,6 +38,7 @@ import { z } from 'zod';
 import { cn } from '@/lib/utils';
 import InvoicePdfReport from './invoice-pdf-report';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 const initialItem: InvoiceItem = {
   id: crypto.randomUUID(),
@@ -48,7 +49,7 @@ const initialItem: InvoiceItem = {
 
 const getInitialData = (): InvoiceData => ({
   logo: null,
-  invoiceRef: '', // Set in useEffect
+  invoiceRef: '', 
   invoiceDate: new Date().toISOString().split('T')[0],
   dueDate: (() => {
     const d = new Date();
@@ -81,6 +82,7 @@ const FormTextarea = (props: React.ComponentProps<typeof Textarea>) => (
 const currencySymbols: { [key: string]: string } = { USD: '$', INR: '₹', EUR: '€', GBP: '£' };
 
 export default function InvoiceForm() {
+  const { user } = useAuth();
   const [data, setData] = useState<InvoiceData>(getInitialData());
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -92,7 +94,21 @@ export default function InvoiceForm() {
   const router = useRouter();
   
   useEffect(() => {
-    const lastRef = localStorage.getItem('lastInvoiceRef');
+    if (!user?.uid) return;
+
+    const keyPrefix = `u_${user.uid}_`;
+    const settingsPrefix = `business_${user.uid}_`;
+
+    // Migration logic for document counter if needed
+    const oldRefKey = 'lastInvoiceRef';
+    const newRefKey = `${keyPrefix}lastInvoiceRef`;
+    const oldRefValue = localStorage.getItem(oldRefKey);
+    if (oldRefValue && !localStorage.getItem(newRefKey)) {
+      localStorage.setItem(newRefKey, oldRefValue);
+      localStorage.removeItem(oldRefKey);
+    }
+
+    const lastRef = localStorage.getItem(newRefKey);
     let nextRef = '';
     const currentYear = new Date().getFullYear().toString();
 
@@ -115,10 +131,10 @@ export default function InvoiceForm() {
       nextRef = `${currentYear}-0001`;
     }
 
-    const quotationJSON = localStorage.getItem('quotationForInvoice');
+    const quotationJSON = localStorage.getItem(`${keyPrefix}quotationForInvoice`);
     if (quotationJSON) {
         try {
-            localStorage.removeItem('quotationForInvoice'); 
+            localStorage.removeItem(`${keyPrefix}quotationForInvoice`); 
             const quotationData: QuotationData = JSON.parse(quotationJSON);
 
             const performConversion = quotationData.currency !== quotationData.displayCurrency;
@@ -165,7 +181,7 @@ export default function InvoiceForm() {
     } else {
         setData(prev => ({ ...prev, invoiceRef: nextRef }));
     }
-  }, [toast]);
+  }, [user, toast]);
 
   const handleLogoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -234,7 +250,10 @@ export default function InvoiceForm() {
         toast({ variant: "destructive", title: "Error", description: "Could not find content to generate PDF." });
         return;
     }
-    localStorage.setItem('lastInvoiceRef', data.invoiceRef);
+    
+    if (user?.uid) {
+      localStorage.setItem(`u_${user.uid}_lastInvoiceRef`, data.invoiceRef);
+    }
 
     setIsGeneratingPdf(true);
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
@@ -307,6 +326,8 @@ export default function InvoiceForm() {
     reader.readAsText(file);
     if (jsonFileInputRef.current) jsonFileInputRef.current.value = '';
   };
+
+  if (!user) return null;
 
   const pdfData = { data, subtotal, discountAmount, taxAmount, total, balanceDue };
 

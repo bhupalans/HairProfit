@@ -60,7 +60,7 @@ const initialItem: QuotationItem = {
 
 const getInitialData = (): QuotationData => ({
   logo: null,
-  quotationRef: '', // This will be set in useEffect
+  quotationRef: '', 
   date: new Date().toISOString().split('T')[0],
   validUntil: (() => {
     const d = new Date();
@@ -119,6 +119,7 @@ function getTimeAgo(timestamp: number) {
 }
 
 export default function PriceQuotationForm() {
+  const { user } = useAuth();
   const [data, setData] = useState<QuotationData>(getInitialData());
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -132,10 +133,34 @@ export default function PriceQuotationForm() {
   const { toast } = useToast();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { user } = useAuth();
 
   useEffect(() => {
-    const lastRef = localStorage.getItem('lastQuotationRef');
+    if (!user?.uid) return;
+
+    const keyPrefix = `u_${user.uid}_`;
+    const settingsPrefix = `business_${user.uid}_`;
+
+    // Migrate business settings if needed
+    ['terms', 'payment', 'logo'].forEach(field => {
+      const oldKey = `business_${field}`;
+      const newKey = `${settingsPrefix}${field}`;
+      const val = localStorage.getItem(oldKey);
+      if (val && !localStorage.getItem(newKey)) {
+        localStorage.setItem(newKey, val);
+        localStorage.removeItem(oldKey);
+      }
+    });
+
+    // Migrate lastQuotationRef if needed
+    const oldRefKey = 'lastQuotationRef';
+    const newRefKey = `${keyPrefix}lastQuotationRef`;
+    const oldRef = localStorage.getItem(oldRefKey);
+    if (oldRef && !localStorage.getItem(newRefKey)) {
+      localStorage.setItem(newRefKey, oldRef);
+      localStorage.removeItem(oldRefKey);
+    }
+
+    const lastRef = localStorage.getItem(newRefKey);
     let nextRef = '';
     const currentYear = new Date().getFullYear().toString();
 
@@ -146,24 +171,21 @@ export default function PriceQuotationForm() {
         const num = parseInt(parts[2], 10);
 
         if (year === currentYear && !isNaN(num)) {
-          // Same year, increment number
           const nextNum = (num + 1).toString().padStart(3, '0');
           nextRef = `Q-${currentYear}-${nextNum}`;
         } else {
-          // New year or invalid format, reset for the current year
            nextRef = `Q-${currentYear}-001`;
         }
       }
     }
     
     if (!nextRef) {
-      // No lastRef found, start from 1 for the current year
       nextRef = `Q-${currentYear}-001`;
     }
     
-    const savedTerms = localStorage.getItem('business_terms');
-    const savedPayment = localStorage.getItem('business_payment');
-    const savedLogo = localStorage.getItem('business_logo');
+    const savedTerms = localStorage.getItem(`${settingsPrefix}terms`);
+    const savedPayment = localStorage.getItem(`${settingsPrefix}payment`);
+    const savedLogo = localStorage.getItem(`${settingsPrefix}logo`);
 
     setData(prev => ({ 
       ...prev, 
@@ -173,11 +195,11 @@ export default function PriceQuotationForm() {
       logo: savedLogo || prev.logo
     }));
 
-    // Data flow from Profit Calculator
-    const profitJSON = localStorage.getItem('profitToQuotation');
+    // Data flow from Profit Calculator (scoped)
+    const profitJSON = localStorage.getItem(`${keyPrefix}profitToQuotation`);
     if (profitJSON) {
       try {
-        localStorage.removeItem('profitToQuotation');
+        localStorage.removeItem(`${keyPrefix}profitToQuotation`);
         const profitData = JSON.parse(profitJSON);
         setData(prev => ({
           ...prev,
@@ -192,10 +214,8 @@ export default function PriceQuotationForm() {
         console.error("Failed to parse profit data", e);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, toast]);
 
-  // Fetch business profile from Firestore
   useEffect(() => {
     if (!user) return;
 
@@ -210,18 +230,15 @@ export default function PriceQuotationForm() {
             setData(prev => {
               const newMyInfo = { ...prev.myInfo };
               
-              // Fill Business Name if empty
               if (!newMyInfo.fromName && business.name) {
                 newMyInfo.fromName = business.name;
               }
 
-              // Fill Address if empty
               if (!newMyInfo.fromAddress) {
                 const { line1, city, state, country } = business.address || {};
                 const addrParts = [line1, city, state, country].filter(Boolean);
                 let combinedAddress = addrParts.join(', ');
                 
-                // Add phone and GST to the multiline address field
                 if (business.contact?.phone) {
                   combinedAddress += `\nPhone: ${business.contact.phone}`;
                 }
@@ -333,7 +350,9 @@ export default function PriceQuotationForm() {
         return;
     }
 
-    localStorage.setItem('lastQuotationRef', data.quotationRef);
+    if (user?.uid) {
+      localStorage.setItem(`u_${user.uid}_lastQuotationRef`, data.quotationRef);
+    }
 
     setIsGeneratingPdf(true);
     toast({ title: 'Generating PDF...', description: 'Please wait a moment.' });
@@ -372,12 +391,13 @@ export default function PriceQuotationForm() {
   };
 
   const handleCreateInvoice = () => {
+    if (!user?.uid) return;
     try {
         const jsonString = JSON.stringify({
           ...data,
           productCategory: data.productCategory
         });
-        localStorage.setItem('quotationForInvoice', jsonString);
+        localStorage.setItem(`u_${user.uid}_quotationForInvoice`, jsonString);
         toast({
             title: 'Quotation Data Saved',
             description: 'Redirecting to the invoice builder...',
@@ -496,6 +516,8 @@ export default function PriceQuotationForm() {
       </TooltipProvider>
     )
   }
+
+  if (!user) return null;
 
   return (
     <div className="bg-muted min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 font-body">
@@ -649,7 +671,6 @@ export default function PriceQuotationForm() {
                                 </Button>
                             </div>
 			
-			{/* ✅ ADD EXACTLY HERE */}
         			{rateUpdatedAt && (
             				<p className="text-xs text-gray-500 mt-1">
                 			Updated {getTimeAgo(rateUpdatedAt)}

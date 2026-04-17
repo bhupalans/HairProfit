@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useCallback, ChangeEvent } from 'react';
@@ -18,6 +17,7 @@ import html2canvas from 'html2canvas';
 import PDFReport from './pdf-report';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 
 const initialData: HairProfitData = {
@@ -34,6 +34,7 @@ const initialData: HairProfitData = {
 };
 
 export default function HairProfitDashboard() {
+  const { user } = useAuth();
   const [data, setData] = useState<HairProfitData>(initialData);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -224,6 +225,7 @@ export default function HairProfitDashboard() {
   }, [data]);
 
    const handleCreateQuotation = () => {
+    if (!user?.uid) return;
     if (!processedNonRemyProducts || processedNonRemyProducts.length === 0) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please add byproduct items before creating a quotation.' });
       return;
@@ -250,7 +252,7 @@ export default function HairProfitDashboard() {
     };
 
     console.log("Quotation Data:", quotationData);
-    localStorage.setItem("profitToQuotation", JSON.stringify(quotationData));
+    localStorage.setItem(`u_${user.uid}_profitToQuotation`, JSON.stringify(quotationData));
     toast({ title: 'Transferring to Quotation...', description: 'Taking you to the builder.' });
     router.push("/price-quotation");
   };
