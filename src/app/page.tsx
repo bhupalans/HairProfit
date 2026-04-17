@@ -76,7 +76,17 @@ const tools = [
   },
 ];
 
+const PRO_ROUTES = [
+  '/marketplace',
+  '/advanced-AI-calculator',
+  '/market-comparison',
+  '/buyer-analysis',
+  '/price-quotation',
+  '/invoice' // note: your route is '/invoice', not '/invoice-builder'
+];
+
 export default function Home() {
+  
   return (
     <main className="bg-background min-h-screen">
       <div className="container mx-auto p-4 sm:p-6 lg:p-8">
@@ -92,25 +102,38 @@ export default function Home() {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tools.map((tool) => (
-            <Link href={tool.href} key={tool.title} className="group">
-              <Card className="h-full flex flex-col hover:border-primary hover:shadow-lg transition-all duration-200">
-                <CardHeader className="flex-row items-center gap-4 space-y-0">
-                  <div className="bg-primary/10 text-primary p-3 rounded-lg group-hover:scale-110 transition-transform">
-                    {tool.icon}
-                  </div>
-                  <div>
-                    <CardTitle className="text-2xl">{tool.title}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <CardDescription className="text-base">
-                    {tool.description}
-                  </CardDescription>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+        {tools.map((tool) => {
+  const isPro = PRO_ROUTES.includes(tool.href);
+
+  return (
+    <Link href={tool.href} key={tool.title} className="group">
+      <Card className="relative h-full flex flex-col hover:border-primary hover:shadow-lg transition-all duration-200">
+        
+        {isPro && (
+          <div className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold shadow-sm">
+            PRO
+          </div>
+        )}
+
+        <CardHeader className="flex-row items-center gap-4 space-y-0">
+          <div className="bg-primary/10 text-primary p-3 rounded-lg group-hover:scale-110 transition-transform">
+            {tool.icon}
+          </div>
+          <div>
+            <CardTitle className="text-2xl">{tool.title}</CardTitle>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-grow">
+          <CardDescription className="text-base">
+            {tool.description}
+          </CardDescription>
+        </CardContent>
+
+      </Card>
+    </Link>
+  );
+})}
         </div>
       </div>
     </main>

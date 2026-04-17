@@ -333,7 +333,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <Label htmlFor="gst">GST Number</Label>
+                <Label htmlFor="gst">GST Number / Tax Details</Label>
                 <Input 
                   id="gst" 
                   value={businessData.tax?.gst || ''} 
