@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
-import { Sparkles, User as UserIcon } from 'lucide-react';
+import { Sparkles, User as UserIcon, CreditCard } from 'lucide-react';
 
 export default function Navbar() {
   const { user } = useAuth();
@@ -16,14 +16,22 @@ export default function Navbar() {
           <span className="text-xl font-bold">HairProfit</span>
         </Link>
 
-        <nav className="flex items-center gap-4">
+        <nav className="flex items-center gap-2 sm:gap-4">
           {user ? (
-            <Button asChild variant="ghost" className="flex items-center gap-2">
-              <Link href="/profile">
-                <UserIcon className="h-4 w-4" />
-                <span>Profile</span>
-              </Link>
-            </Button>
+            <>
+              <Button asChild variant="ghost" className="hidden sm:flex items-center gap-2">
+                <Link href="/account">
+                  <CreditCard className="h-4 w-4" />
+                  <span>Account</span>
+                </Link>
+              </Button>
+              <Button asChild variant="ghost" className="flex items-center gap-2">
+                <Link href="/profile">
+                  <UserIcon className="h-4 w-4" />
+                  <span className="hidden sm:inline">Profile</span>
+                </Link>
+              </Button>
+            </>
           ) : (
             <>
               <Button asChild variant="ghost">

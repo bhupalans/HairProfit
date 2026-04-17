@@ -365,6 +365,33 @@ export async function getPendingPayments(): Promise<{ success: boolean; data?: P
   }
 }
 
+export async function getUserPayments(userId: string): Promise<{ success: boolean; data?: PaymentRecord[]; error?: string }> {
+  try {
+    const paymentsRef = collection(db, 'payments');
+    const q = query(paymentsRef, where('userId', '==', userId));
+    const querySnapshot = await getDocs(q);
+    const payments: PaymentRecord[] = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      payments.push({
+        id: doc.id,
+        userId: data.userId,
+        email: data.email,
+        plan: data.plan,
+        amount: data.amount,
+        utr: data.utr,
+        status: data.status,
+        createdAt: data.createdAt?.toDate().toISOString() || new Date().toISOString(),
+      });
+    });
+    // Sort by date manually to avoid index requirement for simple queries
+    payments.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return { success: true, data: payments };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
 export async function approvePayment(paymentId: string, userId: string, plan: SubscriptionPlan): Promise<{ success: boolean; error?: string }> {
   try {
     // 1. Update payment status
