@@ -47,16 +47,16 @@ export default function Navbar() {
         <nav className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
-              <Button asChild variant="ghost" className="hidden sm:flex items-center gap-2 relative">
+              <Button asChild variant="ghost" className="flex items-center gap-2 relative px-2 sm:px-4">
                 <Link href="/account">
                   <CreditCard className="h-4 w-4" />
-                  <span>Account</span>
+                  <span className="hidden sm:inline">Account</span>
                   {showWarning && (
                     <span className="absolute -top-0.5 -right-0.5 h-3 w-3 rounded-full bg-red-500 animate-pulse border-2 border-background" />
                   )}
                 </Link>
               </Button>
-              <Button asChild variant="ghost" className="flex items-center gap-2">
+              <Button asChild variant="ghost" className="flex items-center gap-2 px-2 sm:px-4">
                 <Link href="/profile">
                   <UserIcon className="h-4 w-4" />
                   <span className="hidden sm:inline">Profile</span>
