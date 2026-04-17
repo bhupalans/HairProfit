@@ -398,16 +398,34 @@ export async function approvePayment(paymentId: string, userId: string, plan: Su
     const paymentRef = doc(db, 'payments', paymentId);
     await updateDoc(paymentRef, { status: 'approved' });
 
-    // 2. Calculate expiry
+    // 2. Fetch current user data to check for existing active subscription
+    const userRef = doc(db, 'users', userId);
+    const userSnap = await getDoc(userRef);
+    const userData = userSnap.data();
+
     const now = new Date();
+    // baseDate is the point from which we add the new subscription time.
+    // If the user has an active sub, we extend from that expiry date.
+    // Otherwise, we start from today.
+    let baseDate = now;
+
+    if (userData?.subscription?.status === 'active' && userData?.subscription?.expiryDate) {
+      const existingExpiry = new Date(userData.subscription.expiryDate);
+      if (existingExpiry > now) {
+        baseDate = existingExpiry;
+      }
+    }
+
+    // 3. Calculate new expiry
     let days = 30;
     if (plan === 'quarterly') days = 90;
     if (plan === 'yearly') days = 365;
-    const expiry = new Date();
-    expiry.setDate(now.getDate() + days);
+    
+    const expiry = new Date(baseDate);
+    expiry.setDate(baseDate.getDate() + days);
 
-    // 3. Update user subscription
-    const userRef = doc(db, 'users', userId);
+    // 4. Update user subscription
+    // Extending from existing expiry date ensures users don't lose paid days when renewing early.
     await setDoc(userRef, {
       subscription: {
         status: 'active',
