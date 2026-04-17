@@ -42,13 +42,22 @@ export default function AccountClient() {
     }
   }, [user]);
 
+  const getExpiryThreshold = (plan: string): number => {
+    if (plan === 'monthly') return 5;
+    if (plan === 'quarterly') return 14;
+    if (plan === 'yearly') return 21;
+    return 5; // fallback
+  };
+
   const subscriptionDetails = useMemo(() => {
     if (!subscription || subscription.status === 'none') return null;
 
     const isActive = subscription.status === 'active' && new Date(subscription.expiryDate) > new Date();
     const expiryDate = new Date(subscription.expiryDate);
     const daysRemaining = differenceInDays(expiryDate, new Date());
-    const isExpiringSoon = daysRemaining <= 5 && daysRemaining > 0;
+    
+    const threshold = getExpiryThreshold(subscription.plan || 'monthly');
+    const isExpiringSoon = daysRemaining <= threshold && daysRemaining > 0;
 
     return {
       isActive,
@@ -60,7 +69,7 @@ export default function AccountClient() {
     };
   }, [subscription]);
 
-  const showRenewButton = !subscriptionDetails || !subscriptionDetails.isActive || subscriptionDetails.daysRemaining <= 5;
+  const showRenewButton = !subscriptionDetails || !subscriptionDetails.isActive || subscriptionDetails.isExpiringSoon;
 
   return (
     <div className="bg-muted/30 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
