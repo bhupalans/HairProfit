@@ -73,17 +73,10 @@ interface Row {
   id: string;
   length: string;
   quantity: string | number;
-  buyerPrice: string | number;
+  buyerPriceUSD: string | number;
   yield: string | number;
-  finalPriceOverride?: string | number;
+  finalPriceOverrideUSD?: string | number;
 }
-
-const currencySymbols: Record<string, string> = {
-  USD: '$',
-  INR: '₹',
-  EUR: '€',
-  GBP: '£',
-};
 
 export default function ReverseCalculatorDashboard() {
   const { user } = useAuth();
@@ -92,17 +85,14 @@ export default function ReverseCalculatorDashboard() {
 
   const [config, setConfig] = useState({
     rawHairPrice: 2000, // INR/kg
-    usdRate: 83.5, // 1 USD = X INR
-    processingCost: 15, // In Pricing Currency/kg
-    logisticsCost: 5, // In Pricing Currency/kg
-    otherCost: 2, // In Pricing Currency/kg
-    pricingCurrency: 'USD',
-    displayCurrency: 'USD',
-    exchangeRate: 1, // 1 Display = X Pricing
+    processingCost: 1200, // INR/kg
+    logisticsCost: 400, // INR/kg
+    otherCost: 200, // INR/kg
+    exchangeRate: 83.50, // 1 USD = X INR
   });
 
   const [rows, setRows] = useState<Row[]>([
-    { id: crypto.randomUUID(), length: '16"', quantity: 10, buyerPrice: 75, yield: 78 },
+    { id: crypto.randomUUID(), length: '16"', quantity: 10, buyerPriceUSD: 75, yield: 78 },
   ]);
 
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -114,7 +104,7 @@ export default function ReverseCalculatorDashboard() {
   const addRow = () => {
     setRows(prev => [
       ...prev,
-      { id: crypto.randomUUID(), length: '12"', quantity: 1, buyerPrice: 0, yield: 82 },
+      { id: crypto.randomUUID(), length: '12"', quantity: 1, buyerPriceUSD: 0, yield: 82 },
     ]);
   };
 
@@ -138,64 +128,63 @@ export default function ReverseCalculatorDashboard() {
 
   const handleFetchRate = async () => {
     setIsFetchingRate(true);
+    // We want INR per 1 USD
     const response = await fetchExchangeRate({ 
-      baseCurrency: config.displayCurrency, 
-      targetCurrency: config.pricingCurrency 
+      baseCurrency: 'USD', 
+      targetCurrency: 'INR' 
     });
     setIsFetchingRate(false);
 
     if (response.success && response.data) {
       handleConfigChange('exchangeRate', response.data.rate);
-      toast({ title: 'Rate Updated', description: `1 ${config.displayCurrency} = ${response.data.rate.toFixed(4)} ${config.pricingCurrency}` });
+      toast({ title: 'Rate Updated', description: `1 USD = ${response.data.rate.toFixed(2)} INR` });
     } else {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch rate.' });
     }
   };
 
   const calculatedRows = useMemo(() => {
-    // 1. Core Logic in Pricing Currency
-    const rawPriceInput = (Number(config.rawHairPrice) || 0);
-    const usdRate = (Number(config.usdRate) || 1);
-    
-    // We assume rawPriceInput is always INR based on UI label
-    let rawCostPricing = rawPriceInput;
-    if (config.pricingCurrency === 'USD') {
-        rawCostPricing = rawPriceInput / usdRate;
-    }
-    
     const rate = Number(config.exchangeRate) || 1;
     
     return rows.map(row => {
       const yieldVal = (Number(row.yield) || 0) / 100;
-      const effectiveRawCost = yieldVal > 0 ? rawCostPricing / yieldVal : 0;
       
-      // All costs added here are already in Pricing Currency
-      const finalCostPricing = effectiveRawCost + (Number(config.processingCost) || 0) + (Number(config.logisticsCost) || 0) + (Number(config.otherCost) || 0);
+      // 1. Calculate base cost in INR
+      const rawCostINR = (Number(config.rawHairPrice) || 0);
+      const effectiveRawCostINR = yieldVal > 0 ? rawCostINR / yieldVal : 0;
       
-      const minPricePricing = finalCostPricing * 1.08;
-      const targetPricePricing = finalCostPricing * 1.20;
+      const totalCostINR = effectiveRawCostINR + 
+                          (Number(config.processingCost) || 0) + 
+                          (Number(config.logisticsCost) || 0) + 
+                          (Number(config.otherCost) || 0);
+      
+      // 2. Convert to USD
+      const totalCostUSD = rate > 0 ? totalCostINR / rate : 0;
+      
+      // 3. Buyer Price in INR for display
+      const buyerPriceINR = (Number(row.buyerPriceUSD) || 0) * rate;
 
-      // Convert to Display Currency for UI
-      // Value(Display) = Value(Pricing) / Rate
-      const finalCostDisp = rate !== 0 ? finalCostPricing / rate : 0;
-      const minPriceDisp = rate !== 0 ? minPricePricing / rate : 0;
-      const targetPriceDisp = rate !== 0 ? targetPricePricing / rate : 0;
+      // 4. Thresholds in USD
+      const minPriceUSD = totalCostUSD * 1.08;
+      const targetPriceUSD = totalCostUSD * 1.20;
 
-      // Final Price Logic: Editable but defaults to target
-      const fPriceDisp = row.finalPriceOverride !== undefined 
-        ? Number(row.finalPriceOverride) 
-        : Number(targetPriceDisp.toFixed(2));
+      // 5. Final Price in USD (Editable)
+      const fPriceUSD = row.finalPriceOverrideUSD !== undefined 
+        ? Number(row.finalPriceOverrideUSD) 
+        : Number(targetPriceUSD.toFixed(2));
 
       let status: 'Reject' | 'Negotiate' | 'Accept' = 'Reject';
-      if (fPriceDisp >= targetPriceDisp) status = 'Accept';
-      else if (fPriceDisp >= minPriceDisp) status = 'Negotiate';
+      if (fPriceUSD >= targetPriceUSD) status = 'Accept';
+      else if (fPriceUSD >= minPriceUSD) status = 'Negotiate';
 
       return {
         ...row,
-        finalCostDisp,
-        minPriceDisp,
-        targetPriceDisp,
-        finalPriceDisp: fPriceDisp,
+        totalCostINR,
+        totalCostUSD,
+        buyerPriceINR,
+        targetPriceUSD,
+        minPriceUSD,
+        finalPriceUSD: fPriceUSD,
         status,
       };
     });
@@ -212,20 +201,17 @@ export default function ReverseCalculatorDashboard() {
       items: calculatedRows.map(row => ({
         length: row.length,
         quantity: Number(row.quantity) || 0,
-        price: row.finalPriceDisp
+        price: row.finalPriceUSD
       })),
-      currency: config.pricingCurrency,
-      displayCurrency: config.displayCurrency,
-      exchangeRate: config.exchangeRate
+      currency: 'USD',
+      displayCurrency: 'USD',
+      exchangeRate: 1
     };
 
     localStorage.setItem(`u_${user.uid}_profitToQuotation`, JSON.stringify(quotationData));
     toast({ title: 'Transferring...', description: 'Opening Price Quotation Builder.' });
     router.push('/price-quotation');
   };
-
-  const dispSym = currencySymbols[config.displayCurrency] || '$';
-  const pricingSym = currencySymbols[config.pricingCurrency] || '$';
 
   return (
     <div className="bg-muted/30 min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -267,42 +253,20 @@ export default function ReverseCalculatorDashboard() {
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
                  <div className="space-y-1.5">
-                    <Label className="text-xs uppercase font-bold text-muted-foreground">Pricing Currency</Label>
-                    <Select value={config.pricingCurrency} onValueChange={v => handleConfigChange('pricingCurrency', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="INR">INR</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <Label className="text-xs uppercase font-bold text-muted-foreground">Exchange Rate (1 USD = ? INR)</Label>
+                    <div className="flex gap-2">
+                        <Input 
+                            type="number" 
+                            value={config.exchangeRate} 
+                            onChange={e => handleConfigChange('exchangeRate', e.target.value)} 
+                            className="font-mono font-bold"
+                        />
+                        <Button variant="outline" size="icon" onClick={handleFetchRate} disabled={isFetchingRate}>
+                            {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground italic">Pricing is calculated in INR and converted to USD for sale.</p>
                  </div>
-                 <div className="space-y-1.5">
-                    <Label className="text-xs uppercase font-bold text-muted-foreground">Display Currency</Label>
-                    <Select value={config.displayCurrency} onValueChange={v => handleConfigChange('displayCurrency', v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="USD">USD</SelectItem>
-                            <SelectItem value="INR">INR</SelectItem>
-                            <SelectItem value="EUR">EUR</SelectItem>
-                        </SelectContent>
-                    </Select>
-                 </div>
-                 {config.pricingCurrency !== config.displayCurrency && (
-                     <div className="space-y-1.5">
-                        <Label className="text-xs uppercase font-bold text-muted-foreground">Rate (1 {config.displayCurrency} = ?)</Label>
-                        <div className="flex gap-2">
-                            <Input 
-                                type="number" 
-                                value={config.exchangeRate} 
-                                onChange={e => handleConfigChange('exchangeRate', e.target.value)} 
-                            />
-                            <Button variant="outline" size="icon" onClick={handleFetchRate} disabled={isFetchingRate}>
-                                {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                            </Button>
-                        </div>
-                     </div>
-                 )}
               </CardContent>
             </Card>
 
@@ -310,7 +274,7 @@ export default function ReverseCalculatorDashboard() {
               <CardHeader className="pb-3 border-b bg-muted/10">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Coins className="h-5 w-5 text-primary" />
-                  Raw Costs
+                  Raw Costs (INR)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
@@ -323,24 +287,15 @@ export default function ReverseCalculatorDashboard() {
                     onChange={e => handleConfigChange('rawHairPrice', e.target.value)} 
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="usdRate">USD Rate (₹ to $)</Label>
-                  <Input 
-                    id="usdRate" 
-                    type="number" 
-                    value={config.usdRate} 
-                    onChange={e => handleConfigChange('usdRate', e.target.value)} 
-                  />
-                </div>
                 <div className="space-y-2 pt-2 border-t">
                    <div className="flex items-center gap-1.5">
-                    <Label htmlFor="procCost">Processing ({pricingSym}/kg)</Label>
+                    <Label htmlFor="procCost">Processing (₹/kg)</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent>Labor, chemical, and electricity costs.</TooltipContent>
+                        <TooltipContent>Labor, chemical, and washing costs in INR.</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -352,7 +307,7 @@ export default function ReverseCalculatorDashboard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="logCost">Logistics ({pricingSym}/kg)</Label>
+                  <Label htmlFor="logCost">Logistics (₹/kg)</Label>
                   <Input 
                     id="logCost" 
                     type="number" 
@@ -361,7 +316,7 @@ export default function ReverseCalculatorDashboard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="otherCost">Other Costs ({pricingSym}/kg)</Label>
+                  <Label htmlFor="otherCost">Other Costs (₹/kg)</Label>
                   <Input 
                     id="otherCost" 
                     type="number" 
@@ -378,8 +333,8 @@ export default function ReverseCalculatorDashboard() {
             <Card className="shadow-sm overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/5">
                 <div>
-                  <CardTitle className="text-xl">BUYER&apos;S QUOTE</CardTitle>
-                  <CardDescription>Manage offers and adjust final selling prices in {config.displayCurrency}.</CardDescription>
+                  <CardTitle className="text-xl uppercase">Buyer&apos;s Quote Analysis</CardTitle>
+                  <CardDescription>Compare offer in USD against costs in INR.</CardDescription>
                 </div>
                 <Button onClick={addRow} size="sm">
                   <PlusCircle className="h-4 w-4 mr-2" /> Add Length
@@ -390,16 +345,16 @@ export default function ReverseCalculatorDashboard() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-muted/20">
-                        <TableHead className="w-[120px]">Length</TableHead>
+                        <TableHead className="w-[110px]">Length</TableHead>
                         <TableHead className="text-right w-[80px]">Qty (kg)</TableHead>
-                        <TableHead className="text-right w-[110px]">Buyer ({dispSym}/kg)</TableHead>
+                        <TableHead className="text-right w-[110px]">Buyer ($/kg)</TableHead>
+                        <TableHead className="text-right w-[110px] text-muted-foreground italic">Buyer (₹/kg)</TableHead>
                         <TableHead className="text-right w-[90px]">Yield (%)</TableHead>
-                        <TableHead className="text-right w-[100px]">Cost ({dispSym}/kg)</TableHead>
-                        <TableHead className="text-right w-[100px]">Min ({dispSym}/kg)</TableHead>
-                        <TableHead className="text-right w-[100px]">Target ({dispSym}/kg)</TableHead>
-                        <TableHead className="text-right w-[110px] bg-primary/5 font-bold">Final ({dispSym}/kg)</TableHead>
-                        <TableHead className="w-[110px]">Status</TableHead>
-                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead className="text-right w-[110px]">Cost (₹/kg)</TableHead>
+                        <TableHead className="text-right w-[110px] font-bold">Cost ($/kg)</TableHead>
+                        <TableHead className="text-right w-[110px] bg-primary/5 font-bold">Final ($/kg)</TableHead>
+                        <TableHead className="w-[100px]">Status</TableHead>
+                        <TableHead className="w-[40px]"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -411,7 +366,7 @@ export default function ReverseCalculatorDashboard() {
                                 onValueChange={(v) => updateRow(row.id, 'length', v)}
                             >
                                 <SelectTrigger className="h-9">
-                                    <SelectValue placeholder="Select" />
+                                    <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {lengths.map(l => (
@@ -431,10 +386,13 @@ export default function ReverseCalculatorDashboard() {
                           <TableCell className="p-2">
                              <Input 
                                 type="number" 
-                                className="h-9 text-right" 
-                                value={row.buyerPrice} 
-                                onChange={e => updateRow(row.id, 'buyerPrice', e.target.value)}
+                                className="h-9 text-right font-semibold" 
+                                value={row.buyerPriceUSD} 
+                                onChange={e => updateRow(row.id, 'buyerPriceUSD', e.target.value)}
                             />
+                          </TableCell>
+                          <TableCell className="p-2 text-right text-muted-foreground text-[11px] font-mono">
+                            ₹{row.buyerPriceINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </TableCell>
                           <TableCell className="p-2">
                              <Input 
@@ -444,35 +402,32 @@ export default function ReverseCalculatorDashboard() {
                                 onChange={e => updateRow(row.id, 'yield', e.target.value)}
                             />
                           </TableCell>
-                          <TableCell className="p-2 text-right font-medium text-xs">
-                            {dispSym}{row.finalCostDisp.toFixed(2)}
+                          <TableCell className="p-2 text-right text-xs text-muted-foreground">
+                            ₹{row.totalCostINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </TableCell>
-                          <TableCell className="p-2 text-right text-muted-foreground text-[10px]">
-                            {dispSym}{row.minPriceDisp.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="p-2 text-right text-muted-foreground text-[10px]">
-                            {dispSym}{row.targetPriceDisp.toFixed(2)}
+                          <TableCell className="p-2 text-right font-bold text-sm">
+                            ${row.totalCostUSD.toFixed(2)}
                           </TableCell>
                           <TableCell className="p-2 bg-primary/5">
                              <Input 
                                 type="number" 
                                 className="h-9 text-right font-bold border-primary/20 focus-visible:ring-primary" 
-                                value={row.finalPriceDisp} 
-                                onChange={e => updateRow(row.id, 'finalPriceOverride', e.target.value)}
+                                value={row.finalPriceUSD} 
+                                onChange={e => updateRow(row.id, 'finalPriceOverrideUSD', e.target.value)}
                             />
                           </TableCell>
                           <TableCell className="p-2">
                              {row.status === 'Accept' ? (
                                 <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 text-[10px] px-2 py-0">
-                                    <CheckCircle2 className="h-3 w-3 mr-1" /> Accept
+                                    Accept
                                 </Badge>
                              ) : row.status === 'Negotiate' ? (
                                 <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px] px-2 py-0">
-                                    <AlertCircle className="h-3 w-3 mr-1" /> Negotiate
+                                    Negotiate
                                 </Badge>
                              ) : (
                                 <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 text-[10px] px-2 py-0">
-                                    <XCircle className="h-3 w-3 mr-1" /> Reject
+                                    Reject
                                 </Badge>
                              )}
                           </TableCell>
@@ -507,11 +462,11 @@ export default function ReverseCalculatorDashboard() {
                             Strategy Guide
                         </div>
                         <p className="text-muted-foreground leading-relaxed">
-                            <strong>Min Price</strong> is calculated at <strong>8% margin</strong>. 
-                            <strong>Target Price</strong> is calculated at <strong>20% margin</strong>.
+                            <strong>Accept</strong> status indicates a margin above <strong>20%</strong>. 
+                            <strong>Negotiate</strong> is between <strong>8% and 20%</strong>.
                         </p>
                         <p className="text-muted-foreground leading-relaxed">
-                            All values above are converted to <strong>{config.displayCurrency}</strong> based on the set exchange rate. Adjust the <strong>Final Price</strong> column to set your actual selling quote.
+                            Cost per kg includes effective raw material (adjusted for yield) + processing + logistics + other overheads.
                         </p>
                     </CardContent>
                 </Card>
@@ -519,17 +474,13 @@ export default function ReverseCalculatorDashboard() {
                 <Card className="bg-muted/10 border-dashed">
                     <CardContent className="pt-6 space-y-4">
                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Pricing Currency</span>
-                            <span className="font-bold">{config.pricingCurrency}</span>
-                         </div>
-                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Display Currency</span>
-                            <span className="font-bold">{config.displayCurrency}</span>
+                            <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Internal Cost (INR)</span>
+                            <span className="font-bold">₹{calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.totalCostINR, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                          </div>
                          <div className="flex justify-between items-center border-t pt-4">
-                            <span className="text-sm font-bold uppercase">Estimated Quote Total</span>
+                            <span className="text-sm font-bold uppercase">Estimated Quote Total (USD)</span>
                             <span className="text-xl font-black text-primary">
-                                {dispSym}{calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.finalPriceDisp, 0).toLocaleString()}
+                                ${calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.finalPriceUSD, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                             </span>
                          </div>
                     </CardContent>
@@ -541,3 +492,4 @@ export default function ReverseCalculatorDashboard() {
     </div>
   );
 }
+
