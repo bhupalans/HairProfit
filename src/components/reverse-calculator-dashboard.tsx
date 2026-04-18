@@ -20,7 +20,8 @@ import {
   Info,
   Scale,
   FileUp,
-  FileDown
+  FileDown,
+  Tag
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -59,11 +60,26 @@ const YIELD_PROFILE: Record<string, number> = {
 
 const lengths = Object.keys(YIELD_PROFILE);
 
+const currencySymbols: Record<string, string> = {
+  USD: '$',
+  INR: '₹',
+  EUR: '€',
+  GBP: '£',
+};
+
+const categories = [
+  "Non-Remy Hair",
+  "Remy Hair",
+  "Wigs",
+  "Hair Extensions",
+  "Other"
+];
+
 interface QuoteRow {
   id: string;
   length: string;
   quantity: number;
-  buyerPriceUSD: number;
+  buyerPrice: number;
   yield: number;
 }
 
@@ -74,12 +90,24 @@ export default function ReverseCalculatorDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(1);
-  const [exchangeRate, setExchangeRate] = useState(83.50);
+  const [exchangeRate, setExchangeRate] = useState(83.50); // INR per 1 USD
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+
+  // New Global Settings
+  const [productCategory, setProductCategory] = useState("Non-Remy Hair");
+  const [offerCurrency, setOfferCurrency] = useState("USD");
+
+  // Simulated rates relative to USD (USD=1)
+  const ratesMap: Record<string, number> = {
+    USD: 1,
+    INR: exchangeRate,
+    EUR: 0.92,
+    GBP: 0.78,
+  };
 
   // Data States
   const [quoteRows, setQuoteRows] = useState<QuoteRow[]>([
-    { id: crypto.randomUUID(), length: '16"', quantity: 10, buyerPriceUSD: 75, yield: 78 },
+    { id: crypto.randomUUID(), length: '16"', quantity: 10, buyerPrice: 75, yield: 78 },
   ]);
 
   const [costs, setCosts] = useState({
@@ -96,10 +124,10 @@ export default function ReverseCalculatorDashboard() {
   const [globalWastageKg, setGlobalWastageKg] = useState(0);
   const [finalOverrides, setFinalOverrides] = useState<Record<string, number>>({});
 
-  const formatUSD = (val: number) => {
+  const formatCurrency = (val: number, curr: string) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
+      currency: curr,
     }).format(val);
   };
 
@@ -113,7 +141,14 @@ export default function ReverseCalculatorDashboard() {
 
   const calculations = useMemo(() => {
     const totalOutput = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
-    const buyerQuoteGrandTotal = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * (Number(r.buyerPriceUSD) || 0), 0);
+    
+    // Multi-currency handling: Convert buyer offers to INR for internal logic
+    // Rate to convert OfferCurrency to INR: (RateINR / RateOfferCurrency)
+    const offerToINRRate = ratesMap.INR / ratesMap[offerCurrency];
+
+    const buyerQuoteGrandTotalOfferCurr = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * (Number(r.buyerPrice) || 0), 0);
+    const buyerQuoteGrandTotalINR = buyerQuoteGrandTotalOfferCurr * offerToINRRate;
+
     const totalRawCostINR = (Number(costs.totalRawPurchase) || 0) * (Number(costs.rawHairPrice) || 0);
     const totalOverheadINR = totalOutput * (
       (Number(costs.processing) || 0) + 
@@ -123,7 +158,8 @@ export default function ReverseCalculatorDashboard() {
 
     const totalCostPoolINR = totalRawCostINR + totalOverheadINR;
     const totalCostPoolUSD = exchangeRate > 0 ? totalCostPoolINR / exchangeRate : 0;
-    const sharedCostPerKgUSD = totalOutput > 0 ? totalCostPoolUSD / totalOutput : 0;
+    const sharedCostPerKgINR = totalOutput > 0 ? totalCostPoolINR / totalOutput : 0;
+    const sharedCostPerKgUSD = exchangeRate > 0 ? sharedCostPerKgINR / exchangeRate : 0;
 
     let rawRequired = 0;
     if (yieldMode === 'global') {
@@ -144,22 +180,24 @@ export default function ReverseCalculatorDashboard() {
     const isShortage = rawDifference < 0;
 
     const items = quoteRows.map(row => {
+      // Logic for analysis still defaults to USD for final negotiated selling price
       const fPrice = finalOverrides[row.id] !== undefined 
         ? finalOverrides[row.id] 
         : Number((sharedCostPerKgUSD * 1.20).toFixed(2));
 
-      const minPrice = sharedCostPerKgUSD * 1.08;
-      const targetPrice = sharedCostPerKgUSD * 1.20;
+      const minPriceUSD = sharedCostPerKgUSD * 1.08;
+      const targetPriceUSD = sharedCostPerKgUSD * 1.20;
 
       let status: 'Reject' | 'Negotiate' | 'Accept' = 'Reject';
-      if (fPrice >= targetPrice) status = 'Accept';
-      else if (fPrice >= minPrice) status = 'Negotiate';
+      if (fPrice >= targetPriceUSD) status = 'Accept';
+      else if (fPrice >= minPriceUSD) status = 'Negotiate';
 
       return {
         ...row,
+        buyerPriceINR: (Number(row.buyerPrice) || 0) * offerToINRRate,
         costUSD: sharedCostPerKgUSD,
-        minPrice,
-        targetPrice,
+        minPrice: minPriceUSD,
+        targetPrice: targetPriceUSD,
         finalPrice: fPrice,
         status,
         margin: fPrice > 0 ? ((fPrice - sharedCostPerKgUSD) / fPrice) * 100 : 0
@@ -172,7 +210,7 @@ export default function ReverseCalculatorDashboard() {
 
     return {
       totalOutput,
-      buyerQuoteGrandTotal,
+      buyerQuoteGrandTotalOfferCurr,
       totalCostPoolINR,
       totalCostPoolUSD,
       totalRevenueUSD,
@@ -182,9 +220,10 @@ export default function ReverseCalculatorDashboard() {
       rawDifference,
       isShortage,
       items,
-      avgMargin
+      avgMargin,
+      offerToINRRate
     };
-  }, [quoteRows, costs, yieldMode, globalWastage, globalWastageKg, globalWastageMode, finalOverrides, exchangeRate]);
+  }, [quoteRows, costs, yieldMode, globalWastage, globalWastageKg, globalWastageMode, finalOverrides, exchangeRate, offerCurrency, ratesMap]);
 
   useEffect(() => {
     if (yieldMode === 'global' && calculations.totalOutput > 0) {
@@ -213,7 +252,7 @@ export default function ReverseCalculatorDashboard() {
   const addQuoteRow = () => {
     setQuoteRows(prev => [
       ...prev,
-      { id: crypto.randomUUID(), length: '12"', quantity: 5, buyerPriceUSD: 0, yield: 82 },
+      { id: crypto.randomUUID(), length: '12"', quantity: 5, buyerPrice: 0, yield: 82 },
     ]);
   };
 
@@ -233,6 +272,7 @@ export default function ReverseCalculatorDashboard() {
   const handleCreateQuotation = () => {
     if (!user?.uid) return;
     const quotationData = {
+      productCategory,
       items: calculations.items.map(row => ({
         length: row.length,
         quantity: row.quantity,
@@ -247,7 +287,18 @@ export default function ReverseCalculatorDashboard() {
   };
 
   const handleExportJson = () => {
-    const exportData = { quoteRows, costs, yieldMode, globalWastageMode, globalWastage, globalWastageKg, finalOverrides, exchangeRate };
+    const exportData = { 
+      productCategory,
+      offerCurrency,
+      quoteRows, 
+      costs, 
+      yieldMode, 
+      globalWastageMode, 
+      globalWastage, 
+      globalWastageKg, 
+      finalOverrides, 
+      exchangeRate 
+    };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -267,6 +318,8 @@ export default function ReverseCalculatorDashboard() {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
+        if (data.productCategory) setProductCategory(data.productCategory);
+        if (data.offerCurrency) setOfferCurrency(data.offerCurrency);
         if (data.quoteRows) setQuoteRows(data.quoteRows);
         if (data.costs) setCosts(data.costs);
         if (data.yieldMode) setYieldMode(data.yieldMode);
@@ -346,15 +399,45 @@ export default function ReverseCalculatorDashboard() {
                   <input type="file" ref={fileInputRef} className="hidden" accept="application/json" onChange={handleImportJson} />
                 </div>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-4 sm:p-6 space-y-6">
+                
+                {/* Product Category & Currency Row */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-xl border border-dashed">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                      <Tag className="h-3 w-3" /> Product Category
+                    </Label>
+                    <Select value={productCategory} onValueChange={setProductCategory}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                      <Globe className="h-3 w-3" /> Offer Currency
+                    </Label>
+                    <Select value={offerCurrency} onValueChange={setOfferCurrency}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USD">USD - US Dollar</SelectItem>
+                        <SelectItem value="INR">INR - Indian Rupee</SelectItem>
+                        <SelectItem value="EUR">EUR - Euro</SelectItem>
+                        <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
                 <div className="hidden md:block overflow-x-auto">
                   <Table className="table-auto w-full">
                     <TableHeader>
                         <TableRow className="bg-muted/30">
-                        <TableHead className="w-[120px]">Length</TableHead>
-                        <TableHead className="w-[150px] text-right">Qty (kg)</TableHead>
-                        <TableHead className="w-[180px] text-right">Offer ($/kg)</TableHead>
-                        <TableHead className="w-[180px] text-right">Total ($)</TableHead>
+                        <TableHead className="w-[120px] font-black uppercase text-[10px] tracking-widest">Length</TableHead>
+                        <TableHead className="w-[150px] text-right font-black uppercase text-[10px] tracking-widest">Qty (kg)</TableHead>
+                        <TableHead className="w-[180px] text-right font-black uppercase text-[10px] tracking-widest">Offer ({currencySymbols[offerCurrency]}/kg)</TableHead>
+                        <TableHead className="w-[180px] text-right font-black uppercase text-[10px] tracking-widest">Total ({currencySymbols[offerCurrency]})</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -370,11 +453,14 @@ export default function ReverseCalculatorDashboard() {
                             <TableCell className="p-2 text-right">
                                 <Input type="number" className="h-9 text-right text-base font-medium" value={row.quantity} onChange={e => updateQuoteRow(row.id, 'quantity', Number(e.target.value))} />
                             </TableCell>
-                            <TableCell className="p-2 text-right">
-                                <Input type="number" className="h-9 text-right font-bold text-base" value={row.buyerPriceUSD} onChange={e => updateQuoteRow(row.id, 'buyerPriceUSD', Number(e.target.value))} />
+                            <TableCell className="p-2 text-right space-y-1">
+                                <Input type="number" className="h-9 text-right font-bold text-base" value={row.buyerPrice} onChange={e => updateQuoteRow(row.id, 'buyerPrice', Number(e.target.value))} />
+                                <p className="text-[10px] text-muted-foreground font-medium italic">
+                                  ≈ ₹{((Number(row.buyerPrice) || 0) * calculations.offerToINRRate).toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                                </p>
                             </TableCell>
                             <TableCell className="p-2 text-right font-bold text-base">
-                                {formatUSD((Number(row.quantity) || 0) * (Number(row.buyerPriceUSD) || 0))}
+                                {formatCurrency((Number(row.quantity) || 0) * (Number(row.buyerPrice) || 0), offerCurrency)}
                             </TableCell>
                             <TableCell className="p-2">
                                 <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-destructive" onClick={() => removeQuoteRow(row.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -386,7 +472,7 @@ export default function ReverseCalculatorDashboard() {
                         <TableRow className="border-t-2">
                             <TableCell colSpan={3} className="text-right font-bold py-4 text-lg">Grand Total Offer:</TableCell>
                             <TableCell className="text-right font-black py-4 text-primary text-xl">
-                                {formatUSD(calculations.buyerQuoteGrandTotal)}
+                                {formatCurrency(calculations.buyerQuoteGrandTotalOfferCurr, offerCurrency)}
                             </TableCell>
                             <TableCell />
                         </TableRow>
@@ -411,19 +497,20 @@ export default function ReverseCalculatorDashboard() {
                               <Input type="number" className="h-9 text-right text-sm" value={row.quantity} onChange={e => updateQuoteRow(row.id, 'quantity', Number(e.target.value))} />
                            </div>
                            <div className="space-y-1">
-                              <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Offer ($/kg)</Label>
-                              <Input type="number" className="h-9 text-right font-bold text-sm" value={row.buyerPriceUSD} onChange={e => updateQuoteRow(row.id, 'buyerPriceUSD', Number(e.target.value))} />
+                              <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Offer ({currencySymbols[offerCurrency]}/kg)</Label>
+                              <Input type="number" className="h-9 text-right font-bold text-sm" value={row.buyerPrice} onChange={e => updateQuoteRow(row.id, 'buyerPrice', Number(e.target.value))} />
+                              <p className="text-[9px] text-muted-foreground text-right italic">≈ ₹{((Number(row.buyerPrice) || 0) * calculations.offerToINRRate).toLocaleString('en-IN', { maximumFractionDigits: 0 })}</p>
                            </div>
                            <div className="space-y-1">
                               <Label className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Row Total</Label>
-                              <p className="h-9 flex items-center justify-end font-bold text-sm"> {formatUSD((Number(row.quantity) || 0) * (Number(row.buyerPriceUSD) || 0))}</p>
+                              <p className="h-9 flex items-center justify-end font-bold text-sm"> {formatCurrency((Number(row.quantity) || 0) * (Number(row.buyerPrice) || 0), offerCurrency)}</p>
                            </div>
                         </div>
                      </Card>
                    ))}
                    <div className="p-4 bg-primary/5 rounded-lg flex justify-between items-center mt-6 border-2 border-primary/20">
                       <span className="text-sm font-bold uppercase text-muted-foreground">Grand Total Offer:</span>
-                      <span className="text-xl font-black text-primary">{formatUSD(calculations.buyerQuoteGrandTotal)}</span>
+                      <span className="text-xl font-black text-primary">{formatCurrency(calculations.buyerQuoteGrandTotalOfferCurr, offerCurrency)}</span>
                    </div>
                 </div>
 
@@ -457,7 +544,7 @@ export default function ReverseCalculatorDashboard() {
                             <div className="space-y-2">
                                 <Label htmlFor="rawPrice" className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">Price/kg (₹)</Label>
                                 <Input id="rawPrice" className="h-10 text-base" type="number" value={costs.rawHairPrice} onChange={e => setCosts(c => ({...c, rawHairPrice: Number(e.target.value)}))} />
-                                <p className="text-[10px] text-muted-foreground text-right italic font-medium">≈ {formatUSD(costs.rawHairPrice / exchangeRate)}</p>
+                                <p className="text-[10px] text-muted-foreground text-right italic font-medium">≈ {formatCurrency(costs.rawHairPrice / exchangeRate, 'USD')}</p>
                             </div>
                         </div>
                     </div>
@@ -474,7 +561,7 @@ export default function ReverseCalculatorDashboard() {
                                     <Label className="text-sm font-medium text-muted-foreground">{cost.label}</Label>
                                     <div className="w-32 space-y-1">
                                         <Input type="number" className="h-9 text-right text-sm" value={(costs as any)[cost.key]} onChange={e => setCosts(c => ({...c, [cost.key]: Number(e.target.value)}))} />
-                                        <p className="text-[10px] text-muted-foreground text-right italic">≈ {formatUSD((costs as any)[cost.key] / exchangeRate)}</p>
+                                        <p className="text-[10px] text-muted-foreground text-right italic">≈ {formatCurrency((costs as any)[cost.key] / exchangeRate, 'USD')}</p>
                                     </div>
                                 </div>
                             ))}
@@ -491,7 +578,7 @@ export default function ReverseCalculatorDashboard() {
                         <p className="text-3xl font-black text-primary leading-tight">
                           {formatINR(calculations.totalCostPoolINR)}
                         </p>
-                        <p className="text-sm font-bold text-muted-foreground opacity-60">≈ {formatUSD(calculations.totalCostPoolUSD)}</p>
+                        <p className="text-sm font-bold text-muted-foreground opacity-60">≈ {formatCurrency(calculations.totalCostPoolUSD, 'USD')}</p>
                     </div>
                     <Separator className="w-1/2" />
                     <p className="text-xs text-muted-foreground px-6 leading-relaxed italic">
@@ -611,7 +698,7 @@ export default function ReverseCalculatorDashboard() {
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                             <div>
                                 <CardTitle className="text-2xl font-black uppercase tracking-tight">Final Batch Analysis</CardTitle>
-                                <CardDescription className="text-primary-foreground/80 text-sm font-medium mt-1 tracking-wide">Profitability breakdown with shared cost allocation.</CardDescription>
+                                <CardDescription className="text-primary-foreground/80 text-sm font-medium mt-1 tracking-wide">Profitability breakdown for {productCategory}.</CardDescription>
                             </div>
                             <div className="flex gap-2 w-full sm:w-auto">
                               <Button onClick={handleExportJson} variant="outline" className="flex-1 sm:flex-initial h-10 bg-white/10 hover:bg-white/20 border-white/20 text-white font-bold text-xs uppercase tracking-widest">
@@ -628,7 +715,7 @@ export default function ReverseCalculatorDashboard() {
                              <Table className="table-auto w-full">
                                 <TableHeader><TableRow className="bg-muted/50 border-b-2">
                                     <TableHead className="font-black h-10 py-0 uppercase text-[10px] tracking-widest">Size</TableHead>
-                                    <TableHead className="text-right font-black h-10 py-0 uppercase text-[10px] tracking-widest">Buyer Offer ($)</TableHead>
+                                    <TableHead className="text-right font-black h-10 py-0 uppercase text-[10px] tracking-widest">Buyer Offer ({currencySymbols[offerCurrency]})</TableHead>
                                     <TableHead className="text-right font-black h-10 py-0 uppercase text-[10px] tracking-widest bg-muted/20">Our Cost ($)</TableHead>
                                     <TableHead className="text-right font-black h-10 py-0 uppercase text-[10px] tracking-widest text-red-600">Min Price ($)</TableHead>
                                     <TableHead className="text-right font-black h-10 py-0 uppercase text-[10px] tracking-widest text-green-600">Target Price ($)</TableHead>
@@ -639,7 +726,7 @@ export default function ReverseCalculatorDashboard() {
                                     {calculations.items.map(row => (
                                         <TableRow key={row.id} className="hover:bg-muted/10 border-b">
                                             <TableCell className="font-black text-lg p-3 w-[100px]">{row.length}</TableCell>
-                                            <TableCell className="text-right font-bold text-muted-foreground p-3 w-[140px] text-base">${row.buyerPriceUSD.toFixed(0)}</TableCell>
+                                            <TableCell className="text-right font-bold text-muted-foreground p-3 w-[140px] text-base">{formatCurrency(row.buyerPrice, offerCurrency)}</TableCell>
                                             <TableCell className="text-right font-black bg-muted/20 p-3 w-[140px] text-base">${row.costUSD.toFixed(2)}</TableCell>
                                             <TableCell className="text-right text-xs text-red-600 font-bold p-3 w-[120px] opacity-60">${row.minPrice.toFixed(0)}</TableCell>
                                             <TableCell className="text-right text-xs text-green-600 font-bold p-3 w-[120px] opacity-60">${row.targetPrice.toFixed(0)}</TableCell>
@@ -663,7 +750,7 @@ export default function ReverseCalculatorDashboard() {
                                     <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest opacity-60">/ Share of Batch</span>
                                  </div>
                                  <div className="grid grid-cols-2 gap-4 border-b border-dashed pb-4 mb-4">
-                                    <div className="space-y-1"><Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block opacity-50">Customer Offer</Label><span className="text-lg font-bold text-muted-foreground">${row.buyerPriceUSD.toFixed(0)}</span></div>
+                                    <div className="space-y-1"><Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block opacity-50">Customer Offer</Label><span className="text-lg font-bold text-muted-foreground">{formatCurrency(row.buyerPrice, offerCurrency)}</span></div>
                                     <div className="text-right space-y-1"><Label className="text-[10px] uppercase font-black text-muted-foreground tracking-widest block opacity-50">Our Batch Cost</Label><span className="text-lg font-black text-primary">${row.costUSD.toFixed(2)}</span></div>
                                  </div>
                                  <div className="space-y-3">
@@ -699,7 +786,7 @@ export default function ReverseCalculatorDashboard() {
                         <CardHeader className="p-4 pb-2"><CardTitle className="text-xs uppercase text-primary flex items-center gap-2 font-black tracking-[0.15em]"><CheckCircle2 className="h-4 w-4" /> Estimated Batch Profit</CardTitle></CardHeader>
                         <CardContent className="p-4 pt-2">
                             <p className="text-3xl font-black text-primary tracking-tight">
-                                {formatUSD(calculations.totalProfitUSD)}
+                                {formatCurrency(calculations.totalProfitUSD, 'USD')}
                             </p>
                         </CardContent>
                     </Card>
