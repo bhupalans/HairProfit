@@ -15,7 +15,8 @@ import {
   RefreshCw,
   Loader2,
   FilePlus2,
-  Globe
+  Globe,
+  Weight
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -84,6 +85,7 @@ export default function ReverseCalculatorDashboard() {
   const { toast } = useToast();
 
   const [config, setConfig] = useState({
+    totalRawPurchase: 100, // Total kg bought
     rawHairPrice: 2000, // INR/kg
     processingCost: 1200, // INR/kg
     logisticsCost: 400, // INR/kg
@@ -128,7 +130,6 @@ export default function ReverseCalculatorDashboard() {
 
   const handleFetchRate = async () => {
     setIsFetchingRate(true);
-    // We want INR per 1 USD
     const response = await fetchExchangeRate({ 
       baseCurrency: 'USD', 
       targetCurrency: 'INR' 
@@ -146,29 +147,46 @@ export default function ReverseCalculatorDashboard() {
   const calculatedRows = useMemo(() => {
     const rate = Number(config.exchangeRate) || 1;
     
+    // Shared Cost Model implementation
+    const totalOutput = rows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
+    
+    if (totalOutput === 0) {
+      return rows.map(row => ({
+        ...row,
+        totalCostINR: 0,
+        totalCostUSD: 0,
+        buyerPriceINR: (Number(row.buyerPriceUSD) || 0) * rate,
+        targetPriceUSD: 0,
+        minPriceUSD: 0,
+        finalPriceUSD: Number(row.finalPriceOverrideUSD || 0),
+        status: 'Reject' as const,
+      }));
+    }
+
+    // Step 2: Raw Cost Total
+    const rawCostTotal = (Number(config.totalRawPurchase) || 0) * (Number(config.rawHairPrice) || 0);
+
+    // Step 3: Totals
+    const processingTotal = totalOutput * (Number(config.processingCost) || 0);
+    const logisticsTotal = totalOutput * (Number(config.logisticsCost) || 0);
+    const otherTotal = totalOutput * (Number(config.otherCost) || 0);
+
+    // Step 4: Total Cost Pool
+    const totalCostPool = rawCostTotal + processingTotal + logisticsTotal + otherTotal;
+
+    // Step 5: Shared Cost per kg
+    const sharedCostPerKgINR = totalCostPool / totalOutput;
+    const sharedCostPerKgUSD = rate > 0 ? sharedCostPerKgINR / rate : 0;
+
     return rows.map(row => {
-      const yieldVal = (Number(row.yield) || 0) / 100;
-      
-      // 1. Calculate base cost in INR
-      const rawCostINR = (Number(config.rawHairPrice) || 0);
-      const effectiveRawCostINR = yieldVal > 0 ? rawCostINR / yieldVal : 0;
-      
-      const totalCostINR = effectiveRawCostINR + 
-                          (Number(config.processingCost) || 0) + 
-                          (Number(config.logisticsCost) || 0) + 
-                          (Number(config.otherCost) || 0);
-      
-      // 2. Convert to USD
-      const totalCostUSD = rate > 0 ? totalCostINR / rate : 0;
-      
-      // 3. Buyer Price in INR for display
+      // Buyer Price in INR for display
       const buyerPriceINR = (Number(row.buyerPriceUSD) || 0) * rate;
 
-      // 4. Thresholds in USD
-      const minPriceUSD = totalCostUSD * 1.08;
-      const targetPriceUSD = totalCostUSD * 1.20;
+      // Thresholds in USD based on shared cost
+      const minPriceUSD = sharedCostPerKgUSD * 1.08;
+      const targetPriceUSD = sharedCostPerKgUSD * 1.20;
 
-      // 5. Final Price in USD (Editable)
+      // Final Price in USD (Editable)
       const fPriceUSD = row.finalPriceOverrideUSD !== undefined 
         ? Number(row.finalPriceOverrideUSD) 
         : Number(targetPriceUSD.toFixed(2));
@@ -179,8 +197,8 @@ export default function ReverseCalculatorDashboard() {
 
       return {
         ...row,
-        totalCostINR,
-        totalCostUSD,
+        totalCostINR: sharedCostPerKgINR,
+        totalCostUSD: sharedCostPerKgUSD,
         buyerPriceINR,
         targetPriceUSD,
         minPriceUSD,
@@ -213,6 +231,9 @@ export default function ReverseCalculatorDashboard() {
     router.push('/price-quotation');
   };
 
+  const totalOutput = rows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
+  const totalCostINR = calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.totalCostINR, 0);
+
   return (
     <div className="bg-muted/30 min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="container mx-auto max-w-7xl">
@@ -232,7 +253,7 @@ export default function ReverseCalculatorDashboard() {
             </div>
             <div>
               <h1 className="text-4xl font-bold tracking-tight">Reverse Pricing Calculator</h1>
-              <p className="text-muted-foreground mt-1">Validate buyer quotes and convert them to professional quotations.</p>
+              <p className="text-muted-foreground mt-1">Calculate shared costs from bulk raw purchases.</p>
             </div>
           </div>
           <Button onClick={handleCreateQuotation} size="lg" className="shadow-lg hover:shadow-xl transition-all">
@@ -265,7 +286,7 @@ export default function ReverseCalculatorDashboard() {
                             {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                         </Button>
                     </div>
-                    <p className="text-[10px] text-muted-foreground italic">Pricing is calculated in INR and converted to USD for sale.</p>
+                    <p className="text-[10px] text-muted-foreground italic">Cost pool is calculated in INR and divided by Total Output.</p>
                  </div>
               </CardContent>
             </Card>
@@ -274,10 +295,30 @@ export default function ReverseCalculatorDashboard() {
               <CardHeader className="pb-3 border-b bg-muted/10">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Coins className="h-5 w-5 text-primary" />
-                  Raw Costs (INR)
+                  Shared Cost Inputs (INR)
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Label htmlFor="rawPurchase">Total Raw Purchase (kg)</Label>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>The total weight of raw hair purchased from the source.</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <Input 
+                    id="rawPurchase" 
+                    type="number" 
+                    value={config.totalRawPurchase} 
+                    onChange={e => handleConfigChange('totalRawPurchase', e.target.value)} 
+                    className="border-primary/20"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="rawPrice">Raw Hair Price (₹/kg)</Label>
                   <Input 
@@ -295,7 +336,7 @@ export default function ReverseCalculatorDashboard() {
                         <TooltipTrigger asChild>
                           <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                         </TooltipTrigger>
-                        <TooltipContent>Labor, chemical, and washing costs in INR.</TooltipContent>
+                        <TooltipContent>Labor, chemical, and washing costs in INR per kg of output.</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
@@ -333,8 +374,8 @@ export default function ReverseCalculatorDashboard() {
             <Card className="shadow-sm overflow-hidden">
               <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/5">
                 <div>
-                  <CardTitle className="text-xl uppercase">Buyer&apos;s Quote Analysis</CardTitle>
-                  <CardDescription>Compare offer in USD against costs in INR.</CardDescription>
+                  <CardTitle className="text-xl uppercase">Output Analysis</CardTitle>
+                  <CardDescription>Costs are averaged based on total output vs raw purchase.</CardDescription>
                 </div>
                 <Button onClick={addRow} size="sm">
                   <PlusCircle className="h-4 w-4 mr-2" /> Add Length
@@ -349,8 +390,7 @@ export default function ReverseCalculatorDashboard() {
                         <TableHead className="text-right w-[80px]">Qty (kg)</TableHead>
                         <TableHead className="text-right w-[110px]">Buyer ($/kg)</TableHead>
                         <TableHead className="text-right w-[110px] text-muted-foreground italic">Buyer (₹/kg)</TableHead>
-                        <TableHead className="text-right w-[90px]">Yield (%)</TableHead>
-                        <TableHead className="text-right w-[110px]">Cost (₹/kg)</TableHead>
+                        <TableHead className="text-right w-[110px] text-muted-foreground">Cost (₹/kg)</TableHead>
                         <TableHead className="text-right w-[110px] font-bold">Cost ($/kg)</TableHead>
                         <TableHead className="text-right w-[110px] bg-primary/5 font-bold">Final ($/kg)</TableHead>
                         <TableHead className="w-[100px]">Status</TableHead>
@@ -393,14 +433,6 @@ export default function ReverseCalculatorDashboard() {
                           </TableCell>
                           <TableCell className="p-2 text-right text-muted-foreground text-[11px] font-mono">
                             ₹{row.buyerPriceINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </TableCell>
-                          <TableCell className="p-2">
-                             <Input 
-                                type="number" 
-                                className="h-9 text-right text-muted-foreground" 
-                                value={row.yield} 
-                                onChange={e => updateRow(row.id, 'yield', e.target.value)}
-                            />
                           </TableCell>
                           <TableCell className="p-2 text-right text-xs text-muted-foreground">
                             ₹{row.totalCostINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -456,17 +488,23 @@ export default function ReverseCalculatorDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card className="bg-primary/5 border-primary/20">
-                    <CardContent className="pt-6 text-sm space-y-2">
+                    <CardContent className="pt-6 text-sm space-y-4">
                         <div className="flex items-center gap-2 text-primary font-bold mb-2">
                             <TrendingDown className="h-4 w-4" />
-                            Strategy Guide
+                            Efficiency Analysis
                         </div>
-                        <p className="text-muted-foreground leading-relaxed">
-                            <strong>Accept</strong> status indicates a margin above <strong>20%</strong>. 
-                            <strong>Negotiate</strong> is between <strong>8% and 20%</strong>.
-                        </p>
-                        <p className="text-muted-foreground leading-relaxed">
-                            Cost per kg includes effective raw material (adjusted for yield) + processing + logistics + other overheads.
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-xs text-muted-foreground uppercase font-bold">Total Output</p>
+                                <p className="text-lg font-bold">{totalOutput.toFixed(2)} kg</p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground uppercase font-bold">Avg. Yield</p>
+                                <p className="text-lg font-bold">{config.totalRawPurchase > 0 ? ((totalOutput / config.totalRawPurchase) * 100).toFixed(1) : 0}%</p>
+                            </div>
+                        </div>
+                        <p className="text-muted-foreground leading-relaxed text-xs border-t pt-4">
+                            All rows share the same cost per kg based on the ratio of raw material to output weight.
                         </p>
                     </CardContent>
                 </Card>
@@ -474,8 +512,8 @@ export default function ReverseCalculatorDashboard() {
                 <Card className="bg-muted/10 border-dashed">
                     <CardContent className="pt-6 space-y-4">
                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Internal Cost (INR)</span>
-                            <span className="font-bold">₹{calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.totalCostINR, 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Batch Cost Pool (INR)</span>
+                            <span className="font-bold">₹{totalCostINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
                          </div>
                          <div className="flex justify-between items-center border-t pt-4">
                             <span className="text-sm font-bold uppercase">Estimated Quote Total (USD)</span>
@@ -492,4 +530,3 @@ export default function ReverseCalculatorDashboard() {
     </div>
   );
 }
-
