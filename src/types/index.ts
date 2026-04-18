@@ -241,3 +241,24 @@ export interface PaymentRecord {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
+
+// Reverse Calculator Types
+export const reverseCalculatorRowSchema = z.object({
+  id: z.string(),
+  length: z.string(),
+  quantity: emptyOrNumber,
+  buyerPrice: emptyOrNumber,
+  yield: emptyOrNumber,
+});
+
+export type ReverseCalculatorRow = z.infer<typeof reverseCalculatorRowSchema>;
+
+export const reverseCalculatorConfigSchema = z.object({
+  rawHairPrice: emptyOrNumber,
+  usdRate: emptyOrNumber,
+  processingCost: emptyOrNumber,
+  logisticsCost: emptyOrNumber,
+  otherCost: emptyOrNumber,
+});
+
+export type ReverseCalculatorConfig = z.infer<typeof reverseCalculatorConfigSchema>;

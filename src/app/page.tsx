@@ -10,6 +10,7 @@ import {
   Store,
   Bot,
   Settings,
+  ArrowRightLeft,
 } from 'lucide-react';
 import {
   Card,
@@ -43,6 +44,12 @@ const tools = [
     description: 'Auto-price byproducts with anchor logic and AI market suggestions.',
     href: '/advanced-AI-calculator',
     icon: <Bot className="h-8 w-8" />,
+  },
+  {
+    title: 'Reverse Calculator',
+    description: 'Validate buyer quotes instantly based on raw costs and yields.',
+    href: '/reverse-calculator',
+    icon: <ArrowRightLeft className="h-8 w-8" />,
   },
   {
     title: 'Market Comparison',
@@ -79,10 +86,11 @@ const tools = [
 const PRO_ROUTES = [
   '/marketplace',
   '/advanced-AI-calculator',
+  '/reverse-calculator',
   '/market-comparison',
   '/buyer-analysis',
   '/price-quotation',
-  '/invoice' // note: your route is '/invoice', not '/invoice-builder'
+  '/invoice'
 ];
 
 export default function Home() {
