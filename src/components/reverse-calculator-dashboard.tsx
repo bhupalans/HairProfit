@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   ArrowLeft, 
+  ArrowRight,
   ArrowRightLeft, 
   PlusCircle, 
   Trash2, 
@@ -16,12 +17,17 @@ import {
   Loader2,
   FilePlus2,
   Globe,
-  Weight
+  Weight,
+  Layers,
+  ChevronRight,
+  ChevronLeft,
+  Info,
+  Scale
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -50,33 +56,22 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { fetchExchangeRate } from '@/app/actions';
 import { useAuth } from '@/contexts/auth-context';
+import { Separator } from '@/components/ui/separator';
 
 // Standard Industry Yield Profile
 const YIELD_PROFILE: Record<string, number> = {
-  '6"': 90,
-  '8"': 88,
-  '10"': 85,
-  '12"': 82,
-  '14"': 80,
-  '16"': 78,
-  '18"': 75,
-  '20"': 72,
-  '22"': 70,
-  '24"': 68,
-  '26"': 65,
-  '28"': 62,
-  '30"': 60,
+  '6"': 90, '8"': 88, '10"': 85, '12"': 82, '14"': 80, '16"': 78,
+  '18"': 75, '20"': 72, '22"': 70, '24"': 68, '26"': 65, '28"': 62, '30"': 60,
 };
 
 const lengths = Object.keys(YIELD_PROFILE);
 
-interface Row {
+interface QuoteRow {
   id: string;
   length: string;
-  quantity: string | number;
-  buyerPriceUSD: string | number;
-  yield: string | number;
-  finalPriceOverrideUSD?: string | number;
+  quantity: number;
+  buyerPriceUSD: number;
+  yield: number;
 }
 
 export default function ReverseCalculatorDashboard() {
@@ -84,448 +79,522 @@ export default function ReverseCalculatorDashboard() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [config, setConfig] = useState({
-    totalRawPurchase: 100, // Total kg bought
-    rawHairPrice: 2000, // INR/kg
-    processingCost: 1200, // INR/kg
-    logisticsCost: 400, // INR/kg
-    otherCost: 200, // INR/kg
-    exchangeRate: 83.50, // 1 USD = X INR
-  });
+  const [step, setStep] = useState(1);
+  const [exchangeRate, setExchangeRate] = useState(83.50);
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
 
-  const [rows, setRows] = useState<Row[]>([
+  // Data States
+  const [quoteRows, setQuoteRows] = useState<QuoteRow[]>([
     { id: crypto.randomUUID(), length: '16"', quantity: 10, buyerPriceUSD: 75, yield: 78 },
   ]);
 
-  const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [costs, setCosts] = useState({
+    totalRawPurchase: 100,
+    rawHairPrice: 2000,
+    processing: 1200,
+    logistics: 400,
+    other: 200,
+  });
 
-  const handleConfigChange = (field: string, value: any) => {
-    setConfig(prev => ({ ...prev, [field]: value }));
-  };
+  const [yieldMode, setYieldMode] = useState<'individual' | 'global'>('individual');
+  const [globalWastage, setGlobalWastage] = useState(20); // 20% wastage
+  const [finalOverrides, setFinalOverrides] = useState<Record<string, number>>({});
 
-  const addRow = () => {
-    setRows(prev => [
-      ...prev,
-      { id: crypto.randomUUID(), length: '12"', quantity: 1, buyerPriceUSD: 0, yield: 82 },
-    ]);
-  };
+  // Calculations
+  const calculations = useMemo(() => {
+    const totalOutput = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
+    
+    // Step 2 Raw Cost
+    const totalRawCostINR = (Number(costs.totalRawPurchase) || 0) * (Number(costs.rawHairPrice) || 0);
+    
+    // Step 3 Overhead
+    const totalOverheadINR = totalOutput * (
+      (Number(costs.processing) || 0) + 
+      (Number(costs.logistics) || 0) + 
+      (Number(costs.other) || 0)
+    );
 
-  const removeRow = (id: string) => {
-    setRows(prev => prev.filter(r => r.id !== id));
-  };
+    const totalCostPoolINR = totalRawCostINR + totalOverheadINR;
+    const sharedCostPerKgINR = totalOutput > 0 ? totalCostPoolINR / totalOutput : 0;
+    const sharedCostPerKgUSD = exchangeRate > 0 ? sharedCostPerKgINR / exchangeRate : 0;
 
-  const updateRow = (id: string, field: keyof Row, value: string | number) => {
-    setRows(prev => prev.map(r => {
-      if (r.id !== id) return r;
-      const newRow = { ...r, [field]: value };
-      
-      // Auto-fill yield if length changes
-      if (field === 'length' && typeof value === 'string') {
-        newRow.yield = YIELD_PROFILE[value] || 80;
-      }
-      
-      return newRow;
-    }));
-  };
-
-  const handleFetchRate = async () => {
-    setIsFetchingRate(true);
-    const response = await fetchExchangeRate({ 
-      baseCurrency: 'USD', 
-      targetCurrency: 'INR' 
-    });
-    setIsFetchingRate(false);
-
-    if (response.success && response.data) {
-      handleConfigChange('exchangeRate', response.data.rate);
-      toast({ title: 'Rate Updated', description: `1 USD = ${response.data.rate.toFixed(2)} INR` });
+    // Yield Analysis
+    let rawRequired = 0;
+    if (yieldMode === 'global') {
+      const yieldFactor = (100 - globalWastage) / 100;
+      rawRequired = yieldFactor > 0 ? totalOutput / yieldFactor : 0;
     } else {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch rate.' });
-    }
-  };
-
-  const calculatedRows = useMemo(() => {
-    const rate = Number(config.exchangeRate) || 1;
-    
-    // Shared Cost Model implementation
-    const totalOutput = rows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
-    
-    if (totalOutput === 0) {
-      return rows.map(row => ({
-        ...row,
-        totalCostINR: 0,
-        totalCostUSD: 0,
-        buyerPriceINR: (Number(row.buyerPriceUSD) || 0) * rate,
-        targetPriceUSD: 0,
-        minPriceUSD: 0,
-        finalPriceUSD: Number(row.finalPriceOverrideUSD || 0),
-        status: 'Reject' as const,
-      }));
+      rawRequired = quoteRows.reduce((acc, r) => {
+        const y = Number(r.yield) || 80;
+        return acc + (Number(r.quantity) || 0) / (y / 100);
+      }, 0);
     }
 
-    // Step 2: Raw Cost Total
-    const rawCostTotal = (Number(config.totalRawPurchase) || 0) * (Number(config.rawHairPrice) || 0);
+    const rawDifference = (Number(costs.totalRawPurchase) || 0) - rawRequired;
+    const isShortage = rawDifference < 0;
 
-    // Step 3: Totals
-    const processingTotal = totalOutput * (Number(config.processingCost) || 0);
-    const logisticsTotal = totalOutput * (Number(config.logisticsCost) || 0);
-    const otherTotal = totalOutput * (Number(config.otherCost) || 0);
+    const items = quoteRows.map(row => {
+      const fPrice = finalOverrides[row.id] !== undefined 
+        ? finalOverrides[row.id] 
+        : Number((sharedCostPerKgUSD * 1.20).toFixed(2));
 
-    // Step 4: Total Cost Pool
-    const totalCostPool = rawCostTotal + processingTotal + logisticsTotal + otherTotal;
-
-    // Step 5: Shared Cost per kg
-    const sharedCostPerKgINR = totalCostPool / totalOutput;
-    const sharedCostPerKgUSD = rate > 0 ? sharedCostPerKgINR / rate : 0;
-
-    return rows.map(row => {
-      // Buyer Price in INR for display
-      const buyerPriceINR = (Number(row.buyerPriceUSD) || 0) * rate;
-
-      // Thresholds in USD based on shared cost
-      const minPriceUSD = sharedCostPerKgUSD * 1.08;
-      const targetPriceUSD = sharedCostPerKgUSD * 1.20;
-
-      // Final Price in USD (Editable)
-      const fPriceUSD = row.finalPriceOverrideUSD !== undefined 
-        ? Number(row.finalPriceOverrideUSD) 
-        : Number(targetPriceUSD.toFixed(2));
+      const minPrice = sharedCostPerKgUSD * 1.08;
+      const targetPrice = sharedCostPerKgUSD * 1.20;
 
       let status: 'Reject' | 'Negotiate' | 'Accept' = 'Reject';
-      if (fPriceUSD >= targetPriceUSD) status = 'Accept';
-      else if (fPriceUSD >= minPriceUSD) status = 'Negotiate';
+      if (fPrice >= targetPrice) status = 'Accept';
+      else if (fPrice >= minPrice) status = 'Negotiate';
 
       return {
         ...row,
-        totalCostINR: sharedCostPerKgINR,
-        totalCostUSD: sharedCostPerKgUSD,
-        buyerPriceINR,
-        targetPriceUSD,
-        minPriceUSD,
-        finalPriceUSD: fPriceUSD,
+        costUSD: sharedCostPerKgUSD,
+        minPrice,
+        targetPrice,
+        finalPrice: fPrice,
         status,
+        margin: fPrice > 0 ? ((fPrice - sharedCostPerKgUSD) / fPrice) * 100 : 0
       };
     });
-  }, [rows, config]);
+
+    const avgMargin = items.length > 0 
+      ? items.reduce((acc, i) => acc + i.margin, 0) / items.length 
+      : 0;
+
+    return {
+      totalOutput,
+      totalCostPoolINR,
+      sharedCostPerKgUSD,
+      rawRequired,
+      rawDifference,
+      isShortage,
+      items,
+      avgMargin
+    };
+  }, [quoteRows, costs, yieldMode, globalWastage, finalOverrides, exchangeRate]);
+
+  // Handlers
+  const handleFetchRate = async () => {
+    setIsFetchingRate(true);
+    const response = await fetchExchangeRate({ baseCurrency: 'USD', targetCurrency: 'INR' });
+    setIsFetchingRate(false);
+    if (response.success && response.data) {
+      setExchangeRate(response.data.rate);
+      toast({ title: 'Rate Updated', description: `1 USD = ${response.data.rate.toFixed(2)} INR` });
+    }
+  };
+
+  const addQuoteRow = () => {
+    setQuoteRows(prev => [
+      ...prev,
+      { id: crypto.randomUUID(), length: '12"', quantity: 5, buyerPriceUSD: 0, yield: 82 },
+    ]);
+  };
+
+  const updateQuoteRow = (id: string, field: keyof QuoteRow, value: any) => {
+    setQuoteRows(prev => prev.map(r => {
+      if (r.id !== id) return r;
+      const updated = { ...r, [field]: value };
+      if (field === 'length') updated.yield = YIELD_PROFILE[value] || 80;
+      return updated;
+    }));
+  };
+
+  const removeQuoteRow = (id: string) => {
+    setQuoteRows(prev => prev.filter(r => r.id !== id));
+  };
 
   const handleCreateQuotation = () => {
     if (!user?.uid) return;
-    if (calculatedRows.length === 0) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Add some lengths first.' });
-      return;
-    }
-
     const quotationData = {
-      items: calculatedRows.map(row => ({
+      items: calculations.items.map(row => ({
         length: row.length,
-        quantity: Number(row.quantity) || 0,
-        price: row.finalPriceUSD
+        quantity: row.quantity,
+        price: row.finalPrice
       })),
       currency: 'USD',
       displayCurrency: 'USD',
       exchangeRate: 1
     };
-
     localStorage.setItem(`u_${user.uid}_profitToQuotation`, JSON.stringify(quotationData));
-    toast({ title: 'Transferring...', description: 'Opening Price Quotation Builder.' });
     router.push('/price-quotation');
   };
 
-  const totalOutput = rows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
-  const totalCostINR = calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.totalCostINR, 0);
+  const nextStep = () => setStep(s => Math.min(s + 1, 4));
+  const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
   return (
-    <div className="bg-muted/30 min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="container mx-auto max-w-7xl">
-        <div className="mb-8">
+    <div className="bg-muted/30 min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 font-body">
+      <div className="container mx-auto max-w-5xl">
+        <div className="mb-8 flex items-center justify-between">
           <Button asChild variant="ghost" className="pl-0">
             <Link href="/">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+              <ChevronLeft className="mr-1 h-4 w-4" /> Back to Dashboard
             </Link>
           </Button>
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">1 USD = {exchangeRate.toFixed(2)} INR</span>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleFetchRate} disabled={isFetchingRate}>
+              {isFetchingRate ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+            </Button>
+          </div>
         </div>
 
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-4">
-            <div className="bg-primary/20 p-2 rounded-lg">
-              <ArrowRightLeft className="h-8 w-8 text-primary" />
+        {/* Stepper Header */}
+        <div className="mb-12">
+            <div className="flex items-center justify-center gap-4 text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                <span className={cn("flex items-center gap-2", step === 1 && "text-primary")}>
+                    <span className={cn("w-6 h-6 rounded-full border flex items-center justify-center", step === 1 && "border-primary bg-primary text-white")}>1</span>
+                    Buyer Quote
+                </span>
+                <ChevronRight className="h-4 w-4" />
+                <span className={cn("flex items-center gap-2", step === 2 && "text-primary")}>
+                    <span className={cn("w-6 h-6 rounded-full border flex items-center justify-center", step === 2 && "border-primary bg-primary text-white")}>2</span>
+                    Costs
+                </span>
+                <ChevronRight className="h-4 w-4" />
+                <span className={cn("flex items-center gap-2", step === 3 && "text-primary")}>
+                    <span className={cn("w-6 h-6 rounded-full border flex items-center justify-center", step === 3 && "border-primary bg-primary text-white")}>3</span>
+                    Yield
+                </span>
+                <ChevronRight className="h-4 w-4" />
+                <span className={cn("flex items-center gap-2", step === 4 && "text-primary")}>
+                    <span className={cn("w-6 h-6 rounded-full border flex items-center justify-center", step === 4 && "border-primary bg-primary text-white")}>4</span>
+                    Analysis
+                </span>
             </div>
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight">Reverse Pricing Calculator</h1>
-              <p className="text-muted-foreground mt-1">Calculate shared costs from bulk raw purchases.</p>
-            </div>
-          </div>
-          <Button onClick={handleCreateQuotation} size="lg" className="shadow-lg hover:shadow-xl transition-all">
-            <FilePlus2 className="mr-2 h-5 w-5" />
-            Create Quotation
-          </Button>
-        </header>
+        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Global Config Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            <Card>
-              <CardHeader className="pb-3 border-b bg-muted/10">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Globe className="h-5 w-5 text-primary" />
-                  Currency & Exchange
+        <main className="space-y-8">
+          {/* STEP 1: BUYER QUOTE */}
+          {step === 1 && (
+            <Card className="shadow-xl">
+              <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <ArrowRightLeft className="h-6 w-6 text-primary" />
+                  Step 1: Buyer Offer Details
                 </CardTitle>
+                <CardDescription>Enter the lengths and quantities your customer is asking for.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                 <div className="space-y-1.5">
-                    <Label className="text-xs uppercase font-bold text-muted-foreground">Exchange Rate (1 USD = ? INR)</Label>
-                    <div className="flex gap-2">
-                        <Input 
-                            type="number" 
-                            value={config.exchangeRate} 
-                            onChange={e => handleConfigChange('exchangeRate', e.target.value)} 
-                            className="font-mono font-bold"
-                        />
-                        <Button variant="outline" size="icon" onClick={handleFetchRate} disabled={isFetchingRate}>
-                            {isFetchingRate ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                        </Button>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground italic">Cost pool is calculated in INR and divided by Total Output.</p>
-                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-3 border-b bg-muted/10">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-primary" />
-                  Shared Cost Inputs (INR)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <Label htmlFor="rawPurchase">Total Raw Purchase (kg)</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>The total weight of raw hair purchased from the source.</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input 
-                    id="rawPurchase" 
-                    type="number" 
-                    value={config.totalRawPurchase} 
-                    onChange={e => handleConfigChange('totalRawPurchase', e.target.value)} 
-                    className="border-primary/20"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="rawPrice">Raw Hair Price (₹/kg)</Label>
-                  <Input 
-                    id="rawPrice" 
-                    type="number" 
-                    value={config.rawHairPrice} 
-                    onChange={e => handleConfigChange('rawHairPrice', e.target.value)} 
-                  />
-                </div>
-                <div className="space-y-2 pt-2 border-t">
-                   <div className="flex items-center gap-1.5">
-                    <Label htmlFor="procCost">Processing (₹/kg)</Label>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>Labor, chemical, and washing costs in INR per kg of output.</TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                  <Input 
-                    id="procCost" 
-                    type="number" 
-                    value={config.processingCost} 
-                    onChange={e => handleConfigChange('processingCost', e.target.value)} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="logCost">Logistics (₹/kg)</Label>
-                  <Input 
-                    id="logCost" 
-                    type="number" 
-                    value={config.logisticsCost} 
-                    onChange={e => handleConfigChange('logisticsCost', e.target.value)} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="otherCost">Other Costs (₹/kg)</Label>
-                  <Input 
-                    id="otherCost" 
-                    type="number" 
-                    value={config.otherCost} 
-                    onChange={e => handleConfigChange('otherCost', e.target.value)} 
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Table Area */}
-          <div className="lg:col-span-3 space-y-6">
-            <Card className="shadow-sm overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between border-b bg-muted/5">
-                <div>
-                  <CardTitle className="text-xl uppercase">Output Analysis</CardTitle>
-                  <CardDescription>Costs are averaged based on total output vs raw purchase.</CardDescription>
-                </div>
-                <Button onClick={addRow} size="sm">
-                  <PlusCircle className="h-4 w-4 mr-2" /> Add Length
-                </Button>
-              </CardHeader>
-              <CardContent className="p-0">
+              <CardContent className="pt-6">
                 <div className="overflow-x-auto">
-                  <Table>
+                    <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/20">
-                        <TableHead className="w-[110px]">Length</TableHead>
-                        <TableHead className="text-right w-[80px]">Qty (kg)</TableHead>
-                        <TableHead className="text-right w-[110px]">Buyer ($/kg)</TableHead>
-                        <TableHead className="text-right w-[110px] text-muted-foreground italic">Buyer (₹/kg)</TableHead>
-                        <TableHead className="text-right w-[110px] text-muted-foreground">Cost (₹/kg)</TableHead>
-                        <TableHead className="text-right w-[110px] font-bold">Cost ($/kg)</TableHead>
-                        <TableHead className="text-right w-[110px] bg-primary/5 font-bold">Final ($/kg)</TableHead>
-                        <TableHead className="w-[100px]">Status</TableHead>
-                        <TableHead className="w-[40px]"></TableHead>
-                      </TableRow>
+                        <TableRow className="bg-muted/50">
+                        <TableHead>Length</TableHead>
+                        <TableHead className="text-right">Quantity (kg)</TableHead>
+                        <TableHead className="text-right">Buyer Offer ($/kg)</TableHead>
+                        <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {calculatedRows.map(row => (
+                        {quoteRows.map(row => (
                         <TableRow key={row.id}>
-                          <TableCell className="p-2">
-                            <Select 
-                                value={row.length} 
-                                onValueChange={(v) => updateRow(row.id, 'length', v)}
-                            >
-                                <SelectTrigger className="h-9">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {lengths.map(l => (
-                                        <SelectItem key={l} value={l}>{l}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell className="p-2">
+                            <TableCell className="p-2">
+                                <Select value={row.length} onValueChange={(v) => updateQuoteRow(row.id, 'length', v)}>
+                                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                                    <SelectContent>{lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
+                                </Select>
+                            </TableCell>
+                            <TableCell className="p-2">
+                                <Input type="number" className="h-9 text-right" value={row.quantity} onChange={e => updateQuoteRow(row.id, 'quantity', Number(e.target.value))} />
+                            </TableCell>
+                            <TableCell className="p-2">
+                                <Input type="number" className="h-9 text-right font-bold" value={row.buyerPriceUSD} onChange={e => updateQuoteRow(row.id, 'buyerPriceUSD', Number(e.target.value))} />
+                            </TableCell>
+                            <TableCell className="p-2">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => removeQuoteRow(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                            </TableCell>
+                        </TableRow>
+                        ))}
+                    </TableBody>
+                    </Table>
+                </div>
+                <Button onClick={addQuoteRow} variant="outline" className="mt-4 w-full border-dashed">
+                  <PlusCircle className="mr-2 h-4 w-4" /> Add Another Length
+                </Button>
+              </CardContent>
+              <CardFooter className="bg-muted/10 border-t justify-end pt-6">
+                <Button onClick={nextStep} size="lg" className="px-12">Next: Costing <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              </CardFooter>
+            </Card>
+          )}
+
+          {/* STEP 2: COST INPUTS */}
+          {step === 2 && (
+            <Card className="shadow-xl">
+               <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <Coins className="h-6 w-6 text-primary" />
+                  Step 2: Shared Batch Costs
+                </CardTitle>
+                <CardDescription>Enter procurement and processing costs in INR.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                    <div className="space-y-3">
+                        <Label className="text-primary font-bold">Material Procurement</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="rawPurchase">Raw Hair Bought (kg)</Label>
+                                <Input id="rawPurchase" type="number" value={costs.totalRawPurchase} onChange={e => setCosts(c => ({...c, totalRawPurchase: Number(e.target.value)}))} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="rawPrice">Price per kg (₹)</Label>
+                                <Input id="rawPrice" type="number" value={costs.rawHairPrice} onChange={e => setCosts(c => ({...c, rawHairPrice: Number(e.target.value)}))} />
+                            </div>
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className="space-y-3">
+                        <Label className="text-primary font-bold">Operational Overheads (₹/kg)</Label>
+                        <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4 items-center">
+                                <Label>Processing/Labor</Label>
+                                <Input type="number" value={costs.processing} onChange={e => setCosts(c => ({...c, processing: Number(e.target.value)}))} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 items-center">
+                                <Label>Logistics/Shipping</Label>
+                                <Input type="number" value={costs.logistics} onChange={e => setCosts(c => ({...c, logistics: Number(e.target.value)}))} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 items-center">
+                                <Label>Other/Customs</Label>
+                                <Input type="number" value={costs.other} onChange={e => setCosts(c => ({...c, other: Number(e.target.value)}))} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-muted/30 rounded-xl p-6 flex flex-col justify-center items-center text-center space-y-4">
+                    <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+                        <Weight className="h-8 w-8 text-primary" />
+                    </div>
+                    <div>
+                        <h4 className="font-bold text-xl">Total Batch Cost Pool</h4>
+                        <p className="text-3xl font-black text-primary mt-1">₹{calculations.totalCostPoolINR.toLocaleString()}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground px-8 leading-relaxed italic">
+                        This pool is distributed equally across the {calculations.totalOutput} kg of final output you intend to produce.
+                    </p>
+                </div>
+              </CardContent>
+              <CardFooter className="bg-muted/10 border-t justify-between pt-6">
+                <Button onClick={prevStep} variant="outline"><ChevronLeft className="mr-2 h-4 w-4" /> Back</Button>
+                <Button onClick={nextStep} size="lg" className="px-12">Next: Yield Validation <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              </CardFooter>
+            </Card>
+          )}
+
+          {/* STEP 3: YIELD/WASTAGE */}
+          {step === 3 && (
+            <Card className="shadow-xl">
+               <CardHeader className="bg-primary/5 border-b">
+                <CardTitle className="text-2xl flex items-center gap-3">
+                  <Scale className="h-6 w-6 text-primary" />
+                  Step 3: Wastage & Yield Analysis
+                </CardTitle>
+                <CardDescription>Determine how much raw material is needed for this production.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-8">
+                <div className="flex gap-4 mb-8">
+                    <Button 
+                        variant={yieldMode === 'individual' ? 'default' : 'outline'} 
+                        className="flex-1 h-auto py-4 flex-col gap-1"
+                        onClick={() => setYieldMode('individual')}
+                    >
+                        <Layers className="h-5 w-5 mb-1" />
+                        <span>Individual Yields</span>
+                        <span className="text-[10px] opacity-70">Based on Hair Length</span>
+                    </Button>
+                    <Button 
+                        variant={yieldMode === 'global' ? 'default' : 'outline'} 
+                        className="flex-1 h-auto py-4 flex-col gap-1"
+                        onClick={() => setYieldMode('global')}
+                    >
+                        <TrendingDown className="h-5 w-5 mb-1" />
+                        <span>Global Wastage %</span>
+                        <span className="text-[10px] opacity-70">Apply Single Rate</span>
+                    </Button>
+                </div>
+
+                {yieldMode === 'global' ? (
+                    <div className="max-w-xs mx-auto space-y-4 p-8 border rounded-xl bg-muted/20 text-center">
+                        <Label className="text-lg">Overall Wastage %</Label>
+                        <div className="flex items-center gap-4">
                             <Input 
                                 type="number" 
-                                className="h-9 text-right" 
-                                value={row.quantity} 
-                                onChange={e => updateRow(row.id, 'quantity', e.target.value)}
+                                value={globalWastage} 
+                                onChange={e => setGlobalWastage(Number(e.target.value))} 
+                                className="text-3xl h-16 text-center font-black"
                             />
-                          </TableCell>
-                          <TableCell className="p-2">
-                             <Input 
-                                type="number" 
-                                className="h-9 text-right font-semibold" 
-                                value={row.buyerPriceUSD} 
-                                onChange={e => updateRow(row.id, 'buyerPriceUSD', e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell className="p-2 text-right text-muted-foreground text-[11px] font-mono">
-                            ₹{row.buyerPriceINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </TableCell>
-                          <TableCell className="p-2 text-right text-xs text-muted-foreground">
-                            ₹{row.totalCostINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </TableCell>
-                          <TableCell className="p-2 text-right font-bold text-sm">
-                            ${row.totalCostUSD.toFixed(2)}
-                          </TableCell>
-                          <TableCell className="p-2 bg-primary/5">
-                             <Input 
-                                type="number" 
-                                className="h-9 text-right font-bold border-primary/20 focus-visible:ring-primary" 
-                                value={row.finalPriceUSD} 
-                                onChange={e => updateRow(row.id, 'finalPriceOverrideUSD', e.target.value)}
-                            />
-                          </TableCell>
-                          <TableCell className="p-2">
-                             {row.status === 'Accept' ? (
-                                <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200 text-[10px] px-2 py-0">
-                                    Accept
-                                </Badge>
-                             ) : row.status === 'Negotiate' ? (
-                                <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 text-[10px] px-2 py-0">
-                                    Negotiate
-                                </Badge>
-                             ) : (
-                                <Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 text-[10px] px-2 py-0">
-                                    Reject
-                                </Badge>
-                             )}
-                          </TableCell>
-                          <TableCell className="p-2">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => removeRow(row.id)}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            <span className="text-2xl font-bold">%</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="border rounded-lg overflow-hidden">
+                         <Table>
+                            <TableHeader><TableRow className="bg-muted/50">
+                                <TableHead>Length</TableHead>
+                                <TableHead className="text-right">Qty (kg)</TableHead>
+                                <TableHead className="text-right">Yield %</TableHead>
+                                <TableHead className="text-right">Raw Required (kg)</TableHead>
+                            </TableRow></TableHeader>
+                            <TableBody>
+                                {quoteRows.map(row => (
+                                    <TableRow key={row.id}>
+                                        <TableCell className="font-bold">{row.length}</TableCell>
+                                        <TableCell className="text-right">{row.quantity} kg</TableCell>
+                                        <TableCell className="p-2">
+                                            <Input 
+                                                type="number" 
+                                                className="h-8 w-24 ml-auto text-right" 
+                                                value={row.yield} 
+                                                onChange={e => updateQuoteRow(row.id, 'yield', Number(e.target.value))} 
+                                            />
+                                        </TableCell>
+                                        <TableCell className="text-right text-muted-foreground">
+                                            {(row.quantity / (row.yield / 100)).toFixed(2)} kg
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                         </Table>
+                    </div>
+                )}
+
+                <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-4 rounded-xl border bg-muted/10 text-center">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Total Output</Label>
+                        <p className="text-2xl font-black">{calculations.totalOutput} kg</p>
+                    </div>
+                    <div className="p-4 rounded-xl border bg-muted/10 text-center">
+                        <Label className="text-xs uppercase font-bold text-muted-foreground">Raw Material Needed</Label>
+                        <p className="text-2xl font-black">{calculations.rawRequired.toFixed(2)} kg</p>
+                    </div>
+                    <div className={cn(
+                        "p-4 rounded-xl border text-center transition-colors",
+                        calculations.isShortage ? "bg-red-50 border-red-200" : "bg-green-50 border-green-200"
+                    )}>
+                        <Label className={cn("text-xs uppercase font-bold", calculations.isShortage ? "text-red-700" : "text-green-700")}>
+                            {calculations.isShortage ? "Raw Shortage" : "Raw Excess"}
+                        </Label>
+                        <p className={cn("text-2xl font-black", calculations.isShortage ? "text-red-800" : "text-green-800")}>
+                            {Math.abs(calculations.rawDifference).toFixed(2)} kg
+                        </p>
+                    </div>
                 </div>
-                {rows.length === 0 && (
-                    <div className="py-12 text-center text-muted-foreground">
-                        No rows added yet. Click &quot;Add Length&quot; to start.
+
+                {calculations.isShortage && (
+                    <div className="mt-4 p-4 rounded-lg bg-red-100 border border-red-200 flex items-center gap-3 text-red-800">
+                        <AlertCircle className="h-5 w-5 shrink-0" />
+                        <p className="text-sm font-medium">Warning: You are {Math.abs(calculations.rawDifference).toFixed(2)} kg short on raw material to fulfill this production run.</p>
                     </div>
                 )}
               </CardContent>
+              <CardFooter className="bg-muted/10 border-t justify-between pt-6">
+                <Button onClick={prevStep} variant="outline"><ChevronLeft className="mr-2 h-4 w-4" /> Back</Button>
+                <Button onClick={nextStep} size="lg" className="px-12">Calculate Results <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              </CardFooter>
             </Card>
+          )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="bg-primary/5 border-primary/20">
-                    <CardContent className="pt-6 text-sm space-y-4">
-                        <div className="flex items-center gap-2 text-primary font-bold mb-2">
-                            <TrendingDown className="h-4 w-4" />
-                            Efficiency Analysis
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
+          {/* STEP 4: ANALYSIS RESULT */}
+          {step === 4 && (
+            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                 <Card className="shadow-2xl overflow-hidden border-primary/20">
+                    <CardHeader className="bg-primary text-primary-foreground">
+                        <div className="flex justify-between items-center">
                             <div>
-                                <p className="text-xs text-muted-foreground uppercase font-bold">Total Output</p>
-                                <p className="text-lg font-bold">{totalOutput.toFixed(2)} kg</p>
+                                <CardTitle className="text-3xl font-black">Final Analysis</CardTitle>
+                                <CardDescription className="text-primary-foreground/80">Profitability overview per length based on shared batch costs.</CardDescription>
                             </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground uppercase font-bold">Avg. Yield</p>
-                                <p className="text-lg font-bold">{config.totalRawPurchase > 0 ? ((totalOutput / config.totalRawPurchase) * 100).toFixed(1) : 0}%</p>
-                            </div>
+                            <Button onClick={handleCreateQuotation} variant="secondary" size="lg" className="font-bold">
+                                <FilePlus2 className="mr-2 h-5 w-5" /> Generate Professional Quote
+                            </Button>
                         </div>
-                        <p className="text-muted-foreground leading-relaxed text-xs border-t pt-4">
-                            All rows share the same cost per kg based on the ratio of raw material to output weight.
-                        </p>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                             <Table>
+                                <TableHeader><TableRow className="bg-muted/50 border-b-2">
+                                    <TableHead className="font-black text-xs uppercase">Length</TableHead>
+                                    <TableHead className="text-right font-black text-xs uppercase">Offer ($/kg)</TableHead>
+                                    <TableHead className="text-right font-black text-xs uppercase bg-muted/20">Our Cost ($/kg)</TableHead>
+                                    <TableHead className="text-right font-black text-xs uppercase">Min ($/kg)</TableHead>
+                                    <TableHead className="text-right font-black text-xs uppercase">Target ($/kg)</TableHead>
+                                    <TableHead className="text-right font-black text-xs uppercase bg-primary/5">Final Negotiated ($/kg)</TableHead>
+                                    <TableHead className="text-center font-black text-xs uppercase">Decision</TableHead>
+                                </TableRow></TableHeader>
+                                <TableBody>
+                                    {calculations.items.map(row => (
+                                        <TableRow key={row.id} className="hover:bg-muted/10">
+                                            <TableCell className="font-black text-lg">{row.length}</TableCell>
+                                            <TableCell className="text-right font-medium text-muted-foreground text-lg">${row.buyerPriceUSD.toFixed(0)}</TableCell>
+                                            <TableCell className="text-right font-bold text-lg bg-muted/20">${row.costUSD.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right text-xs text-red-600 font-bold">${row.minPrice.toFixed(0)}</TableCell>
+                                            <TableCell className="text-right text-xs text-green-600 font-bold">${row.targetPrice.toFixed(0)}</TableCell>
+                                            <TableCell className="p-2 bg-primary/5">
+                                                <Input 
+                                                    type="number" 
+                                                    className="h-10 text-right font-black text-lg border-primary/20 focus-visible:ring-primary focus:bg-white"
+                                                    value={row.finalPrice}
+                                                    onChange={e => setFinalOverrides(prev => ({...prev, [row.id]: Number(e.target.value)}))}
+                                                />
+                                            </TableCell>
+                                            <TableCell className="text-center">
+                                                <Badge className={cn(
+                                                    "px-3 py-1 uppercase text-[10px] font-black tracking-tighter",
+                                                    row.status === 'Accept' ? "bg-green-600" :
+                                                    row.status === 'Negotiate' ? "bg-amber-500" : "bg-red-600"
+                                                )}>
+                                                    {row.status}
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                             </Table>
+                        </div>
                     </CardContent>
-                </Card>
+                 </Card>
 
-                <Card className="bg-muted/10 border-dashed">
-                    <CardContent className="pt-6 space-y-4">
-                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground font-medium uppercase tracking-wider">Batch Cost Pool (INR)</span>
-                            <span className="font-bold">₹{totalCostINR.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                         </div>
-                         <div className="flex justify-between items-center border-t pt-4">
-                            <span className="text-sm font-bold uppercase">Estimated Quote Total (USD)</span>
-                            <span className="text-xl font-black text-primary">
-                                ${calculatedRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * r.finalPriceUSD, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                         </div>
-                    </CardContent>
-                </Card>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className="bg-muted/5 border-dashed">
+                        <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground flex items-center gap-2"><TrendingDown className="h-3 w-3" /> Efficiency</CardTitle></CardHeader>
+                        <CardContent>
+                            <p className="text-3xl font-black">{(calculations.totalOutput / calculations.rawRequired * 100).toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground">Production Yield Rate</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-muted/5 border-dashed">
+                        <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground flex items-center gap-2"><Info className="h-3 w-3" /> Average Margin</CardTitle></CardHeader>
+                        <CardContent>
+                            <p className={cn("text-3xl font-black", calculations.avgMargin >= 20 ? "text-green-600" : "text-amber-500")}>
+                                {calculations.avgMargin.toFixed(1)}%
+                            </p>
+                            <p className="text-xs text-muted-foreground">On negotiated prices</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-primary/10 border-primary/30">
+                        <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-primary flex items-center gap-2"><CheckCircle2 className="h-3 w-3" /> Total Profit</CardTitle></CardHeader>
+                        <CardContent>
+                            <p className="text-3xl font-black text-primary">
+                                ${(calculations.items.reduce((acc, r) => acc + r.quantity * (r.finalPrice - r.costUSD), 0)).toLocaleString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Estimated Batch Return</p>
+                        </CardContent>
+                    </Card>
+                 </div>
+
+                 <div className="flex justify-between items-center pt-8">
+                    <Button onClick={() => setStep(3)} variant="ghost"><ChevronLeft className="mr-2 h-4 w-4" /> Re-check Yields</Button>
+                    <div className="flex gap-4">
+                         <Button onClick={() => setStep(1)} variant="outline">Start Over</Button>
+                    </div>
+                 </div>
             </div>
-          </div>
-        </div>
+          )}
+        </main>
       </div>
     </div>
   );
