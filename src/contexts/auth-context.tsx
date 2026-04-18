@@ -1,6 +1,6 @@
 'use client';
 
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
@@ -35,10 +35,20 @@ useEffect(() => {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-          setSubscription(userSnap.data().subscription || null);
-        } else {
+        if (!userSnap.exists()) {
+          // ✅ CREATE USER DOC (FIRST TIME LOGIN)
+          await setDoc(userRef, {
+            email: user.email,
+            role: 'user',
+            createdAt: new Date().toISOString(),
+            subscription: {
+              status: 'none'
+            }
+          });
+        
           setSubscription(null);
+        } else {
+          setSubscription(userSnap.data().subscription || null);
         }
       } catch (error) {
         console.error('Error fetching subscription:', error);

@@ -20,6 +20,11 @@ export default function SubscriptionGuard({ children }: { children: React.ReactN
       return;
     }
 
+    if (user.email === 'admin@hairprofit.com') {
+      setChecking(false);
+      return;
+    }
+
     const isActive =
       subscription?.status === 'active' &&
       subscription?.expiryDate &&
