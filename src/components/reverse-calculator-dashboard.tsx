@@ -101,7 +101,9 @@ export default function ReverseCalculatorDashboard() {
   });
 
   const [yieldMode, setYieldMode] = useState<'individual' | 'global'>('individual');
+  const [globalWastageMode, setGlobalWastageMode] = useState<'percentage' | 'kg'>('percentage');
   const [globalWastage, setGlobalWastage] = useState(20); // 20% wastage
+  const [globalWastageKg, setGlobalWastageKg] = useState(0);
   const [finalOverrides, setFinalOverrides] = useState<Record<string, number>>({});
 
   // Formatting helpers
@@ -144,8 +146,12 @@ export default function ReverseCalculatorDashboard() {
     // Yield Analysis
     let rawRequired = 0;
     if (yieldMode === 'global') {
-      const yieldFactor = (100 - globalWastage) / 100;
-      rawRequired = yieldFactor > 0 ? totalOutput / yieldFactor : 0;
+      if (globalWastageMode === 'percentage') {
+        const yieldFactor = (100 - globalWastage) / 100;
+        rawRequired = yieldFactor > 0 ? totalOutput / yieldFactor : 0;
+      } else {
+        rawRequired = totalOutput + (Number(globalWastageKg) || 0);
+      }
     } else {
       rawRequired = quoteRows.reduce((acc, r) => {
         const y = Number(r.yield) || 80;
@@ -200,7 +206,22 @@ export default function ReverseCalculatorDashboard() {
       items,
       avgMargin
     };
-  }, [quoteRows, costs, yieldMode, globalWastage, finalOverrides, exchangeRate]);
+  }, [quoteRows, costs, yieldMode, globalWastage, globalWastageKg, globalWastageMode, finalOverrides, exchangeRate]);
+
+  // Sync KG and % for global wastage
+  useEffect(() => {
+    if (yieldMode === 'global' && calculations.totalOutput > 0) {
+      if (globalWastageMode === 'percentage') {
+        const currentRawRequired = calculations.totalOutput / ((100 - globalWastage) / 100);
+        setGlobalWastageKg(Number((currentRawRequired - calculations.totalOutput).toFixed(2)));
+      } else {
+        const currentRawRequired = calculations.totalOutput + globalWastageKg;
+        if (currentRawRequired > 0) {
+          setGlobalWastage(Number(((globalWastageKg / currentRawRequired) * 100).toFixed(1)));
+        }
+      }
+    }
+  }, [globalWastage, globalWastageKg, globalWastageMode, yieldMode, calculations.totalOutput]);
 
   // Handlers
   const handleFetchRate = async () => {
@@ -254,7 +275,9 @@ export default function ReverseCalculatorDashboard() {
       quoteRows,
       costs,
       yieldMode,
+      globalWastageMode,
       globalWastage,
+      globalWastageKg,
       finalOverrides,
       exchangeRate,
       exportedAt: new Date().toISOString(),
@@ -285,7 +308,9 @@ export default function ReverseCalculatorDashboard() {
         if (data.quoteRows) setQuoteRows(data.quoteRows);
         if (data.costs) setCosts(data.costs);
         if (data.yieldMode) setYieldMode(data.yieldMode);
+        if (data.globalWastageMode) setGlobalWastageMode(data.globalWastageMode);
         if (data.globalWastage !== undefined) setGlobalWastage(data.globalWastage);
+        if (data.globalWastageKg !== undefined) setGlobalWastageKg(data.globalWastageKg);
         if (data.finalOverrides) setFinalOverrides(data.finalOverrides);
         if (data.exchangeRate) setExchangeRate(data.exchangeRate);
 
@@ -526,22 +551,76 @@ export default function ReverseCalculatorDashboard() {
                         onClick={() => setYieldMode('global')}
                     >
                         <TrendingDown className="h-5 w-5 mb-1" />
-                        <span>Global Wastage %</span>
+                        <span>Global Wastage</span>
                         <span className="text-[10px] opacity-70">Apply Single Rate</span>
                     </Button>
                 </div>
 
                 {yieldMode === 'global' ? (
-                    <div className="max-w-xs mx-auto space-y-4 p-8 border rounded-xl bg-muted/20 text-center">
-                        <Label className="text-lg">Overall Wastage %</Label>
-                        <div className="flex items-center gap-4">
-                            <Input 
-                                type="number" 
-                                value={globalWastage} 
-                                onChange={e => setGlobalWastage(Number(e.target.value))} 
-                                className="text-3xl h-16 text-center font-black"
-                            />
-                            <span className="text-2xl font-bold">%</span>
+                    <div className="max-w-md mx-auto space-y-6 p-8 border rounded-xl bg-muted/20">
+                        <div className="flex flex-col items-center gap-4">
+                            <Label className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Wastage Input Type</Label>
+                            <div className="flex bg-background p-1 rounded-lg border shadow-sm">
+                                <Button 
+                                    variant={globalWastageMode === 'percentage' ? 'secondary' : 'ghost'} 
+                                    size="sm"
+                                    onClick={() => setGlobalWastageMode('percentage')}
+                                    className="px-6"
+                                >
+                                    Percentage (%)
+                                </Button>
+                                <Button 
+                                    variant={globalWastageMode === 'kg' ? 'secondary' : 'ghost'} 
+                                    size="sm"
+                                    onClick={() => setGlobalWastageMode('kg')}
+                                    className="px-6"
+                                >
+                                    Weight (kg)
+                                </Button>
+                            </div>
+                        </div>
+
+                        <div className="text-center">
+                            <Label className="text-lg mb-2 block">
+                                {globalWastageMode === 'percentage' ? 'Overall Wastage %' : 'Total Wastage in kg'}
+                            </Label>
+                            <div className="flex items-center justify-center gap-4">
+                                {globalWastageMode === 'percentage' ? (
+                                    <>
+                                        <Input 
+                                            type="number" 
+                                            value={globalWastage} 
+                                            onChange={e => {
+                                              let val = Number(e.target.value);
+                                              if (val >= 100) val = 99.9;
+                                              if (val < 0) val = 0;
+                                              setGlobalWastage(val);
+                                            }} 
+                                            className="text-3xl h-16 w-32 text-center font-black"
+                                        />
+                                        <span className="text-2xl font-bold">%</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Input 
+                                            type="number" 
+                                            value={globalWastageKg} 
+                                            onChange={e => {
+                                              let val = Number(e.target.value);
+                                              if (val < 0) val = 0;
+                                              setGlobalWastageKg(val);
+                                            }} 
+                                            className="text-3xl h-16 w-48 text-center font-black"
+                                        />
+                                        <span className="text-2xl font-bold">kg</span>
+                                    </>
+                                )}
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-4">
+                                {globalWastageMode === 'percentage' 
+                                    ? `Equates to ≈ ${globalWastageKg.toFixed(2)} kg of lost material`
+                                    : `Equates to ≈ ${globalWastage.toFixed(1)}% wastage rate`}
+                            </p>
                         </div>
                     </div>
                 ) : (
@@ -681,7 +760,7 @@ export default function ReverseCalculatorDashboard() {
                     <Card className="bg-muted/5 border-dashed">
                         <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-muted-foreground flex items-center gap-2"><TrendingDown className="h-3 w-3" /> Efficiency</CardTitle></CardHeader>
                         <CardContent>
-                            <p className="text-3xl font-black">{(calculations.totalOutput / calculations.rawRequired * 100).toFixed(1)}%</p>
+                            <p className="text-3xl font-black">{(calculations.totalOutput / (calculations.rawRequired || 1) * 100).toFixed(1)}%</p>
                             <p className="text-xs text-muted-foreground">Production Yield Rate</p>
                         </CardContent>
                     </Card>
