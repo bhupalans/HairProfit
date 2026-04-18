@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, ChangeEvent } from 'react';
 import { 
   ArrowLeft, 
   ArrowRight,
@@ -22,7 +22,9 @@ import {
   ChevronRight,
   ChevronLeft,
   Info,
-  Scale
+  Scale,
+  FileUp,
+  FileDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -79,6 +81,7 @@ export default function ReverseCalculatorDashboard() {
   const { user } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState(1);
   const [exchangeRate, setExchangeRate] = useState(83.50);
@@ -240,6 +243,56 @@ export default function ReverseCalculatorDashboard() {
     router.push('/price-quotation');
   };
 
+  const handleExportJson = () => {
+    const exportData = {
+      quoteRows,
+      costs,
+      yieldMode,
+      globalWastage,
+      finalOverrides,
+      exchangeRate,
+      exportedAt: new Date().toISOString(),
+    };
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reverse-calc-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Export Successful', description: 'Calculation saved to JSON file.' });
+  };
+
+  const handleImportJson = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const result = event.target?.result as string;
+        const data = JSON.parse(result);
+        
+        if (data.quoteRows) setQuoteRows(data.quoteRows);
+        if (data.costs) setCosts(data.costs);
+        if (data.yieldMode) setYieldMode(data.yieldMode);
+        if (data.globalWastage !== undefined) setGlobalWastage(data.globalWastage);
+        if (data.finalOverrides) setFinalOverrides(data.finalOverrides);
+        if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+
+        toast({ title: 'Import Successful', description: 'Calculation state restored.' });
+      } catch (err) {
+        console.error('Import failed', err);
+        toast({ variant: 'destructive', title: 'Import Failed', description: 'The JSON file is invalid.' });
+      }
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const nextStep = () => setStep(s => Math.min(s + 1, 4));
   const prevStep = () => setStep(s => Math.max(s - 1, 1));
 
@@ -290,12 +343,20 @@ export default function ReverseCalculatorDashboard() {
           {/* STEP 1: BUYER QUOTE */}
           {step === 1 && (
             <Card className="shadow-xl">
-              <CardHeader className="bg-primary/5 border-b">
-                <CardTitle className="text-2xl flex items-center gap-3">
-                  <ArrowRightLeft className="h-6 w-6 text-primary" />
-                  Step 1: Buyer Offer Details
-                </CardTitle>
-                <CardDescription>Enter the lengths and quantities your customer is asking for.</CardDescription>
+              <CardHeader className="bg-primary/5 border-b flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-2xl flex items-center gap-3">
+                    <ArrowRightLeft className="h-6 w-6 text-primary" />
+                    Step 1: Buyer Offer Details
+                  </CardTitle>
+                  <CardDescription>Enter the lengths and quantities your customer is asking for.</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                    <FileUp className="h-4 w-4 mr-2" /> Import JSON
+                  </Button>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="application/json" onChange={handleImportJson} />
+                </div>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="overflow-x-auto">
@@ -555,9 +616,14 @@ export default function ReverseCalculatorDashboard() {
                                 <CardTitle className="text-3xl font-black">Final Analysis</CardTitle>
                                 <CardDescription className="text-primary-foreground/80">Profitability overview per length based on shared batch costs.</CardDescription>
                             </div>
-                            <Button onClick={handleCreateQuotation} variant="secondary" size="lg" className="font-bold">
-                                <FilePlus2 className="mr-2 h-5 w-5" /> Generate Professional Quote
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button onClick={handleExportJson} variant="outline" className="bg-white/10 hover:bg-white/20 border-white/20 text-white font-bold">
+                                <FileDown className="mr-2 h-5 w-5" /> Export JSON
+                              </Button>
+                              <Button onClick={handleCreateQuotation} variant="secondary" size="lg" className="font-bold">
+                                  <FilePlus2 className="mr-2 h-5 w-5" /> Generate Professional Quote
+                              </Button>
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent className="p-0">
