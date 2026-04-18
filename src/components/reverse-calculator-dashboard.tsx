@@ -138,8 +138,8 @@ export default function ReverseCalculatorDashboard() {
     );
 
     const totalCostPoolINR = totalRawCostINR + totalOverheadINR;
-    const sharedCostPerKgINR = totalOutput > 0 ? totalCostPoolINR / totalOutput : 0;
-    const sharedCostPerKgUSD = exchangeRate > 0 ? sharedCostPerKgINR / exchangeRate : 0;
+    const totalCostPoolUSD = exchangeRate > 0 ? totalCostPoolINR / exchangeRate : 0;
+    const sharedCostPerKgUSD = totalOutput > 0 ? totalCostPoolUSD / totalOutput : 0;
 
     // Yield Analysis
     let rawRequired = 0;
@@ -179,14 +179,20 @@ export default function ReverseCalculatorDashboard() {
       };
     });
 
-    const avgMargin = items.length > 0 
-      ? items.reduce((acc, i) => acc + i.margin, 0) / items.length 
+    const totalRevenueUSD = items.reduce((acc, i) => acc + (Number(i.quantity) || 0) * i.finalPrice, 0);
+    const totalProfitUSD = totalRevenueUSD - totalCostPoolUSD;
+    
+    const avgMargin = totalCostPoolUSD > 0 
+      ? (totalProfitUSD / totalCostPoolUSD) * 100 
       : 0;
 
     return {
       totalOutput,
       buyerQuoteGrandTotal,
       totalCostPoolINR,
+      totalCostPoolUSD,
+      totalRevenueUSD,
+      totalProfitUSD,
       sharedCostPerKgUSD,
       rawRequired,
       rawDifference,
@@ -692,7 +698,7 @@ export default function ReverseCalculatorDashboard() {
                         <CardHeader className="pb-2"><CardTitle className="text-xs uppercase text-primary flex items-center gap-2"><CheckCircle2 className="h-3 w-3" /> Total Profit</CardTitle></CardHeader>
                         <CardContent>
                             <p className="text-3xl font-black text-primary">
-                                ${(calculations.items.reduce((acc, r) => acc + r.quantity * (r.finalPrice - r.costUSD), 0)).toLocaleString()}
+                                {formatUSD(calculations.totalProfitUSD)}
                             </p>
                             <p className="text-xs text-muted-foreground">Estimated Batch Return</p>
                         </CardContent>
