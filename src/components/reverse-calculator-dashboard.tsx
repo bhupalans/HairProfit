@@ -37,6 +37,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
+  TableFooter,
 } from '@/components/ui/table';
 import {
   Select,
@@ -100,10 +101,21 @@ export default function ReverseCalculatorDashboard() {
   const [globalWastage, setGlobalWastage] = useState(20); // 20% wastage
   const [finalOverrides, setFinalOverrides] = useState<Record<string, number>>({});
 
+  // Formatting helpers
+  const formatUSD = (val: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(val);
+  };
+
   // Calculations
   const calculations = useMemo(() => {
     const totalOutput = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
     
+    // Step 1 Grand Total
+    const buyerQuoteGrandTotal = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0) * (Number(r.buyerPriceUSD) || 0), 0);
+
     // Step 2 Raw Cost
     const totalRawCostINR = (Number(costs.totalRawPurchase) || 0) * (Number(costs.rawHairPrice) || 0);
     
@@ -162,6 +174,7 @@ export default function ReverseCalculatorDashboard() {
 
     return {
       totalOutput,
+      buyerQuoteGrandTotal,
       totalCostPoolINR,
       sharedCostPerKgUSD,
       rawRequired,
@@ -284,6 +297,7 @@ export default function ReverseCalculatorDashboard() {
                         <TableHead>Length</TableHead>
                         <TableHead className="text-right">Quantity (kg)</TableHead>
                         <TableHead className="text-right">Buyer Offer ($/kg)</TableHead>
+                        <TableHead className="text-right">Total ($)</TableHead>
                         <TableHead className="w-[50px]"></TableHead>
                         </TableRow>
                     </TableHeader>
@@ -302,12 +316,24 @@ export default function ReverseCalculatorDashboard() {
                             <TableCell className="p-2">
                                 <Input type="number" className="h-9 text-right font-bold" value={row.buyerPriceUSD} onChange={e => updateQuoteRow(row.id, 'buyerPriceUSD', Number(e.target.value))} />
                             </TableCell>
+                            <TableCell className="p-2 text-right font-medium">
+                                {formatUSD((Number(row.quantity) || 0) * (Number(row.buyerPriceUSD) || 0))}
+                            </TableCell>
                             <TableCell className="p-2">
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:text-destructive" onClick={() => removeQuoteRow(row.id)}><Trash2 className="h-4 w-4" /></Button>
                             </TableCell>
                         </TableRow>
                         ))}
                     </TableBody>
+                    <TableFooter>
+                        <TableRow>
+                            <TableCell colSpan={3} className="text-right font-bold py-4">Grand Total Offer:</TableCell>
+                            <TableCell className="text-right font-bold py-4 text-primary text-lg">
+                                {formatUSD(calculations.buyerQuoteGrandTotal)}
+                            </TableCell>
+                            <TableCell />
+                        </TableRow>
+                    </TableFooter>
                     </Table>
                 </div>
                 <Button onClick={addQuoteRow} variant="outline" className="mt-4 w-full border-dashed">
