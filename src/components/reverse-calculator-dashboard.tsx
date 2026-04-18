@@ -93,9 +93,9 @@ export default function ReverseCalculatorDashboard() {
   const [config, setConfig] = useState({
     rawHairPrice: 2000, // INR/kg
     usdRate: 83.5, // 1 USD = X INR
-    processingCost: 15, // USD/kg
-    logisticsCost: 5, // USD/kg
-    otherCost: 2, // USD/kg
+    processingCost: 15, // In Pricing Currency/kg
+    logisticsCost: 5, // In Pricing Currency/kg
+    otherCost: 2, // In Pricing Currency/kg
     pricingCurrency: 'USD',
     displayCurrency: 'USD',
     exchangeRate: 1, // 1 Display = X Pricing
@@ -153,24 +153,33 @@ export default function ReverseCalculatorDashboard() {
   };
 
   const calculatedRows = useMemo(() => {
-    // 1. Core Logic in Pricing Currency (USD based on user specific steps)
-    const rawCostUsd = (Number(config.rawHairPrice) || 0) / (Number(config.usdRate) || 1);
+    // 1. Core Logic in Pricing Currency
+    const rawPriceInput = (Number(config.rawHairPrice) || 0);
+    const usdRate = (Number(config.usdRate) || 1);
+    
+    // We assume rawPriceInput is always INR based on UI label
+    let rawCostPricing = rawPriceInput;
+    if (config.pricingCurrency === 'USD') {
+        rawCostPricing = rawPriceInput / usdRate;
+    }
+    
     const rate = Number(config.exchangeRate) || 1;
     
     return rows.map(row => {
       const yieldVal = (Number(row.yield) || 0) / 100;
-      const effectiveRawCost = yieldVal > 0 ? rawCostUsd / yieldVal : 0;
+      const effectiveRawCost = yieldVal > 0 ? rawCostPricing / yieldVal : 0;
       
-      const finalCostUsd = effectiveRawCost + (Number(config.processingCost) || 0) + (Number(config.logisticsCost) || 0) + (Number(config.otherCost) || 0);
+      // All costs added here are already in Pricing Currency
+      const finalCostPricing = effectiveRawCost + (Number(config.processingCost) || 0) + (Number(config.logisticsCost) || 0) + (Number(config.otherCost) || 0);
       
-      const minPriceUsd = finalCostUsd * 1.08;
-      const targetPriceUsd = finalCostUsd * 1.20;
+      const minPricePricing = finalCostPricing * 1.08;
+      const targetPricePricing = finalCostPricing * 1.20;
 
       // Convert to Display Currency for UI
       // Value(Display) = Value(Pricing) / Rate
-      const finalCostDisp = rate !== 0 ? finalCostUsd / rate : 0;
-      const minPriceDisp = rate !== 0 ? minPriceUsd / rate : 0;
-      const targetPriceDisp = rate !== 0 ? targetPriceUsd / rate : 0;
+      const finalCostDisp = rate !== 0 ? finalCostPricing / rate : 0;
+      const minPriceDisp = rate !== 0 ? minPricePricing / rate : 0;
+      const targetPriceDisp = rate !== 0 ? targetPricePricing / rate : 0;
 
       // Final Price Logic: Editable but defaults to target
       const fPriceDisp = row.finalPriceOverride !== undefined 
@@ -216,6 +225,7 @@ export default function ReverseCalculatorDashboard() {
   };
 
   const dispSym = currencySymbols[config.displayCurrency] || '$';
+  const pricingSym = currencySymbols[config.pricingCurrency] || '$';
 
   return (
     <div className="bg-muted/30 min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -324,7 +334,7 @@ export default function ReverseCalculatorDashboard() {
                 </div>
                 <div className="space-y-2 pt-2 border-t">
                    <div className="flex items-center gap-1.5">
-                    <Label htmlFor="procCost">Processing ($/kg)</Label>
+                    <Label htmlFor="procCost">Processing ({pricingSym}/kg)</Label>
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -342,7 +352,7 @@ export default function ReverseCalculatorDashboard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="logCost">Logistics ($/kg)</Label>
+                  <Label htmlFor="logCost">Logistics ({pricingSym}/kg)</Label>
                   <Input 
                     id="logCost" 
                     type="number" 
@@ -351,7 +361,7 @@ export default function ReverseCalculatorDashboard() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="otherCost">Other Costs ($/kg)</Label>
+                  <Label htmlFor="otherCost">Other Costs ({pricingSym}/kg)</Label>
                   <Input 
                     id="otherCost" 
                     type="number" 
