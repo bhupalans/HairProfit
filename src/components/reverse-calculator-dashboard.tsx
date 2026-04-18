@@ -109,6 +109,14 @@ export default function ReverseCalculatorDashboard() {
     }).format(val);
   };
 
+  const formatINR = (val: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(val);
+  };
+
   // Calculations
   const calculations = useMemo(() => {
     const totalOutput = quoteRows.reduce((acc, r) => acc + (Number(r.quantity) || 0), 0);
@@ -368,6 +376,7 @@ export default function ReverseCalculatorDashboard() {
                             <div className="space-y-2">
                                 <Label htmlFor="rawPrice">Price per kg (₹)</Label>
                                 <Input id="rawPrice" type="number" value={costs.rawHairPrice} onChange={e => setCosts(c => ({...c, rawHairPrice: Number(e.target.value)}))} />
+                                <p className="text-[10px] text-muted-foreground mt-1">≈ {formatUSD(costs.rawHairPrice / exchangeRate)}</p>
                             </div>
                         </div>
                     </div>
@@ -377,15 +386,24 @@ export default function ReverseCalculatorDashboard() {
                         <div className="space-y-4">
                             <div className="grid grid-cols-2 gap-4 items-center">
                                 <Label>Processing/Labor</Label>
-                                <Input type="number" value={costs.processing} onChange={e => setCosts(c => ({...c, processing: Number(e.target.value)}))} />
+                                <div className="space-y-1">
+                                    <Input type="number" value={costs.processing} onChange={e => setCosts(c => ({...c, processing: Number(e.target.value)}))} />
+                                    <p className="text-[10px] text-muted-foreground text-right">≈ {formatUSD(costs.processing / exchangeRate)}</p>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4 items-center">
                                 <Label>Logistics/Shipping</Label>
-                                <Input type="number" value={costs.logistics} onChange={e => setCosts(c => ({...c, logistics: Number(e.target.value)}))} />
+                                <div className="space-y-1">
+                                    <Input type="number" value={costs.logistics} onChange={e => setCosts(c => ({...c, logistics: Number(e.target.value)}))} />
+                                    <p className="text-[10px] text-muted-foreground text-right">≈ {formatUSD(costs.logistics / exchangeRate)}</p>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4 items-center">
                                 <Label>Other/Customs</Label>
-                                <Input type="number" value={costs.other} onChange={e => setCosts(c => ({...c, other: Number(e.target.value)}))} />
+                                <div className="space-y-1">
+                                    <Input type="number" value={costs.other} onChange={e => setCosts(c => ({...c, other: Number(e.target.value)}))} />
+                                    <p className="text-[10px] text-muted-foreground text-right">≈ {formatUSD(costs.other / exchangeRate)}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -397,7 +415,10 @@ export default function ReverseCalculatorDashboard() {
                     </div>
                     <div>
                         <h4 className="font-bold text-xl">Total Batch Cost Pool</h4>
-                        <p className="text-3xl font-black text-primary mt-1">₹{calculations.totalCostPoolINR.toLocaleString()}</p>
+                        <p className="text-3xl font-black text-primary mt-1">
+                          {formatINR(calculations.totalCostPoolINR)}
+                        </p>
+                        <p className="text-lg font-bold text-muted-foreground">≈ {formatUSD(calculations.totalCostPoolINR / exchangeRate)}</p>
                     </div>
                     <p className="text-xs text-muted-foreground px-8 leading-relaxed italic">
                         This pool is distributed equally across the {calculations.totalOutput} kg of final output you intend to produce.
